@@ -5,7 +5,11 @@ import 'package:hexcolor/hexcolor.dart';
 
 import 'package:location/location.dart';
 
-void main() {
+import 'package:firebase_core/firebase_core.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(const MyApp());
 }
 
@@ -19,9 +23,9 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   final Location _location = Location();
 
-  final Color _primaryColor = HexColor('#DC54FE');
+  final Color _primaryColor = HexColor('#54fe7f');
 
-  final Color _accentColor = HexColor('#8A02AE');
+  final Color _accentColor = HexColor('#02ae33');
 
   @override
   void initState() {

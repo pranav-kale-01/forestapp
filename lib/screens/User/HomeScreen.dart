@@ -1,10 +1,29 @@
-// ignore_for_file: library_private_types_in_public_api
+// ignore_for_file: library_private_types_in_public_api, use_build_context_synchronously
 
 import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+class ProfileData {
+  final String name;
+  final String email;
+  final String contactNumber;
+  final String imageUrl;
+  // final int numberOfForestsAdded;
+
+  ProfileData({
+    required this.name,
+    required this.email,
+    required this.contactNumber,
+    required this.imageUrl,
+    // required this.numberOfForestsAdded,
+  });
+}
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -14,6 +33,41 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  late String _userEmail;
+  late ProfileData _profileData;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchUserEmail();
+  }
+
+  Future<void> fetchUserEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userEmail = prefs.getString('userEmail');
+    setState(() {
+      _userEmail = userEmail ?? '';
+    });
+    fetchUserProfileData();
+  }
+
+  Future<void> fetchUserProfileData() async {
+    final userSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .where('email', isEqualTo: _userEmail)
+        .get();
+    final userData = userSnapshot.docs.first.data();
+    setState(() {
+      _profileData = ProfileData(
+        name: userData['name'],
+        email: userData['email'],
+        contactNumber: userData['contactNumber'],
+        imageUrl: userData['imageUrl'],
+        // numberOfForestsAdded: userData['numberOfForestsAdded']
+      );
+    });
+  }
+
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -33,6 +87,106 @@ class _HomeScreenState extends State<HomeScreen> {
       _currentLocation =
           'Latitude: ${position.latitude}, Longitude: ${position.longitude}';
     });
+  }
+
+  void _onSubmitPressed() async {
+    // Validate the form
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    // Show a loading spinner while the data is being uploaded
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const Center(
+          child: SizedBox(
+            width: 40,
+            height: 40,
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+              strokeWidth: 2,
+            ),
+          ),
+        );
+      },
+    );
+    try {
+      // Upload the image to Cloud Storage
+      final storageRef = FirebaseStorage.instance
+          .ref()
+          .child('forest_images')
+          .child('${DateTime.now().millisecondsSinceEpoch}.jpg');
+
+      final uploadTask = storageRef.putFile(_image!);
+      final snapshot = await uploadTask.whenComplete(() => null);
+      final imageUrl = await snapshot.ref.getDownloadURL();
+
+      // Get the current location
+      final position = await Geolocator.getCurrentPosition();
+      final location = GeoPoint(position.latitude, position.longitude);
+
+      // Create a new document in the 'forestdata' collection
+      final docRef = FirebaseFirestore.instance.collection('forestdata').doc();
+      final data = {
+        'id': docRef.id,
+        'title': _titleController.text.trim(),
+        'description': _descriptionController.text.trim(),
+        'imageUrl': imageUrl,
+        'location': location,
+        'user_name': _profileData.name,
+        'user_email': _profileData.email,
+        'user_contact': _profileData.contactNumber,
+        'user_imageUrl': _profileData.imageUrl,
+        'createdAt': DateTime.now(),
+      };
+
+      await docRef.set(data);
+
+      _titleController.clear();
+      _descriptionController.clear();
+
+      // Hide the loading spinner
+      Navigator.pop(context);
+
+      // Show an alert dialog indicating success
+      showDialog(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: const Text('Success'),
+          content: const Text('Data added successfully.'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      );
+    } catch (error) {
+      // Hide the loading spinner
+      Navigator.pop(context);
+
+      // Show an alert dialog indicating failure
+      showDialog(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: const Text('Error'),
+          content: const Text('Failed to upload data.'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   @override
@@ -138,11 +292,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text(_currentLocation!),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    Navigator.pop(context);
-                  }
-                },
+                onPressed: _onSubmitPressed,
                 child: const Text('Submit'),
               ),
             ],

@@ -1,31 +1,74 @@
+// ignore_for_file: library_private_types_in_public_api, unnecessary_null_comparison
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileData {
   final String name;
   final String email;
   final String contactNumber;
-  final int numberOfForestsAdded;
+  final String imageUrl;
+  // final int numberOfForestsAdded;
 
   ProfileData({
     required this.name,
     required this.email,
     required this.contactNumber,
-    required this.numberOfForestsAdded,
+    required this.imageUrl,
+    // required this.numberOfForestsAdded,
   });
 }
 
-class ProfileScreen extends StatelessWidget {
-  final ProfileData profileData = ProfileData(
-    name: 'John Doe',
-    email: 'johndoe@example.com',
-    contactNumber: '+1 555-555-5555',
-    numberOfForestsAdded: 10,
-  );
+class ProfileScreen extends StatefulWidget {
+  const ProfileScreen({Key? key}) : super(key: key);
 
-  ProfileScreen({super.key});
+  @override
+  _ProfileScreenState createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  late String _userEmail;
+  late ProfileData _profileData;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchUserEmail();
+  }
+
+  Future<void> fetchUserEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userEmail = prefs.getString('userEmail');
+    setState(() {
+      _userEmail = userEmail ?? '';
+    });
+    fetchUserProfileData();
+  }
+
+  Future<void> fetchUserProfileData() async {
+    final userSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .where('email', isEqualTo: _userEmail)
+        .get();
+    final userData = userSnapshot.docs.first.data();
+    setState(() {
+      _profileData = ProfileData(
+        name: userData['name'],
+        email: userData['email'],
+        contactNumber: userData['contactNumber'],
+        imageUrl: userData['imageUrl'],
+        // numberOfForestsAdded: userData['numberOfForestsAdded']
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_profileData == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     return Scaffold(
       appBar: AppBar(
         elevation: 0.0,
@@ -51,18 +94,17 @@ class ProfileScreen extends StatelessWidget {
             Container(
               width: 150.0,
               height: 150.0,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 image: DecorationImage(
-                  image: NetworkImage(
-                      'https://randomuser.me/api/portraits/men/1.jpg'),
+                  image: NetworkImage(_profileData.imageUrl),
                   fit: BoxFit.cover,
                 ),
               ),
             ),
             const SizedBox(height: 16.0),
             Text(
-              profileData.name,
+              _profileData.name,
               style: const TextStyle(
                 fontSize: 24.0,
                 fontWeight: FontWeight.bold,
@@ -70,22 +112,22 @@ class ProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8.0),
             Text(
-              profileData.email,
+              _profileData.email,
               style: const TextStyle(
                 fontSize: 16.0,
               ),
             ),
             const SizedBox(height: 8.0),
             Text(
-              profileData.contactNumber,
+              _profileData.contactNumber,
               style: const TextStyle(
                 fontSize: 16.0,
               ),
             ),
             const SizedBox(height: 16.0),
-            Text(
-              'Number of Forests Added: ${profileData.numberOfForestsAdded}',
-              style: const TextStyle(
+            const Text(
+              'Number of Forests Added: 10',
+              style: TextStyle(
                 fontSize: 16.0,
               ),
             ),

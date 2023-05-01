@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:forestapp/screens/loginScreen.dart';
 
-
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key, required this.title}) : super(key: key);
 
@@ -16,32 +15,32 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> {
   bool _isVisible = false;
 
-  _SplashScreenState(){
-
-    Timer(const Duration(milliseconds: 2000), (){
+  _SplashScreenState() {
+    Timer(const Duration(milliseconds: 2000), () {
       setState(() {
         Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (context) => LoginScreen()), (route) => false);
+            MaterialPageRoute(builder: (context) => const LoginScreen()),
+            (route) => false);
       });
     });
 
-    Timer(
-        const Duration(milliseconds: 10),(){
+    Timer(const Duration(milliseconds: 10), () {
       setState(() {
-        _isVisible = true; // Now it is showing fade effect and navigating to Login page
+        _isVisible =
+            true; // Now it is showing fade effect and navigating to Login page
       });
-    }
-    );
-
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Theme.of(context).accentColor, Theme.of(context).primaryColor],
+          colors: [
+            Theme.of(context).colorScheme.secondary,
+            Theme.of(context).primaryColor
+          ],
           begin: const FractionalOffset(0, 0),
           end: const FractionalOffset(1.0, 0.0),
           stops: const [0.0, 1.0],
@@ -65,11 +64,13 @@ class _SplashScreenState extends State<SplashScreen> {
                     offset: const Offset(5.0, 3.0),
                     spreadRadius: 2.0,
                   )
-                ]
-            ),
+                ]),
             child: const Center(
               child: ClipOval(
-                child: Icon(Icons.android_outlined, size: 128,), //put your logo here
+                child: Icon(
+                  Icons.android_outlined,
+                  size: 128,
+                ), //put your logo here
               ),
             ),
           ),

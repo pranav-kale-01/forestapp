@@ -7,7 +7,7 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:759114737207:android:ae1423e544a6cbc2f7c1b2",
+        "mobilesdk_app_id": "1:759114737207:android:bc4f819723e4d3f7f7c1b2",
         "android_client_info": {
           "package_name": "com.example.forestapp"
         }
@@ -29,6 +29,13 @@
             {
               "client_id": "759114737207-4o05tiqf8cikdbs6u2kmkv6jup64gd0d.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "759114737207-3mu17sd1ovdtmg9jh8g9svm96p6qtcrs.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.forestapp"
+              }
             }
           ]
         }

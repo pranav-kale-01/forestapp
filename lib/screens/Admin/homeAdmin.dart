@@ -53,7 +53,7 @@ class _HomeAdminState extends State<HomeAdmin> {
             label: 'Forest Data',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
+            icon: Icon(Icons.map),
             label: 'Settings',
           ),
         ],
@@ -73,7 +73,7 @@ class SettingsScreen extends StatelessWidget {
     return Container(
       child: Center(
         child: Text(
-          'Settings Screen',
+          'Map Screen',
           style: TextStyle(fontSize: 30),
         ),
       ),
