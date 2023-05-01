@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'AddUserScreen.dart';
 import 'ForestDataScreen.dart';
 import 'HomeScreen.dart';
+import 'MapScreen.dart';
 
 class HomeAdmin extends StatefulWidget {
   const HomeAdmin({Key? key, required this.title}) : super(key: key);
@@ -20,9 +21,9 @@ class _HomeAdminState extends State<HomeAdmin> {
 
   static final List<Widget> _widgetOptions = <Widget>[
     HomeScreen(),
-    AddUserScreen(),
-    ForestDataScreen(),
-    const SettingsScreen(),
+    const AddUserScreen(),
+    const ForestDataScreen(),
+    const MapScreen(),
   ];
 
   void _onItemTapped(int index) {
@@ -71,7 +72,7 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      child: Center(
+      child: const Center(
         child: Text(
           'Map Screen',
           style: TextStyle(fontSize: 30),

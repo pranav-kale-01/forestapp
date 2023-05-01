@@ -1,106 +1,147 @@
+// ignore_for_file: unnecessary_null_comparison
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class ForestDataScreen extends StatelessWidget {
-  final List<ForestData> forestDataList = [
-    ForestData(
-      location: 'Yosemite National Park',
-      title: 'El Capitan',
-      description:
-          'El Capitan is a vertical rock formation in Yosemite National Park, located on the north side of Yosemite Valley, near its western end. The granite monolith extends about 3,000 feet (900 meters) from base to summit along its tallest face and is one of the world\'s favorite challenges for rock climbers.',
-      userName: 'John Doe',
-      dateTime: DateTime.now(),
-      image: 'https://randomuser.me/api/portraits/men/1.jpg',
-    ),
-    ForestData(
-      location: 'Yellowstone National Park',
-      title: 'Old Faithful',
-      description:
-          'Old Faithful is a cone geyser in Yellowstone National Park in Wyoming, United States. It was named in 1870 during the Washburn-Langford-Doane Expedition and was the first geyser in the park to receive a name. It is one of the most predictable geysers, erupting almost every 90 minutes.',
-      userName: 'Jane Smith',
-      dateTime: DateTime.now().subtract(const Duration(days: 1)),
-      image: 'https://randomuser.me/api/portraits/men/1.jpg',
-    ),
-    ForestData(
-      location: 'Redwood National Park',
-      title: 'Tall Trees Grove',
-      description:
-          'Tall Trees Grove is a nature reserve and hiking area in Del Norte County, California. The grove is part of the Redwood National and State Parks system and is home to some of the tallest trees in the world, including Hyperion, the world\'s tallest known living tree.',
-      userName: 'Bob Johnson',
-      dateTime: DateTime.now().subtract(const Duration(days: 2)),
-      image: 'https://randomuser.me/api/portraits/men/1.jpg',
-    ),
-  ];
+class ProfileData {
+  final String title;
+  final String description;
+  final String imageUrl;
+  final String userName;
+  final String userEmail;
 
-  ForestDataScreen({super.key});
+  ProfileData({
+    required this.title,
+    required this.description,
+    required this.imageUrl,
+    required this.userName,
+    required this.userEmail,
+  });
+}
+
+class ForestDataScreen extends StatefulWidget {
+  const ForestDataScreen({super.key});
+
+  @override
+  State<ForestDataScreen> createState() => _ForestDataScreenState();
+}
+
+class _ForestDataScreenState extends State<ForestDataScreen> {
+  late String _userEmail;
+  late List<ProfileData> _profileDataList = [];
+
+  @override
+  void initState() {
+    super.initState();
+    fetchUserEmail();
+  }
+
+  Future<void> fetchUserEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userEmail = prefs.getString('userEmail');
+    setState(() {
+      _userEmail = userEmail ?? '';
+    });
+    fetchUserProfileData();
+  }
+
+  Future<void> fetchUserProfileData() async {
+    final userSnapshot =
+        await FirebaseFirestore.instance.collection('forestdata').get();
+    final profileDataList = userSnapshot.docs
+        .map((doc) => ProfileData(
+              imageUrl: doc['imageUrl'],
+              title: doc['title'],
+              description: doc['description'],
+              userName: doc['user_name'],
+              userEmail: doc['user_email'],
+            ))
+        .toList();
+    setState(() {
+      _profileDataList = profileDataList;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        // appBar: AppBar(
-        //   title: const Text('Forest Data'),
-        // ),
-        body: Container(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            const Padding(
-              padding: EdgeInsets.only(top: 20.0),
-              child: Text(
-                'Forest Data',
-                style: TextStyle(
-                  fontSize: 24.0,
-                  fontWeight: FontWeight.bold,
+    if (_profileDataList.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    return MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: Scaffold(
+          appBar: PreferredSize(
+            preferredSize: const Size.fromHeight(0.0), // hide the app bar
+            child: AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0.0,
+            ),
+          ),
+          body: Column(
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Center(
+                  child: Text(
+                    'Forest Data List',
+                    style: TextStyle(
+                      fontSize: 24.0,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
-            ),
-            Expanded(
-              child: ListView.builder(
-                itemCount: forestDataList.length,
-                itemBuilder: (BuildContext context, int index) {
-                  return Card(
-                    child: ListTile(
-                      title: Text(forestDataList[index].title),
-                      subtitle: Text(forestDataList[index].location),
-                      // leading: CircleAvatar(
-                      //   backgroundImage:
-                      //       NetworkImage(forestDataList[index].image),
-                      // ),
-                      trailing: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+              Expanded(
+                child: ListView.builder(
+                  itemCount: _profileDataList.length,
+                  itemBuilder: (context, index) {
+                    final profileData = _profileDataList[index];
+                    return Card(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(forestDataList[index].dateTime.toString()),
-                          const SizedBox(height: 5),
-                          Text('Added by ${forestDataList[index].userName}'),
+                          SizedBox(
+                            width: 100.0,
+                            height: 100.0,
+                            child: Image.network(profileData.imageUrl),
+                          ),
+                          const SizedBox(
+                            width: 20,
+                          ),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                Text(
+                                  profileData.title,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 8.0),
+                                Text(
+                                  profileData.description,
+                                ),
+                                const SizedBox(height: 8.0),
+                                Text(
+                                  profileData.userName,
+                                ),
+                                const SizedBox(height: 8.0),
+                                // Text(
+                                //   profileData.userEmail,
+                                // ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
-                      onTap: () {
-                        // Navigate to detail screen
-                      },
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
-            )
-          ]),
-    ));
+            ],
+          ),
+        ));
   }
-}
-
-class ForestData {
-  final String location;
-  final String title;
-  final String description;
-  final String userName;
-  final DateTime dateTime;
-  final String image;
-
-  ForestData({
-    required this.location,
-    required this.title,
-    required this.description,
-    required this.userName,
-    required this.dateTime,
-    required this.image,
-  });
 }
