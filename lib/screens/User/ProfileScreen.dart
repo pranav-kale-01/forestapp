@@ -12,6 +12,8 @@ class ProfileData {
   final String email;
   final String contactNumber;
   final String imageUrl;
+  final String aadharNumber;
+  final String forestId;
   // final int numberOfForestsAdded;
 
   ProfileData({
@@ -19,6 +21,8 @@ class ProfileData {
     required this.email,
     required this.contactNumber,
     required this.imageUrl,
+    required this.aadharNumber,
+    required this.forestId,
     // required this.numberOfForestsAdded,
   });
 }
@@ -32,7 +36,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   late String _userEmail;
-  late ProfileData _profileData;
+  ProfileData? _profileData;
 
   @override
   void initState() {
@@ -61,6 +65,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         email: userData['email'],
         contactNumber: userData['contactNumber'],
         imageUrl: userData['imageUrl'],
+        aadharNumber: userData['aadharNumber'],
+        forestId: userData['forestID'],
         // numberOfForestsAdded: userData['numberOfForestsAdded']
       );
     });
@@ -134,14 +140,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   image: DecorationImage(
-                    image: NetworkImage(_profileData.imageUrl),
+                    image: NetworkImage(_profileData!.imageUrl),
                     fit: BoxFit.cover,
                   ),
                 ),
               ),
               const SizedBox(height: 16.0),
               Text(
-                _profileData.name,
+                _profileData!.name,
                 style: const TextStyle(
                   fontSize: 24.0,
                   fontWeight: FontWeight.bold,
@@ -149,69 +155,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 8.0),
               Text(
-                _profileData.email,
+                _profileData!.email,
                 style: const TextStyle(
                   fontSize: 16.0,
                 ),
               ),
               const SizedBox(height: 8.0),
               Text(
-                _profileData.contactNumber,
+                _profileData!.contactNumber,
                 style: const TextStyle(
                   fontSize: 16.0,
                 ),
               ),
               const SizedBox(height: 16.0),
-              const Text(
-                'Number of Forests Added: 10',
-                style: TextStyle(
+              Text(
+                _profileData!.aadharNumber,
+                style: const TextStyle(
                   fontSize: 16.0,
                 ),
               ),
-              const Spacer(),
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: SizedBox(
-                  width: 100.0,
-                  height: 40.0,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      final confirm = await showDialog(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          title: const Text('Confirm Logout'),
-                          content:
-                              const Text('Are you sure you want to log out?'),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, false),
-                              child: const Text('Cancel'),
-                            ),
-                            TextButton(
-                              onPressed: () async {
-                                await FirebaseAuth.instance.signOut();
-                                // ignore: use_build_context_synchronously
-                                Navigator.pushAndRemoveUntil(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) =>
-                                          const LoginScreen()),
-                                  (route) => false,
-                                );
-                              },
-                              child: const Text('Logout'),
-                            ),
-                          ],
-                        ),
-                      );
-                      if (confirm == true) {
-                        // perform logout
-                      }
-                    },
-                    child: const Text('Logout'),
-                  ),
+              const SizedBox(height: 16.0),
+              Text(
+                _profileData!.forestId,
+                style: const TextStyle(
+                  fontSize: 16.0,
                 ),
-              )
+              ),
+              const SizedBox(height: 16.0),
+              // const Text(
+              //   'Number of Forests Added: 10',
+              //   style: TextStyle(
+              //     fontSize: 16.0,
+              //   ),
+              // ),
+              const Spacer(),
             ]),
       ),
     );

@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:forestapp/screens/User/ProfileScreen.dart';
 
+import 'AddForestData.dart';
 import 'ForestDataScreen.dart';
 import 'HomeScreen.dart';
 
@@ -19,9 +20,10 @@ class _HomeUserState extends State<HomeUser> {
   int _selectedIndex = 0;
 
   static final List<Widget> _widgetOptions = <Widget>[
-    HomeScreen(),
+    const HomeScreen(),
+    AddForestData(),
     const ForestDataScreen(),
-    ProfileScreen(),
+    const ProfileScreen(),
   ];
 
   void _onItemTapped(int index) {
@@ -41,6 +43,11 @@ class _HomeUserState extends State<HomeUser> {
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
             label: 'Home',
+            backgroundColor: Colors.black,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_add),
+            label: 'Add',
             backgroundColor: Colors.black,
           ),
           BottomNavigationBarItem(

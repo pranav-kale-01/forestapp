@@ -1,47 +1,57 @@
-// ignore_for_file: library_private_types_in_public_api, use_build_context_synchronously
-
-import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/intl.dart';
+
+import '../loginScreen.dart';
 
 class ProfileData {
-  final String name;
-  final String email;
-  final String contactNumber;
+  final String title;
+  final String description;
   final String imageUrl;
-  // final int numberOfForestsAdded;
+  final String userName;
+  final String userEmail;
+  final Timestamp? datetime;
 
   ProfileData({
-    required this.name,
-    required this.email,
-    required this.contactNumber,
+    required this.title,
+    required this.description,
     required this.imageUrl,
-    // required this.numberOfForestsAdded,
+    required this.userName,
+    required this.userEmail,
+    this.datetime,
   });
 }
 
-//
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
   late String _userEmail;
-  late ProfileData _profileData;
-  String _selectedValue = 'no remark';
+  late List<ProfileData> _profileDataList = [];
+
+  late int _count;
+  late int _countUser;
 
   @override
   void initState() {
     super.initState();
     fetchUserEmail();
+    getTotalDocumentsCount().then((value) {
+      setState(() {
+        _count = value;
+      });
+    });
+    getTotalDocumentsCountUser().then((value) {
+      setState(() {
+        _countUser = value;
+      });
+    });
   }
 
   Future<void> fetchUserEmail() async {
@@ -55,308 +65,210 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> fetchUserProfileData() async {
     final userSnapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .where('email', isEqualTo: _userEmail)
+        .collection('forestdata')
+        .where('user_email', isEqualTo: _userEmail)
+        // .orderBy('createdAt', descending: true)
+        .limit(5)
         .get();
-    final userData = userSnapshot.docs.first.data();
+    final profileDataList = userSnapshot.docs
+        .map((doc) => ProfileData(
+              imageUrl: doc['imageUrl'],
+              title: doc['title'],
+              description: doc['description'],
+              userName: doc['user_name'],
+              userEmail: doc['user_email'],
+              datetime: doc['createdAt'] as Timestamp?,
+            ))
+        .toList();
     setState(() {
-      _profileData = ProfileData(
-        name: userData['name'],
-        email: userData['email'],
-        contactNumber: userData['contactNumber'],
-        imageUrl: userData['imageUrl'],
-        // numberOfForestsAdded: userData['numberOfForestsAdded']
-      );
+      _profileDataList = profileDataList;
     });
   }
 
-  final _formKey = GlobalKey<FormState>();
-  final _titleController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  final _numberOfTigersController = TextEditingController();
-  final _numberOfCubsController = TextEditingController();
-  File? _image;
-  String? _currentLocation;
-
-  Future<void> _pickImage(ImageSource source) async {
-    final pickedFile = await ImagePicker().pickImage(source: source);
-    setState(() {
-      _image = File(pickedFile!.path);
-    });
+  Future<int> getTotalDocumentsCount() async {
+    final snapshot =
+        await FirebaseFirestore.instance.collection('forestdata').get();
+    return snapshot.size;
   }
 
-  Future<void> _getCurrentLocation() async {
-    final position = await Geolocator.getCurrentPosition();
-    setState(() {
-      _currentLocation =
-          'Latitude: ${position.latitude}, Longitude: ${position.longitude}';
-    });
+  Future<int> getTotalDocumentsCountUser() async {
+    final snapshot = await FirebaseFirestore.instance.collection('users').get();
+    return snapshot.size;
   }
 
-  void _onSubmitPressed() async {
-    // Validate the form
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    // Show a loading spinner while the data is being uploaded
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return const Center(
-          child: SizedBox(
-            width: 40,
-            height: 40,
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
-              strokeWidth: 2,
-            ),
-          ),
-        );
-      },
-    );
-    try {
-      // Upload the image to Cloud Storage
-      final storageRef = FirebaseStorage.instance
-          .ref()
-          .child('forest_images')
-          .child('${DateTime.now().millisecondsSinceEpoch}.jpg');
-
-      final uploadTask = storageRef.putFile(_image!);
-      final snapshot = await uploadTask.whenComplete(() => null);
-      final imageUrl = await snapshot.ref.getDownloadURL();
-
-      // Get the current location
-      final position = await Geolocator.getCurrentPosition();
-      final location = GeoPoint(position.latitude, position.longitude);
-
-      // Create a new document in the 'forestdata' collection
-      final docRef = FirebaseFirestore.instance.collection('forestdata').doc();
-      final data = {
-        'id': docRef.id,
-        'number_of_tiger': int.parse(_numberOfTigersController.text.trim()),
-        'number_of_cubs': int.parse(_numberOfCubsController.text.trim()),
-        'remark': _selectedValue,
-        'title': _titleController.text.trim(),
-        'description': _descriptionController.text.trim(),
-        'imageUrl': imageUrl,
-        'location': location,
-        'user_name': _profileData.name,
-        'user_email': _profileData.email,
-        'user_contact': _profileData.contactNumber,
-        'user_imageUrl': _profileData.imageUrl,
-        'createdAt': DateTime.now(),
-      };
-
-      await docRef.set(data);
-
-      _titleController.clear();
-      _descriptionController.clear();
-
-      // Hide the loading spinner
-      Navigator.pop(context);
-
-      // Show an alert dialog indicating success
-      showDialog(
-        context: context,
-        builder: (BuildContext context) => AlertDialog(
-          title: const Text('Success'),
-          content: const Text('Data added successfully.'),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('OK'),
-              onPressed: () {
-                Navigator.pop(context);
-              },
-            ),
-          ],
-        ),
-      );
-    } catch (error) {
-      // Hide the loading spinner
-      Navigator.pop(context);
-
-      // Show an alert dialog indicating failure
-      showDialog(
-        context: context,
-        builder: (BuildContext context) => AlertDialog(
-          title: const Text('Error'),
-          content: const Text('Failed to upload data.'),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('OK'),
-              onPressed: () {
-                Navigator.pop(context);
-              },
-            ),
-          ],
-        ),
-      );
-    }
-  }
+  // late final int numberOfTigers;
+  final CollectionReference users =
+      FirebaseFirestore.instance.collection('users');
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Center(
-          child: Text(
-            'Add Forest Data',
-            style: TextStyle(
-              fontSize: 24.0,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0.0,
-      ),
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+    if (_profileDataList.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    return SafeArea(
+      child: Scaffold(
+        body: Container(
+          padding: const EdgeInsets.all(10.0),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(
-                height: 60,
-              ),
-              if (_image != null)
-                Container(
-                  height: 200,
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                      image: FileImage(_image!),
-                      fit: BoxFit.cover,
-                    ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Pench MH',
+                    style:
+                        TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
                   ),
-                ),
-              ElevatedButton(
-                onPressed: () {
-                  showModalBottomSheet(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return SafeArea(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            ListTile(
-                              leading: const Icon(Icons.camera_alt),
-                              title: const Text('Take a photo'),
-                              onTap: () {
-                                _pickImage(ImageSource.camera);
-                                Navigator.pop(context);
-                              },
+                  Column(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.logout),
+                        onPressed: () async {
+                          final confirm = await showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('Confirm Logout'),
+                              content: const Text(
+                                  'Are you sure you want to log out?'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.pop(context, false),
+                                  child: const Text('Cancel'),
+                                ),
+                                TextButton(
+                                  onPressed: () async {
+                                    await FirebaseAuth.instance.signOut();
+                                    // ignore: use_build_context_synchronously
+                                    Navigator.pushAndRemoveUntil(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              const LoginScreen()),
+                                      (route) => false,
+                                    );
+                                  },
+                                  child: const Text('Logout'),
+                                ),
+                              ],
                             ),
-                            ListTile(
-                              leading: const Icon(Icons.photo_library),
-                              title: const Text('Choose from gallery'),
-                              onTap: () {
-                                _pickImage(ImageSource.gallery);
-                                Navigator.pop(context);
-                              },
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  );
-                },
-                child: Text(_image == null ? 'Add Photo' : 'Change Photo'),
-              ),
-              TextFormField(
-                controller: _titleController,
-                decoration: const InputDecoration(
-                  labelText: 'Title',
-                ),
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return 'Please enter a title';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: _numberOfTigersController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Number of tigers',
-                ),
-                validator: (value) {
-                  final intValue = int.tryParse(value!);
-                  if (intValue == null) {
-                    return 'Please enter a valid number';
-                  }
-                  // Add any additional validation checks here
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: _numberOfCubsController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Number of cubs',
-                ),
-                validator: (value) {
-                  final intValue = int.tryParse(value!);
-                  if (intValue == null) {
-                    return 'Please enter a valid number';
-                  }
-                  // Add any additional validation checks here
-                  return null;
-                },
-              ),
-              DropdownButton<String>(
-                value: _selectedValue,
-                onChanged: (value) {
-                  setState(() {
-                    _selectedValue = value!;
-                  });
-                },
-                items: const [
-                  DropdownMenuItem(
-                    value: 'no remark',
-                    child: Text('Remark'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'injured',
-                    child: Text('Injured'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'pregnant',
-                    child: Text('Pregnant'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'killed',
-                    child: Text('Killed'),
+                          );
+                          if (confirm == true) {
+                            // perform logout
+                          }
+                        },
+                      ),
+                      const Text("Logout"),
+                    ],
                   ),
                 ],
               ),
-              TextFormField(
-                controller: _descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Description',
+              const SizedBox(height: 16.0),
+              Expanded(
+                  child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  SizedBox(
+                    height: 180,
+                    width: 300,
+                    child: Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.animation,
+                              size: 50,
+                              color: Colors.orange,
+                            ),
+                            const SizedBox(height: 10),
+                            const Text(
+                              'No of tigers',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 20,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              '$_count',
+                              style: const TextStyle(
+                                fontSize: 18,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              )),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: _profileDataList.length,
+                  itemBuilder: (context, index) {
+                    final profileData = _profileDataList[index];
+                    return Card(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        profileData.title,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8.0),
+                                      Text(
+                                        DateFormat('MMM d, yyyy h:mm a').format(
+                                            profileData.datetime!.toDate()),
+                                      ),
+                                    ],
+                                  ),
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          const SizedBox(height: 8.0),
+                                          Text(
+                                            profileData.userName,
+                                          ),
+                                          const SizedBox(height: 8.0),
+                                          Text(
+                                            profileData.userEmail,
+                                          ),
+                                        ],
+                                      ),
+                                      ElevatedButton(
+                                          onPressed: () {},
+                                          child: const Text("View"))
+                                    ],
+                                  )
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return 'Please enter a description';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              if (_currentLocation == null)
-                ElevatedButton(
-                  onPressed: _getCurrentLocation,
-                  child: const Text('Get Current Location'),
-                )
-              else
-                Text(_currentLocation!),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _onSubmitPressed,
-                child: const Text('Submit'),
               ),
             ],
           ),

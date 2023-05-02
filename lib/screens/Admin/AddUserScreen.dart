@@ -19,6 +19,8 @@ class _AddUserScreenState extends State<AddUserScreen> {
   String _email = '';
   String _password = '';
   String _contactNumber = '';
+  String _aadharNumber = '';
+  String _forestId = '';
   File? _imageFile;
   final CollectionReference _userRef =
       FirebaseFirestore.instance.collection('users');
@@ -39,7 +41,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
       appBar: AppBar(
         title: const Center(
           child: Text(
-            'Add User',
+            'Add Guard',
             style: TextStyle(
               fontSize: 24.0,
               fontWeight: FontWeight.bold,
@@ -160,6 +162,40 @@ class _AddUserScreenState extends State<AddUserScreen> {
                     },
                   ),
                   const SizedBox(height: 16.0),
+                  TextFormField(
+                    decoration: const InputDecoration(
+                      labelText: 'Aadhar Number',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.phone,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a aadhar number';
+                      }
+                      return null;
+                    },
+                    onSaved: (value) {
+                      _aadharNumber = value!;
+                    },
+                  ),
+                  const SizedBox(height: 16.0),
+                  TextFormField(
+                    decoration: const InputDecoration(
+                      labelText: 'Forest ID',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.phone,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a Forest ID';
+                      }
+                      return null;
+                    },
+                    onSaved: (value) {
+                      _forestId = value!;
+                    },
+                  ),
+                  const SizedBox(height: 16.0),
                   ElevatedButton(
                     onPressed: () async {
                       if (_formKey.currentState!.validate()) {
@@ -186,6 +222,8 @@ class _AddUserScreenState extends State<AddUserScreen> {
                           'password': _password,
                           'contactNumber': _contactNumber,
                           'imageUrl': imageUrl,
+                          'aadharNumber': _aadharNumber,
+                          'forestID': _forestId,
                         };
                         try {
                           await usersRef.add(userData);
