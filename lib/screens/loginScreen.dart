@@ -123,6 +123,20 @@ class _LoginScreenState extends State<LoginScreen> {
                                           email: _emailController.text.trim(),
                                           password: _passwordController.text,
                                         );
+                                        FirebaseAuth.instance
+                                            .signInWithEmailAndPassword(
+                                          email: _emailController.text.trim(),
+                                          password: _passwordController.text,
+                                        )
+                                            .then((value) async {
+                                          await FirebaseAuth.instance
+                                              .setPersistence(
+                                                  Persistence.LOCAL);
+                                          // user is now signed in and persistence is enabled
+                                        }).catchError((error) {
+                                          // handle error
+                                        });
+
                                         // Navigate to the HomeAdmin screen on successful login
                                         Navigator.pushReplacement(
                                           context,

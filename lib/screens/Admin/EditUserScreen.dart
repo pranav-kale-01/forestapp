@@ -1,19 +1,21 @@
 // ignore_for_file: unused_field, library_private_types_in_public_api, use_build_context_synchronously
 
 import 'dart:io';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 
-class AddUserScreen extends StatefulWidget {
-  const AddUserScreen({super.key});
+class EditUserScreen extends StatefulWidget {
+  const EditUserScreen({super.key, required Map<String, dynamic> userData});
 
   @override
-  _AddUserScreenState createState() => _AddUserScreenState();
+  _EditUserScreenState createState() => _EditUserScreenState();
 }
 
-class _AddUserScreenState extends State<AddUserScreen> {
+class _EditUserScreenState extends State<EditUserScreen> {
   final _formKey = GlobalKey<FormState>();
   String _name = '';
   String _email = '';
@@ -39,7 +41,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
       appBar: AppBar(
         title: const Center(
           child: Text(
-            'Add User',
+            'Edit User',
             style: TextStyle(
               fontSize: 24.0,
               fontWeight: FontWeight.bold,

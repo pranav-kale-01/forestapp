@@ -25,6 +25,7 @@ class ProfileData {
   });
 }
 
+//
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -35,6 +36,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   late String _userEmail;
   late ProfileData _profileData;
+  String _selectedValue = 'no remark';
 
   @override
   void initState() {
@@ -71,6 +73,8 @@ class _HomeScreenState extends State<HomeScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _numberOfTigersController = TextEditingController();
+  final _numberOfCubsController = TextEditingController();
   File? _image;
   String? _currentLocation;
 
@@ -131,6 +135,9 @@ class _HomeScreenState extends State<HomeScreen> {
       final docRef = FirebaseFirestore.instance.collection('forestdata').doc();
       final data = {
         'id': docRef.id,
+        'number_of_tiger': int.parse(_numberOfTigersController.text.trim()),
+        'number_of_cubs': int.parse(_numberOfCubsController.text.trim()),
+        'remark': _selectedValue,
         'title': _titleController.text.trim(),
         'description': _descriptionController.text.trim(),
         'imageUrl': imageUrl,
@@ -269,6 +276,62 @@ class _HomeScreenState extends State<HomeScreen> {
                   }
                   return null;
                 },
+              ),
+              TextFormField(
+                controller: _numberOfTigersController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Number of tigers',
+                ),
+                validator: (value) {
+                  final intValue = int.tryParse(value!);
+                  if (intValue == null) {
+                    return 'Please enter a valid number';
+                  }
+                  // Add any additional validation checks here
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _numberOfCubsController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Number of cubs',
+                ),
+                validator: (value) {
+                  final intValue = int.tryParse(value!);
+                  if (intValue == null) {
+                    return 'Please enter a valid number';
+                  }
+                  // Add any additional validation checks here
+                  return null;
+                },
+              ),
+              DropdownButton<String>(
+                value: _selectedValue,
+                onChanged: (value) {
+                  setState(() {
+                    _selectedValue = value!;
+                  });
+                },
+                items: const [
+                  DropdownMenuItem(
+                    value: 'no remark',
+                    child: Text('Remark'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'injured',
+                    child: Text('Injured'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'pregnant',
+                    child: Text('Pregnant'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'killed',
+                    child: Text('Killed'),
+                  ),
+                ],
               ),
               TextFormField(
                 controller: _descriptionController,

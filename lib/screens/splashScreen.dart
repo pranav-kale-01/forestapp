@@ -1,7 +1,11 @@
 import 'dart:async';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:forestapp/screens/Admin/homeAdmin.dart';
+import 'package:forestapp/screens/User/homeUser.dart';
 import 'package:forestapp/screens/loginScreen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key, required this.title}) : super(key: key);
@@ -14,13 +18,65 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
   bool _isVisible = false;
+  // late String _userEmail;
+
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  String? _userEmail;
+  User? _user;
+
+  @override
+  void initState() {
+    fetchUserEmail();
+    super.initState();
+    // Listen to auth state changes
+    _auth.authStateChanges().listen((User? user) {
+      if (user != null) {
+        // User is logged in
+        setState(() {
+          _user = user;
+        });
+      } else {
+        // User is not logged in
+        setState(() {
+          _user = null;
+        });
+      }
+    });
+  }
+
+  Future<void> fetchUserEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userEmail = prefs.getString('userEmail');
+    setState(() {
+      _userEmail = userEmail ?? '';
+    });
+  }
 
   _SplashScreenState() {
-    Timer(const Duration(milliseconds: 2000), () {
+    Timer(const Duration(milliseconds: 1000), () {
       setState(() {
-        Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (context) => const LoginScreen()),
-            (route) => false);
+        if (_user != null) {
+          Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(
+                builder: (context) => const HomeAdmin(
+                  title: 'title',
+                ),
+              ),
+              (route) => false);
+        } else if (_userEmail != null) {
+          Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(
+                builder: (context) => const HomeUser(
+                  title: 'title',
+                ),
+              ),
+              (route) => false);
+        } else {
+          Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => const LoginScreen()),
+              (route) => false);
+        }
       });
     });
 
@@ -49,31 +105,50 @@ class _SplashScreenState extends State<SplashScreen> {
       ),
       child: AnimatedOpacity(
         opacity: _isVisible ? 1.0 : 0,
-        duration: const Duration(milliseconds: 1200),
-        child: Center(
-          child: Container(
-            height: 140.0,
-            width: 140.0,
-            decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.3),
-                    blurRadius: 2.0,
-                    offset: const Offset(5.0, 3.0),
-                    spreadRadius: 2.0,
-                  )
-                ]),
-            child: const Center(
-              child: ClipOval(
-                child: Icon(
-                  Icons.android_outlined,
-                  size: 128,
-                ), //put your logo here
+        duration: const Duration(milliseconds: 300),
+        child: Column(
+          children: [
+            Expanded(
+              child: Center(
+                child: SizedBox(
+                  width: 200,
+                  height: 200,
+                  child: Image.asset('penchlogo.png'),
+                ),
               ),
             ),
-          ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 30.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  Text(
+                    'Tiger love',
+                    style: TextStyle(
+                      decoration: TextDecoration.none,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  Icon(
+                    Icons.flag,
+                    color: Colors.white,
+                  ),
+                  Text(
+                    'India',
+                    style: TextStyle(
+                      decoration: TextDecoration.none,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
