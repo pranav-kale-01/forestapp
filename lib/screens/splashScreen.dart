@@ -66,15 +66,15 @@ class _SplashScreenState extends State<SplashScreen> {
               (route) => false);
         } else if (_userEmail != null) {
           Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => const LoginScreen()),
+              (route) => false);
+        } else {
+          Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(
                 builder: (context) => const HomeUser(
                   title: 'title',
                 ),
               ),
-              (route) => false);
-        } else {
-          Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(builder: (context) => const LoginScreen()),
               (route) => false);
         }
       });
@@ -113,7 +113,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 child: SizedBox(
                   width: 200,
                   height: 200,
-                  child: Image.asset('penchlogo.png'),
+                  child: Image.asset('assets/penchlogo.png'),
                 ),
               ),
             ),
