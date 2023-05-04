@@ -38,6 +38,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         20, 10, 20, 10), // This will be the login form
                     child: Column(
                       children: [
+                        SizedBox(
+                          width: 100,
+                          height: 100,
+                          child: Image.asset('assets/penchlogo.png'),
+                        ),
+                        const SizedBox(height: 10.0),
                         const Text(
                           'Login into your account',
                           style: TextStyle(color: Colors.grey),
@@ -298,7 +304,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                         }
                                       } catch (e) {
                                         // Handle any errors that occur during sign in
-
                                       }
                                     },
                                   ),

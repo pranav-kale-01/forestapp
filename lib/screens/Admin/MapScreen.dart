@@ -1,10 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:forestapp/screens/Admin/UserDetails.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 
 import '../loginScreen.dart';
+import 'homeAdmin.dart';
 
 class ProfileData {
   final String title;
@@ -104,43 +106,70 @@ class _MapScreenState extends State<MapScreen> {
     if (_profileDataList.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
-    return SafeArea(
-      child: Scaffold(
-        body: Container(
-          padding: const EdgeInsets.all(10.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  Center(
-                    child: Text(
-                      'Guard',
-                      style: TextStyle(
-                          fontSize: 24.0, fontWeight: FontWeight.bold),
-                    ),
+    return Scaffold(
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(0.0), // hide the app bar
+        child: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0.0,
+        ),
+      ),
+      body: Container(
+        padding: const EdgeInsets.all(10.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                IconButton(
+                  icon: Icon(
+                    Icons.arrow_back,
+                    color: Colors.black,
                   ),
-                ],
-              ),
-              Expanded(
-                child: StreamBuilder<QuerySnapshot>(
-                  stream: users.snapshots(),
-                  builder: (BuildContext context,
-                      AsyncSnapshot<QuerySnapshot> snapshot) {
-                    if (!snapshot.hasData) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
+                  onPressed: () {
+                    Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(
+                            builder: (context) => const HomeAdmin(
+                                  title: '',
+                                )),
+                        (route) => false);
+                  },
+                ),
+                Center(
+                  child: Text(
+                    'Guard',
+                    style:
+                        TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            Expanded(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: users.snapshots(),
+                builder: (BuildContext context,
+                    AsyncSnapshot<QuerySnapshot> snapshot) {
+                  if (!snapshot.hasData) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
-                    final List<DocumentSnapshot> documents =
-                        snapshot.data!.docs;
-                    return ListView.builder(
-                      itemCount: documents.length,
-                      itemBuilder: (BuildContext context, int index) {
-                        final data =
-                            documents[index].data() as Map<String, dynamic>;
+                  final List<DocumentSnapshot> documents = snapshot.data!.docs;
+                  return ListView.builder(
+                    itemCount: documents.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      final data =
+                          documents[index].data() as Map<String, dynamic>;
 
-                        return Card(
+                      return InkWell(
+                        onTap: () {
+                          Navigator.of(context).pushAndRemoveUntil(
+                              MaterialPageRoute(
+                                  builder: (context) => UserDetails(
+                                        user: data,
+                                      )),
+                              (route) => false);
+                        },
+                        child: Card(
                           child: Padding(
                             padding: const EdgeInsets.all(16.0),
                             child: Row(
@@ -237,14 +266,14 @@ class _MapScreenState extends State<MapScreen> {
                               ],
                             ),
                           ),
-                        );
-                      },
-                    );
-                  },
-                ),
+                        ),
+                      );
+                    },
+                  );
+                },
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

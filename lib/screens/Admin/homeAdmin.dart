@@ -49,14 +49,17 @@ class _HomeAdminState extends State<HomeAdmin> {
           BottomNavigationBarItem(
             icon: Icon(Icons.person_add),
             label: 'Add User',
+            backgroundColor: Colors.black,
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.eco),
             label: 'Forest Data',
+            backgroundColor: Colors.black,
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.map),
             label: 'Guard',
+            backgroundColor: Colors.black,
           ),
         ],
         currentIndex: _selectedIndex,
