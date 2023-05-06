@@ -1,10 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 
 import '../loginScreen.dart';
+import 'ForestDataScreen.dart';
 
 class ProfileData {
   final String title;
@@ -35,8 +35,9 @@ class _HomeScreenState extends State<HomeScreen> {
   late String _userEmail;
   late List<ProfileData> _profileDataList = [];
 
-  late int _count;
-  late int _countUser;
+  int _userProfileDataCount = 0;
+
+  int? _count;
 
   @override
   void initState() {
@@ -47,11 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _count = value;
       });
     });
-    getTotalDocumentsCountUser().then((value) {
-      setState(() {
-        _countUser = value;
-      });
-    });
+    getTotalDocumentsCountUser().then((value) {});
   }
 
   Future<void> fetchUserEmail() async {
@@ -82,12 +79,16 @@ class _HomeScreenState extends State<HomeScreen> {
         .toList();
     setState(() {
       _profileDataList = profileDataList;
+      _userProfileDataCount = userSnapshot.size;
     });
   }
 
   Future<int> getTotalDocumentsCount() async {
-    final snapshot =
-        await FirebaseFirestore.instance.collection('forestdata').get();
+    final snapshot = await FirebaseFirestore.instance
+        .collection('forestdata')
+        // .where('user_email', isEqualTo: _userEmail)
+        // .orderBy('createdAt', descending: true)
+        .get();
     return snapshot.size;
   }
 
@@ -105,171 +106,168 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_profileDataList.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
-    return SafeArea(
-      child: Scaffold(
-        body: Container(
-          padding: const EdgeInsets.all(10.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Pench MH',
-                    style:
-                        TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
-                  ),
-                  Column(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.logout),
-                        onPressed: () async {
-                          final confirm = await showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: const Text('Confirm Logout'),
-                              content: const Text(
-                                  'Are you sure you want to log out?'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () =>
-                                      Navigator.pop(context, false),
-                                  child: const Text('Cancel'),
-                                ),
-                                TextButton(
-                                  onPressed: () async {
-                                    await FirebaseAuth.instance.signOut();
-                                    // ignore: use_build_context_synchronously
-                                    Navigator.pushAndRemoveUntil(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) =>
-                                              const LoginScreen()),
-                                      (route) => false,
-                                    );
-                                  },
-                                  child: const Text('Logout'),
-                                ),
-                              ],
-                            ),
-                          );
-                          if (confirm == true) {
-                            // perform logout
-                          }
-                        },
-                      ),
-                      const Text("Logout"),
-                    ],
-                  ),
-                ],
+    return Scaffold(
+      appBar: AppBar(
+        elevation: 0.0,
+        flexibleSpace: Container(
+            height: 90,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.green, Colors.greenAccent],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              const SizedBox(height: 16.0),
-              Expanded(
-                  child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  SizedBox(
-                    height: 180,
-                    width: 300,
-                    child: Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.animation,
-                              size: 50,
-                              color: Colors.orange,
-                            ),
-                            const SizedBox(height: 10),
-                            const Text(
-                              'No of tigers',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 20,
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              '$_count',
-                              style: const TextStyle(
-                                fontSize: 18,
-                              ),
-                            ),
-                          ],
+            )),
+        title: const Text('Pench MH'),
+        actions: [
+          Column(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.logout),
+                onPressed: () async {
+                  final confirm = await showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Confirm Logout'),
+                      content: const Text('Are you sure you want to log out?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Cancel'),
                         ),
-                      ),
+                        TextButton(
+                          onPressed: () async {
+                            SharedPreferences prefs =
+                                await SharedPreferences.getInstance();
+                            prefs.remove('userEmail');
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const LoginScreen()),
+                              (route) => false,
+                            );
+                          },
+                          child: const Text('Logout'),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirm == true) {
+                    // perform logout
+                  }
+                },
+              ),
+              // const Text("Logout"),
+            ],
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 16.0),
+              InkWell(
+                onTap: () {
+                  Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(
+                          builder: (context) => const ForestDataScreen()),
+                      (route) => false);
+                },
+                child: Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      children: [
+                        const Text(
+                          'Total Tigers Entries',
+                          style: TextStyle(fontSize: 20.0),
+                        ),
+                        const Icon(
+                          Icons.trending_up,
+                          size: 50.0,
+                        ),
+                        const SizedBox(height: 16.0),
+                        Text(
+                          '$_userProfileDataCount',
+                          style: TextStyle(fontSize: 24.0),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              )),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: _profileDataList.length,
-                  itemBuilder: (context, index) {
-                    final profileData = _profileDataList[index];
-                    return Card(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: <Widget>[
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        profileData.title,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8.0),
-                                      Text(
-                                        DateFormat('MMM d, yyyy h:mm a').format(
-                                            profileData.datetime!.toDate()),
-                                      ),
-                                    ],
-                                  ),
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          const SizedBox(height: 8.0),
-                                          Text(
-                                            profileData.userName,
-                                          ),
-                                          const SizedBox(height: 8.0),
-                                          Text(
-                                            profileData.userEmail,
-                                          ),
-                                        ],
-                                      ),
-                                      ElevatedButton(
-                                          onPressed: () {},
-                                          child: const Text("View"))
-                                    ],
-                                  )
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
                 ),
               ),
+              const SizedBox(height: 16.0),
+              Container(
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(
+                    "Recent Entries",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                ),
+              ),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: SingleChildScrollView(
+                  child: DataTable(
+                    columnSpacing: 16.0,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade500),
+                    ),
+                    columns: const [
+                      DataColumn(
+                        label: Text(
+                          'Tiger Name',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      DataColumn(
+                        label: Text(
+                          'User Name',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      DataColumn(
+                        label: Text(
+                          'Date & Time',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      DataColumn(
+                        label: Text(
+                          'View',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                    rows: _profileDataList.map((profileData) {
+                      return DataRow(
+                        cells: [
+                          DataCell(Text(profileData.title)),
+                          DataCell(Text(profileData.userName)),
+                          DataCell(Text(DateFormat('dd/MM/yyyy hh:mm')
+                              .format(profileData.datetime!.toDate()))),
+                          DataCell(IconButton(
+                            onPressed: () {
+                              Navigator.of(context).pushAndRemoveUntil(
+                                  MaterialPageRoute(
+                                      builder: (context) => ForestDataScreen()),
+                                  (route) => false);
+                            },
+                            icon: Icon(Icons.visibility),
+                          )),
+                        ],
+                      );
+                    }).toList(),
+                  ),
+                ),
+              )
             ],
           ),
         ),

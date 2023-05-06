@@ -24,7 +24,10 @@ class _HomeAdminState extends State<HomeAdmin> {
     HomeScreen(),
     const AddUserScreen(),
     const ForestDataScreen(),
-    const MapScreen(),
+    MapScreen(
+      latitude: 37.4220,
+      longitude: -122.0841,
+    ),
   ];
 
   void _onItemTapped(int index) {

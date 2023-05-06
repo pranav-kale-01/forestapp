@@ -53,10 +53,12 @@ class _HomeUserState extends State<HomeUser> {
           BottomNavigationBarItem(
             icon: Icon(Icons.eco),
             label: 'Forest Data',
+            backgroundColor: Colors.black,
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
             label: 'Profile',
+            backgroundColor: Colors.black,
           ),
         ],
         currentIndex: _selectedIndex,

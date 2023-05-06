@@ -39,6 +39,17 @@ class _AddUserScreenState extends State<AddUserScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        elevation: 0.0,
+        flexibleSpace: Container(
+            height: 90,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.green, Colors.greenAccent],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            )),
+        // title: const Text('Pench MH'),
         title: const Center(
           child: Text(
             'Add Guard',
@@ -49,7 +60,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
           ),
         ),
         backgroundColor: Colors.transparent,
-        elevation: 0.0,
+        // elevation: 0.0,
       ),
       body: SafeArea(
         child: Padding(
@@ -197,6 +208,9 @@ class _AddUserScreenState extends State<AddUserScreen> {
                   ),
                   const SizedBox(height: 16.0),
                   ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: Color.fromARGB(255, 3, 8, 35),
+                        foregroundColor: Colors.white),
                     onPressed: () async {
                       if (_formKey.currentState!.validate()) {
                         _formKey.currentState!.save();

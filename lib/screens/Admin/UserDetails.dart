@@ -11,6 +11,17 @@ class UserDetails extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        elevation: 0.0,
+        flexibleSpace: Container(
+            height: 90,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.green, Colors.greenAccent],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            )),
+        // title: const Text('Pench MH'),
         title: Text('Guard Profile'),
         leading: IconButton(
           icon: Icon(Icons.arrow_back),

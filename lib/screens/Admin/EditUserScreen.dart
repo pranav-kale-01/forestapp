@@ -1,15 +1,17 @@
 // ignore_for_file: unused_field, library_private_types_in_public_api, use_build_context_synchronously
 
 import 'dart:io';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:forestapp/screens/Admin/MapScreen.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:firebase_app_check/firebase_app_check.dart';
+
+import 'UserScreen.dart';
 
 class EditUserScreen extends StatefulWidget {
-  const EditUserScreen({super.key, required Map<String, dynamic> userData});
+  final Map<String, dynamic> user;
+  const EditUserScreen({super.key, required this.user});
 
   @override
   _EditUserScreenState createState() => _EditUserScreenState();
@@ -20,7 +22,10 @@ class _EditUserScreenState extends State<EditUserScreen> {
   String _name = '';
   String _email = '';
   String _password = '';
+
   String _contactNumber = '';
+  String _aadharNumber = '';
+  String _forestId = '';
   File? _imageFile;
   final CollectionReference _userRef =
       FirebaseFirestore.instance.collection('users');
@@ -39,6 +44,17 @@ class _EditUserScreenState extends State<EditUserScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        elevation: 0.0,
+        flexibleSpace: Container(
+            height: 90,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.green, Colors.greenAccent],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            )),
+        // title: const Text('Pench MH'),
         title: const Center(
           child: Text(
             'Edit User',
@@ -49,7 +65,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
           ),
         ),
         backgroundColor: Colors.transparent,
-        elevation: 0.0,
+        // elevation: 0.0,
       ),
       body: SafeArea(
         child: Padding(
@@ -105,6 +121,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
                       }
                       return null;
                     },
+                    initialValue: widget.user['name'] as String,
                     onSaved: (value) {
                       _name = value!;
                     },
@@ -123,6 +140,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
                       }
                       return null;
                     },
+                    initialValue: widget.user['email'] as String,
                     onSaved: (value) {
                       _email = value!;
                     },
@@ -140,6 +158,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
                       }
                       return null;
                     },
+                    initialValue: widget.user['password'] as String,
                     onSaved: (value) {
                       _password = value!;
                     },
@@ -157,8 +176,46 @@ class _EditUserScreenState extends State<EditUserScreen> {
                       }
                       return null;
                     },
+                    initialValue: widget.user['contactNumber'] as String,
                     onSaved: (value) {
                       _contactNumber = value!;
+                    },
+                  ),
+                  const SizedBox(height: 16.0),
+                  const SizedBox(height: 16.0),
+                  TextFormField(
+                    decoration: const InputDecoration(
+                      labelText: 'Aadhar Number',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.phone,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a aadhar number';
+                      }
+                      return null;
+                    },
+                    initialValue: widget.user['aadharNumber'] as String,
+                    onSaved: (value) {
+                      _aadharNumber = value!;
+                    },
+                  ),
+                  const SizedBox(height: 16.0),
+                  TextFormField(
+                    decoration: const InputDecoration(
+                      labelText: 'Forest ID',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.phone,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a Forest ID';
+                      }
+                      return null;
+                    },
+                    initialValue: widget.user['forestID'] as String,
+                    onSaved: (value) {
+                      _forestId = value!;
                     },
                   ),
                   const SizedBox(height: 16.0),
@@ -168,18 +225,20 @@ class _EditUserScreenState extends State<EditUserScreen> {
                         _formKey.currentState!.save();
 
                         // Upload the image to Firebase Storage and get the URL
-                        final Reference storageRef = FirebaseStorage.instance
-                            .ref()
-                            .child('user-images')
-                            .child(_imageFile!.path);
-                        final UploadTask uploadTask =
-                            storageRef.putFile(_imageFile!);
-                        final TaskSnapshot downloadUrl =
-                            await uploadTask.whenComplete(() => null);
-                        final String imageUrl =
-                            await downloadUrl.ref.getDownloadURL();
+                        String imageUrl = widget.user['imageUrl'];
+                        if (_imageFile != null) {
+                          final Reference storageRef = FirebaseStorage.instance
+                              .ref()
+                              .child('user-images')
+                              .child(_imageFile!.path);
+                          final UploadTask uploadTask =
+                              storageRef.putFile(_imageFile!);
+                          final TaskSnapshot downloadUrl =
+                              await uploadTask.whenComplete(() => null);
+                          imageUrl = await downloadUrl.ref.getDownloadURL();
+                        }
 
-                        // Add the user data to the Firebase Firestore
+                        // Update the user data in the Firebase Firestore
                         final CollectionReference usersRef =
                             FirebaseFirestore.instance.collection('users');
                         final Map<String, dynamic> userData = {
@@ -188,18 +247,27 @@ class _EditUserScreenState extends State<EditUserScreen> {
                           'password': _password,
                           'contactNumber': _contactNumber,
                           'imageUrl': imageUrl,
+                          'aadharNumber': _aadharNumber,
+                          'forestID': _forestId,
                         };
                         try {
-                          await usersRef.add(userData);
+                          await usersRef
+                              .where('email', isEqualTo: _email)
+                              .get()
+                              .then((querySnapshot) {
+                            querySnapshot.docs.forEach((doc) {
+                              usersRef.doc(doc.id).update(userData);
+                            });
+                          });
+                          Navigator.of(context).pushAndRemoveUntil(
+                              MaterialPageRoute(
+                                  builder: (context) => const UserScreen()),
+                              (route) => false);
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('User added successfully'),
+                              content: Text('User updated successfully'),
                             ),
                           );
-                          _formKey.currentState!.reset();
-                          setState(() {
-                            _imageFile = null;
-                          });
                         } catch (error) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(

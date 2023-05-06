@@ -49,7 +49,7 @@ class _SplashScreenState extends State<SplashScreen> {
     final prefs = await SharedPreferences.getInstance();
     final userEmail = prefs.getString('userEmail');
     setState(() {
-      _userEmail = userEmail ?? '';
+      _userEmail = userEmail;
     });
   }
 
@@ -66,15 +66,15 @@ class _SplashScreenState extends State<SplashScreen> {
               (route) => false);
         } else if (_userEmail != null) {
           Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(builder: (context) => const LoginScreen()),
-              (route) => false);
-        } else {
-          Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(
                 builder: (context) => const HomeUser(
                   title: 'title',
                 ),
               ),
+              (route) => false);
+        } else {
+          Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => const LoginScreen()),
               (route) => false);
         }
       });

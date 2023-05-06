@@ -1,12 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:forestapp/screens/Admin/UserDetails.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:intl/intl.dart';
-
-import '../loginScreen.dart';
-import 'homeAdmin.dart';
+import 'package:syncfusion_flutter_maps/maps.dart';
 
 class ProfileData {
   final String title;
@@ -15,6 +11,7 @@ class ProfileData {
   final String userName;
   final String userEmail;
   final Timestamp? datetime;
+  final GeoPoint location;
 
   ProfileData({
     required this.title,
@@ -23,14 +20,18 @@ class ProfileData {
     required this.userName,
     required this.userEmail,
     this.datetime,
+    required this.location,
   });
 }
 
 class MapScreen extends StatefulWidget {
-  const MapScreen({super.key});
+  final double latitude;
+  final double longitude;
+
+  MapScreen({required this.latitude, required this.longitude});
 
   @override
-  State<MapScreen> createState() => _MapScreenState();
+  _MapScreenState createState() => _MapScreenState();
 }
 
 class _MapScreenState extends State<MapScreen> {
@@ -40,20 +41,16 @@ class _MapScreenState extends State<MapScreen> {
   late int _count;
   late int _countUser;
 
+  late MapZoomPanBehavior _zoomPanBehavior;
+  late List<MapLatLng> _markers;
+
   @override
   void initState() {
     super.initState();
-    fetchUserEmail();
-    getTotalDocumentsCount().then((value) {
-      setState(() {
-        _count = value;
-      });
-    });
-    getTotalDocumentsCountUser().then((value) {
-      setState(() {
-        _countUser = value;
-      });
-    });
+
+    fetchUserProfileData();
+
+    _zoomPanBehavior = MapZoomPanBehavior();
   }
 
   Future<void> fetchUserEmail() async {
@@ -62,15 +59,11 @@ class _MapScreenState extends State<MapScreen> {
     setState(() {
       _userEmail = userEmail ?? '';
     });
-    fetchUserProfileData();
   }
 
   Future<void> fetchUserProfileData() async {
-    final userSnapshot = await FirebaseFirestore.instance
-        .collection('forestdata')
-        .orderBy('createdAt', descending: true)
-        .limit(5)
-        .get();
+    final userSnapshot =
+        await FirebaseFirestore.instance.collection('forestdata').get();
     final profileDataList = userSnapshot.docs
         .map((doc) => ProfileData(
               imageUrl: doc['imageUrl'],
@@ -79,27 +72,18 @@ class _MapScreenState extends State<MapScreen> {
               userName: doc['user_name'],
               userEmail: doc['user_email'],
               datetime: doc['createdAt'] as Timestamp?,
+              location: doc['location'] as GeoPoint,
             ))
         .toList();
     setState(() {
       _profileDataList = profileDataList;
+
+      _markers = profileDataList
+          .map((profileData) => MapLatLng(
+              profileData.location.latitude, profileData.location.longitude))
+          .toList();
     });
   }
-
-  Future<int> getTotalDocumentsCount() async {
-    final snapshot =
-        await FirebaseFirestore.instance.collection('forestdata').get();
-    return snapshot.size;
-  }
-
-  Future<int> getTotalDocumentsCountUser() async {
-    final snapshot = await FirebaseFirestore.instance.collection('users').get();
-    return snapshot.size;
-  }
-
-  // late final int numberOfTigers;
-  final CollectionReference users =
-      FirebaseFirestore.instance.collection('users');
 
   @override
   Widget build(BuildContext context) {
@@ -107,174 +91,39 @@ class _MapScreenState extends State<MapScreen> {
       return const Center(child: CircularProgressIndicator());
     }
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(0.0), // hide the app bar
-        child: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0.0,
-        ),
-      ),
-      body: Container(
-        padding: const EdgeInsets.all(10.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                IconButton(
-                  icon: Icon(
-                    Icons.arrow_back,
-                    color: Colors.black,
+      body: SfMaps(
+        layers: [
+          MapTileLayer(
+            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            zoomPanBehavior: _zoomPanBehavior,
+            markerBuilder: (BuildContext context, int index) {
+              return MapMarker(
+                latitude: _markers[index].latitude,
+                longitude: _markers[index].longitude,
+                child: GestureDetector(
+                  child: Icon(
+                    Icons.location_on,
+                    size: 50,
+                    color: Colors.red,
                   ),
-                  onPressed: () {
-                    Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(
-                            builder: (context) => const HomeAdmin(
-                                  title: '',
-                                )),
-                        (route) => false);
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (_) => AlertDialog(
+                        title: Text(
+                          'Tiger: ${_profileDataList[index].title}, Added by: ${_profileDataList[index].userName}',
+                          style: TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.w300),
+                        ),
+                      ),
+                    );
                   },
                 ),
-                Center(
-                  child: Text(
-                    'Guard',
-                    style:
-                        TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
-            ),
-            Expanded(
-              child: StreamBuilder<QuerySnapshot>(
-                stream: users.snapshots(),
-                builder: (BuildContext context,
-                    AsyncSnapshot<QuerySnapshot> snapshot) {
-                  if (!snapshot.hasData) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  final List<DocumentSnapshot> documents = snapshot.data!.docs;
-                  return ListView.builder(
-                    itemCount: documents.length,
-                    itemBuilder: (BuildContext context, int index) {
-                      final data =
-                          documents[index].data() as Map<String, dynamic>;
-
-                      return InkWell(
-                        onTap: () {
-                          Navigator.of(context).pushAndRemoveUntil(
-                              MaterialPageRoute(
-                                  builder: (context) => UserDetails(
-                                        user: data,
-                                      )),
-                              (route) => false);
-                        },
-                        child: Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                CircleAvatar(
-                                  backgroundImage:
-                                      NetworkImage(data['imageUrl'] as String),
-                                ),
-                                const SizedBox(width: 16.0),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        data['name'] as String,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 20.0,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8.0),
-                                      Text(data['email'] as String),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 16.0),
-                                IconButton(
-                                  icon: const Icon(Icons.edit),
-                                  onPressed: () {},
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.delete),
-                                  onPressed: () async {
-                                    final confirm = await showDialog(
-                                      context: context,
-                                      builder: (context) => AlertDialog(
-                                        title: const Text('Confirm Deletion'),
-                                        content: const Text(
-                                            'Are you sure you want to delete this user?'),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.pop(context, false),
-                                            child: const Text('Cancel'),
-                                          ),
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.pop(context, true),
-                                            child: const Text('Delete'),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                    if (confirm == true) {
-                                      try {
-                                        final snapshot = await FirebaseFirestore
-                                            .instance
-                                            .collection('users')
-                                            .where('email',
-                                                isEqualTo: data['email'])
-                                            .get();
-                                        if (snapshot.docs.isNotEmpty) {
-                                          await snapshot.docs.first.reference
-                                              .delete();
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                  'User deleted successfully.'),
-                                            ),
-                                          );
-                                        } else {
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            const SnackBar(
-                                              content: Text('User not found.'),
-                                            ),
-                                          );
-                                        }
-                                      } catch (e) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          SnackBar(
-                                            content:
-                                                Text('Error deleting user: $e'),
-                                          ),
-                                        );
-                                      }
-                                    }
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
+              );
+            },
+            initialMarkersCount: _markers.length,
+          ),
+        ],
       ),
     );
   }

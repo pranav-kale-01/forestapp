@@ -9,6 +9,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'homeUser.dart';
+
 class ProfileData {
   final String name;
   final String email;
@@ -42,6 +44,12 @@ class _AddForestDataState extends State<AddForestData> {
   void initState() {
     super.initState();
     fetchUserEmail();
+    _initializeTitle();
+  }
+
+  Future<void> _initializeTitle() async {
+    final uniqueTitle = await getUniqueTitle();
+    _titleController.text = uniqueTitle;
   }
 
   Future<void> fetchUserEmail() async {
@@ -167,7 +175,13 @@ class _AddForestDataState extends State<AddForestData> {
             TextButton(
               child: const Text('OK'),
               onPressed: () {
-                Navigator.pop(context);
+                Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(
+                      builder: (context) => const HomeUser(
+                        title: 'title',
+                      ),
+                    ),
+                    (route) => false);
               },
             ),
           ],
@@ -187,7 +201,13 @@ class _AddForestDataState extends State<AddForestData> {
             TextButton(
               child: const Text('OK'),
               onPressed: () {
-                Navigator.pop(context);
+                Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(
+                      builder: (context) => const HomeUser(
+                        title: 'title',
+                      ),
+                    ),
+                    (route) => false);
               },
             ),
           ],
@@ -196,10 +216,43 @@ class _AddForestDataState extends State<AddForestData> {
     }
   }
 
+  Future<String> getUniqueTitle() async {
+    int counter = 0;
+    String uniqueTitle = "unknown";
+    bool titleExists = true;
+
+    while (titleExists) {
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('forestdata')
+          .where('title', isEqualTo: uniqueTitle)
+          .get();
+
+      if (querySnapshot.docs.isEmpty) {
+        titleExists = false;
+      } else {
+        counter++;
+        uniqueTitle = 'unknown($counter)';
+      }
+    }
+
+    return uniqueTitle;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        elevation: 0.0,
+        flexibleSpace: Container(
+            height: 90,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.green, Colors.greenAccent],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            )),
+        // title: const Text('Pench MH'),
         title: const Center(
           child: Text(
             'Add Forest Data',
@@ -210,7 +263,7 @@ class _AddForestDataState extends State<AddForestData> {
           ),
         ),
         backgroundColor: Colors.transparent,
-        elevation: 0.0,
+        // elevation: 0.0,
       ),
       body: Form(
         key: _formKey,
@@ -233,6 +286,12 @@ class _AddForestDataState extends State<AddForestData> {
                   ),
                 ),
               ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  backgroundColor:
+                      Color.fromARGB(255, 3, 8, 35), // Background color
+                  // Text Color (Foreground color)
+                ),
                 onPressed: () {
                   showModalBottomSheet(
                     context: context,
@@ -348,6 +407,12 @@ class _AddForestDataState extends State<AddForestData> {
               const SizedBox(height: 16),
               if (_currentLocation == null)
                 ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor:
+                        Color.fromARGB(255, 3, 8, 35), // Background color
+                    // Text Color (Foreground color)
+                  ),
                   onPressed: _getCurrentLocation,
                   child: const Text('Get Current Location'),
                 )
@@ -355,6 +420,12 @@ class _AddForestDataState extends State<AddForestData> {
                 Text(_currentLocation!),
               const SizedBox(height: 16),
               ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  backgroundColor:
+                      Color.fromARGB(255, 3, 8, 35), // Background color
+                  // Text Color (Foreground color)
+                ),
                 onPressed: _onSubmitPressed,
                 child: const Text('Submit'),
               ),

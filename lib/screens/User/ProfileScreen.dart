@@ -105,8 +105,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     TextButton(
                       onPressed: () async {
-                        await FirebaseAuth.instance.signOut();
-                        // ignore: use_build_context_synchronously
+                        SharedPreferences prefs =
+                            await SharedPreferences.getInstance();
+                        prefs.remove('userEmail');
                         Navigator.pushAndRemoveUntil(
                           context,
                           MaterialPageRoute(
@@ -161,25 +162,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               const SizedBox(height: 8.0),
-              Text(
-                _profileData!.contactNumber,
-                style: const TextStyle(
-                  fontSize: 16.0,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text("Contact Number: "),
+                  Text(
+                    _profileData!.contactNumber,
+                    style: const TextStyle(
+                      fontSize: 16.0,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16.0),
-              Text(
-                _profileData!.aadharNumber,
-                style: const TextStyle(
-                  fontSize: 16.0,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text("Aadhar Number: "),
+                  Text(
+                    _profileData!.aadharNumber,
+                    style: const TextStyle(
+                      fontSize: 16.0,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16.0),
-              Text(
-                _profileData!.forestId,
-                style: const TextStyle(
-                  fontSize: 16.0,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text("Forest ID: "),
+                  Text(
+                    _profileData!.forestId,
+                    style: const TextStyle(
+                      fontSize: 16.0,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16.0),
               // const Text(
