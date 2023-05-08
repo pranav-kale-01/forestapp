@@ -35,6 +35,8 @@ class _AddUserScreenState extends State<AddUserScreen> {
     });
   }
 
+  bool _isProcessing = false;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -209,57 +211,89 @@ class _AddUserScreenState extends State<AddUserScreen> {
                   const SizedBox(height: 16.0),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                        backgroundColor: Color.fromARGB(255, 3, 8, 35),
-                        foregroundColor: Colors.white),
-                    onPressed: () async {
-                      if (_formKey.currentState!.validate()) {
-                        _formKey.currentState!.save();
+                      backgroundColor: Color.fromARGB(255, 3, 8, 35),
+                      foregroundColor: Colors.white,
+                    ),
+                    onPressed: _isProcessing
+                        ? null
+                        : () async {
+                            if (_formKey.currentState!.validate()) {
+                              setState(() {
+                                _isProcessing = true;
+                              });
 
-                        // Upload the image to Firebase Storage and get the URL
-                        final Reference storageRef = FirebaseStorage.instance
-                            .ref()
-                            .child('user-images')
-                            .child(_imageFile!.path);
-                        final UploadTask uploadTask =
-                            storageRef.putFile(_imageFile!);
-                        final TaskSnapshot downloadUrl =
-                            await uploadTask.whenComplete(() => null);
-                        final String imageUrl =
-                            await downloadUrl.ref.getDownloadURL();
+                              // Check if email already exists in database
+                              final CollectionReference usersRef =
+                                  FirebaseFirestore.instance
+                                      .collection('users');
+                              final QuerySnapshot emailSnapshot = await usersRef
+                                  .where('email', isEqualTo: _email)
+                                  .get();
+                              if (emailSnapshot.docs.isNotEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Email already exists'),
+                                    duration: const Duration(seconds: 3),
+                                    backgroundColor: Colors.green,
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                                setState(() {
+                                  _isProcessing = false;
+                                });
+                                return;
+                              }
 
-                        // Add the user data to the Firebase Firestore
-                        final CollectionReference usersRef =
-                            FirebaseFirestore.instance.collection('users');
-                        final Map<String, dynamic> userData = {
-                          'name': _name,
-                          'email': _email,
-                          'password': _password,
-                          'contactNumber': _contactNumber,
-                          'imageUrl': imageUrl,
-                          'aadharNumber': _aadharNumber,
-                          'forestID': _forestId,
-                        };
-                        try {
-                          await usersRef.add(userData);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('User added successfully'),
-                            ),
-                          );
-                          _formKey.currentState!.reset();
-                          setState(() {
-                            _imageFile = null;
-                          });
-                        } catch (error) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Error: $error'),
-                            ),
-                          );
-                        }
-                      }
-                    },
-                    child: const Text('Save'),
+                              // Upload the image to Firebase Storage and get the URL
+                              final Reference storageRef = FirebaseStorage
+                                  .instance
+                                  .ref()
+                                  .child('user-images')
+                                  .child(_imageFile!.path);
+                              final UploadTask uploadTask =
+                                  storageRef.putFile(_imageFile!);
+                              final TaskSnapshot downloadUrl =
+                                  await uploadTask.whenComplete(() => null);
+                              final String imageUrl =
+                                  await downloadUrl.ref.getDownloadURL();
+
+                              // Add the user data to the Firebase Firestore
+                              final Map<String, dynamic> userData = {
+                                'name': _name,
+                                'email': _email,
+                                'password': _password,
+                                'contactNumber': _contactNumber,
+                                'imageUrl': imageUrl,
+                                'aadharNumber': _aadharNumber,
+                                'forestID': _forestId,
+                              };
+                              try {
+                                await usersRef.add(userData);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('User added successfully'),
+                                  ),
+                                );
+                                _formKey.currentState!.reset();
+                                setState(() {
+                                  _imageFile = null;
+                                });
+                              } catch (error) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Error: $error'),
+                                  ),
+                                );
+                              } finally {
+                                setState(() {
+                                  _isProcessing = false;
+                                });
+                              }
+                            }
+                          },
+                    child: _isProcessing
+                        ? CircularProgressIndicator()
+                        : const Text('Save'),
                   )
                 ],
               ),

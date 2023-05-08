@@ -6,6 +6,7 @@ import 'package:forestapp/screens/Admin/homeAdmin.dart';
 import 'package:forestapp/screens/User/homeUser.dart';
 import 'package:forestapp/screens/loginScreen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key, required this.title}) : super(key: key);
@@ -54,7 +55,7 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   _SplashScreenState() {
-    Timer(const Duration(milliseconds: 1000), () {
+    Timer(const Duration(milliseconds: 3000), () {
       setState(() {
         if (_user != null) {
           Navigator.of(context).pushAndRemoveUntil(
@@ -80,7 +81,7 @@ class _SplashScreenState extends State<SplashScreen> {
       });
     });
 
-    Timer(const Duration(milliseconds: 10), () {
+    Timer(const Duration(milliseconds: 30), () {
       setState(() {
         _isVisible =
             true; // Now it is showing fade effect and navigating to Login page
@@ -105,7 +106,7 @@ class _SplashScreenState extends State<SplashScreen> {
       ),
       child: AnimatedOpacity(
         opacity: _isVisible ? 1.0 : 0,
-        duration: const Duration(milliseconds: 300),
+        duration: const Duration(milliseconds: 500),
         child: Column(
           children: [
             Expanded(
@@ -121,7 +122,7 @@ class _SplashScreenState extends State<SplashScreen> {
               padding: const EdgeInsets.only(bottom: 30.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
+                children: [
                   Text(
                     'Tiger love',
                     style: TextStyle(
@@ -129,6 +130,7 @@ class _SplashScreenState extends State<SplashScreen> {
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
+                      fontFamily: 'Roboto',
                     ),
                   ),
                   SizedBox(width: 8),
@@ -138,11 +140,13 @@ class _SplashScreenState extends State<SplashScreen> {
                   ),
                   Text(
                     'India',
+                    //  style: GoogleFonts.roboto(),
                     style: TextStyle(
                       decoration: TextDecoration.none,
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
+                      fontFamily: 'Roboto',
                     ),
                   ),
                 ],

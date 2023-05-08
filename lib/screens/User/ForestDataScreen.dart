@@ -13,6 +13,8 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:excel/excel.dart';
 import 'package:file_picker/file_picker.dart';
 
+import 'ForestDetail.dart';
+
 class ProfileData {
   final String title;
   final String description;
@@ -388,49 +390,57 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                                             // Text Color (Foreground color)
                                           ),
                                           onPressed: () {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder:
-                                                    (BuildContext context) {
-                                                  return Scaffold(
-                                                    appBar: AppBar(
-                                                      elevation: 0.0,
-                                                      flexibleSpace: Container(
-                                                          height: 90,
-                                                          decoration:
-                                                              BoxDecoration(
-                                                            gradient:
-                                                                LinearGradient(
-                                                              colors: [
-                                                                Colors.green,
-                                                                Colors
-                                                                    .greenAccent
-                                                              ],
-                                                              begin: Alignment
-                                                                  .topLeft,
-                                                              end: Alignment
-                                                                  .bottomRight,
-                                                            ),
-                                                          )),
-                                                      title: const Text('Map'),
-                                                    ),
-                                                    body: WebViewWidget(
-                                                        controller:
-                                                            WebViewController()
-                                                              ..loadRequest(
-                                                                Uri.parse(
-                                                                    'https://www.google.com/maps/search/?api=1&query=${profileData.location.latitude.toString()},${profileData.location.longitude.toString()}'),
-                                                              )
-                                                              ..setJavaScriptMode(
-                                                                  JavaScriptMode
-                                                                      .unrestricted)),
-                                                  );
-                                                },
-                                              ),
-                                            );
+                                            // Navigator.push(
+                                            //   context,
+                                            //   MaterialPageRoute(
+                                            //     builder:
+                                            //         (BuildContext context) {
+                                            //       return Scaffold(
+                                            //         appBar: AppBar(
+                                            //           elevation: 0.0,
+                                            //           flexibleSpace: Container(
+                                            //               height: 90,
+                                            //               decoration:
+                                            //                   BoxDecoration(
+                                            //                 gradient:
+                                            //                     LinearGradient(
+                                            //                   colors: [
+                                            //                     Colors.green,
+                                            //                     Colors
+                                            //                         .greenAccent
+                                            //                   ],
+                                            //                   begin: Alignment
+                                            //                       .topLeft,
+                                            //                   end: Alignment
+                                            //                       .bottomRight,
+                                            //                 ),
+                                            //               )),
+                                            //           title: const Text('Map'),
+                                            //         ),
+                                            //         body: WebViewWidget(
+                                            //             controller:
+                                            //                 WebViewController()
+                                            //                   ..loadRequest(
+                                            //                     Uri.parse(
+                                            //                         'https://www.google.com/maps/search/?api=1&query=${profileData.location.latitude.toString()},${profileData.location.longitude.toString()}'),
+                                            //                   )
+                                            //                   ..setJavaScriptMode(
+                                            //                       JavaScriptMode
+                                            //                           .unrestricted)),
+                                            //       );
+                                            //     },
+                                            //   ),
+                                            // );
+                                            Navigator.of(context)
+                                                .pushAndRemoveUntil(
+                                                    MaterialPageRoute(
+                                                        builder: (context) =>
+                                                            ForestDetail(
+                                                                forestData:
+                                                                    profileData)),
+                                                    (route) => false);
                                           },
-                                          label: const Text("Show on Map"),
+                                          label: const Text("View"),
                                           icon: const Icon(
                                               Icons.arrow_right_alt_outlined),
                                         ),
