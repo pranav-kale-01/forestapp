@@ -251,7 +251,7 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
         '',
         '',
         'Total Cubs: ${totalCubs}',
-        'Total Tigers: ${totalTigers}',
+        'Total Cubs: ${totalTigers}',
         '',
         '',
         '',
