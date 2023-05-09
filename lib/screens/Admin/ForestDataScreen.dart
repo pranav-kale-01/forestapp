@@ -106,32 +106,87 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
       _profileDataList = profileDataList;
       _searchResult = profileDataList;
     });
+
+    int totalCubs = 0;
+    int totalTigers = 0;
+
+    _profileDataList.forEach((profileData) {
+      totalCubs += profileData.noOfCubs;
+      totalTigers += profileData.noOfTigers;
+    });
+
+    print('Total Cubs: $totalCubs');
+    print('Total Tigers: $totalTigers');
   }
 
-  void _filterList(String searchQuery) {
+  // Function to filter the list based on the selected filter
+  void _applyFilter(String filterType) {
+    DateTime now = DateTime.now();
+    DateTime start;
+    switch (filterType) {
+      case 'Today':
+        start = DateTime(now.year, now.month, now.day);
+        break;
+      case 'Yesterday':
+        start = DateTime(now.year, now.month, now.day - 1);
+        break;
+      case 'This Week':
+        start = DateTime(now.year, now.month, now.day - now.weekday + 1);
+        break;
+      case 'This Month':
+        start = DateTime(now.year, now.month, 1);
+        break;
+      case 'This Year':
+        start = DateTime(now.year, 1, 1);
+        break;
+      case 'All':
+        start = DateTime(now.year, 1, 1);
+        break;
+      default:
+        print('Invalid filter type: $filterType');
+        return;
+    }
+
+    List<ProfileData> tempList = [];
+    _profileDataList.forEach((profileData) {
+      if (profileData.datetime != null &&
+          profileData.datetime!.toDate().isAfter(start)) {
+        tempList.add(profileData);
+      }
+    });
+
+    setState(() {
+      _searchResult = tempList;
+    });
+  }
+
+// Function to search the list based on the user input
+  void _searchList(String searchQuery) {
+    List<ProfileData> tempList = [];
+    _profileDataList.forEach((profileData) {
+      if (profileData.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
+          profileData.userName
+              .toLowerCase()
+              .contains(searchQuery.toLowerCase()) ||
+          profileData.userEmail
+              .toLowerCase()
+              .contains(searchQuery.toLowerCase())) {
+        tempList.add(profileData);
+      }
+    });
+    setState(() {
+      _searchResult = tempList;
+    });
+  }
+
+// Function to handle the search and filter actions
+  void _handleSearchFilter(String searchQuery, String filterType) {
     if (searchQuery.isNotEmpty) {
-      List<ProfileData> tempList = [];
-      _profileDataList.forEach((profileData) {
-        if (profileData.title
-                .toLowerCase()
-                .contains(searchQuery.toLowerCase()) ||
-            profileData.userName
-                .toLowerCase()
-                .contains(searchQuery.toLowerCase()) ||
-            profileData.userEmail
-                .toLowerCase()
-                .contains(searchQuery.toLowerCase())) {
-          tempList.add(profileData);
-        }
-      });
-      setState(() {
-        _searchResult = tempList;
-      });
-      return;
+      _searchList(searchQuery);
+    } else if (filterType.isNotEmpty) {
+      _applyFilter(filterType);
     } else {
-      setState(() {
-        _searchResult = _profileDataList;
-      });
+      _searchResult = _profileDataList;
     }
   }
 
@@ -158,7 +213,15 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
         'User Profile',
       ]);
 
-      // add data rows
+// calculate total cubs and tigers
+      int totalCubs = 0;
+      int totalTigers = 0;
+      _profileDataList.forEach((data) {
+        totalCubs += data.noOfCubs;
+        totalTigers += data.noOfTigers;
+      });
+
+// add data rows
       _profileDataList.forEach((data) {
         sheet.appendRow([
           data.title,
@@ -176,6 +239,23 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
           data.userImage,
         ]);
       });
+
+// add row with total cubs and tigers for all data
+      sheet.appendRow([
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        'Total Cubs: ${totalCubs}',
+        'Total Tigers: ${totalTigers}',
+        '',
+        '',
+        '',
+      ]);
 
       // save the Excel file
       final fileBytes = excel.encode();
@@ -244,6 +324,125 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
     }
   }
 
+  String _selectedFilter = 'All';
+  DateTime _fromDate = DateTime.now();
+  DateTime _toDate = DateTime.now();
+
+  final List<String> _filterOptions = [
+    'Today',
+    'Yesterday',
+    'This Week',
+    'This Month',
+    'This Year',
+    'All',
+  ];
+  final List<String> _selectedOptions = [];
+
+  void _showFilterDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10.0),
+          ),
+          title: Text('Filter'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Filter options:'),
+              const SizedBox(height: 8.0),
+              Wrap(
+                spacing: 8.0,
+                runSpacing: 8.0,
+                children: [
+                  for (final option in _filterOptions)
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _selectedOptions.contains(option)
+                            ? Colors.green
+                            : Colors.lightGreen.shade600,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          if (_selectedOptions.contains(option)) {
+                            _selectedOptions.remove(option);
+                          } else {
+                            _selectedOptions.add(option);
+                          }
+                          _selectedFilter = _selectedOptions.join(',');
+                        });
+                        _handleSearchFilter(_searchController.text,
+                            _selectedFilter.simplifyText());
+                        // Navigator.pop(context);
+                      },
+                      child: Text(option),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 16.0),
+              Text('Selected options:'),
+              const SizedBox(height: 8.0),
+              Wrap(
+                spacing: 8.0,
+                runSpacing: 8.0,
+                children: [
+                  for (final option in _selectedOptions)
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _selectedOptions.remove(option);
+                        });
+                        _handleSearchFilter(_searchController.text,
+                            _selectedFilter.simplifyText());
+                        // Navigator.pop(context);
+                      },
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(option),
+                          const SizedBox(width: 4.0),
+                          Icon(Icons.clear, size: 16.0),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Close'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    Colors.greenAccent.shade400, // Background color
+                // Text Color (Foreground color)
+              ),
+              onPressed: () {
+                setState(() {
+                  _selectedFilter = _selectedOptions.join(',');
+                });
+                _handleSearchFilter(
+                    _searchController.text, _selectedFilter.simplifyText());
+                Navigator.pop(context);
+
+                print(_selectedFilter.simplifyText());
+              },
+              child: Text('Apply'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // if (_searchResult.isEmpty) {
@@ -294,6 +493,11 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                           width: 30,
                         ),
                         ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors
+                                  .greenAccent.shade400, // Background color
+                              // Text Color (Foreground color)
+                            ),
                             onPressed: () async {
                               await exportToExcel();
                             },
@@ -311,12 +515,16 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                     labelText: 'Search',
                     hintText: 'Search by title, user name or user email',
                     prefixIcon: const Icon(Icons.search),
+                    suffixIcon: IconButton(
+                      icon: Icon(Icons.filter_list),
+                      onPressed: _showFilterDialog,
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                   onChanged: (value) {
-                    _filterList(value);
+                    _handleSearchFilter(value, _selectedFilter.simplifyText());
                   },
                 ),
               ),
@@ -387,48 +595,6 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                                             // Text Color (Foreground color)
                                           ),
                                           onPressed: () {
-                                            // Navigator.push(
-                                            //   context,
-                                            //   MaterialPageRoute(
-                                            //     builder:
-                                            //         (BuildContext context) {
-                                            //       return Scaffold(
-                                            //         appBar: AppBar(
-                                            //           elevation: 0.0,
-                                            //           flexibleSpace: Container(
-                                            //               height: 90,
-                                            //               decoration:
-                                            //                   BoxDecoration(
-                                            //                 gradient:
-                                            //                     LinearGradient(
-                                            //                   colors: [
-                                            //                     Colors.green,
-                                            //                     Colors
-                                            //                         .greenAccent
-                                            //                   ],
-                                            //                   begin: Alignment
-                                            //                       .topLeft,
-                                            //                   end: Alignment
-                                            //                       .bottomRight,
-                                            //                 ),
-                                            //               )),
-                                            //           title: const Text('Map'),
-                                            //         ),
-                                            //         body: WebViewWidget(
-                                            //             controller:
-                                            //                 WebViewController()
-                                            //                   ..loadRequest(
-                                            //                     Uri.parse(
-                                            //                         'https://www.google.com/maps/search/?api=1&query=${profileData.location.latitude.toString()},${profileData.location.longitude.toString()}'),
-                                            //                   )
-                                            //                   ..setJavaScriptMode(
-                                            //                       JavaScriptMode
-                                            //                           .unrestricted)),
-                                            //       );
-                                            //     },
-                                            //   ),
-                                            // );
-
                                             Navigator.of(context)
                                                 .pushAndRemoveUntil(
                                                     MaterialPageRoute(

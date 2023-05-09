@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import 'ForestDataScreen.dart';
 
 class ForestDetail extends StatelessWidget {
@@ -94,7 +95,59 @@ class ForestDetail extends StatelessWidget {
 
                 Row(
                   children: [
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            Colors.green.shade400, // Background color
+                        // Text Color (Foreground color)
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (BuildContext context) {
+                              return Scaffold(
+                                appBar: AppBar(
+                                  elevation: 0.0,
+                                  flexibleSpace: Container(
+                                      height: 90,
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            Colors.green,
+                                            Colors.greenAccent
+                                          ],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ),
+                                      )),
+                                  title: const Text('Map'),
+                                ),
+                                body: WebViewWidget(
+                                    controller: WebViewController()
+                                      ..loadRequest(
+                                        Uri.parse(
+                                            'https://www.google.com/maps/search/?api=1&query=${forestData.location.latitude.toString()},${forestData.location.longitude.toString()}'),
+                                      )
+                                      ..setJavaScriptMode(
+                                          JavaScriptMode.unrestricted)),
+                              );
+                            },
+                          ),
+                        );
+                      },
+                      label: const Text("Show on Map"),
+                      icon: const Icon(Icons.arrow_right_alt_outlined),
+                    ),
+                    SizedBox(
+                      width: 10,
+                    ),
                     ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            Colors.red.shade400, // Background color
+                        // Text Color (Foreground color)
+                      ),
                       onPressed: () async {
                         final confirm = await showDialog(
                           context: context,
