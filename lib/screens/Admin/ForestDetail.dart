@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:forestapp/screens/Admin/ForestMapScreen.dart' as mp;
 import 'package:intl/intl.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'ForestDataScreen.dart';
@@ -102,39 +103,16 @@ class ForestDetail extends StatelessWidget {
                         // Text Color (Foreground color)
                       ),
                       onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (BuildContext context) {
-                              return Scaffold(
-                                appBar: AppBar(
-                                  elevation: 0.0,
-                                  flexibleSpace: Container(
-                                      height: 90,
-                                      decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          colors: [
-                                            Colors.green,
-                                            Colors.greenAccent
-                                          ],
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                        ),
-                                      )),
-                                  title: const Text('Map'),
-                                ),
-                                body: WebViewWidget(
-                                    controller: WebViewController()
-                                      ..loadRequest(
-                                        Uri.parse(
-                                            'https://www.google.com/maps/search/?api=1&query=${forestData.location.latitude.toString()},${forestData.location.longitude.toString()}'),
-                                      )
-                                      ..setJavaScriptMode(
-                                          JavaScriptMode.unrestricted)),
-                              );
-                            },
-                          ),
-                        );
+                        Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(
+                              builder: (context) => mp.ForestMapScreen(
+                                latitude: forestData.location.latitude,
+                                longitude: forestData.location.longitude,
+                                userName: forestData.userName,
+                                tigerName: forestData.title,
+                              ),
+                            ),
+                            (route) => false);
                       },
                       label: const Text("Show on Map"),
                       icon: const Icon(Icons.arrow_right_alt_outlined),
