@@ -8,6 +8,7 @@ import '../loginScreen.dart';
 import 'package:intl/intl.dart';
 
 import 'ForestDataScreen.dart';
+import 'ForestDetail.dart';
 import 'MapScreen.dart';
 import 'UserScreen.dart';
 
@@ -287,7 +288,12 @@ class _HomeScreenState extends State<HomeScreen> {
                           DataCell(Text(DateFormat('dd/MM/yyyy hh:mm')
                               .format(profileData.datetime!.toDate()))),
                           DataCell(IconButton(
-                            onPressed: () {},
+                            onPressed: () {
+                              Navigator.of(context).pushAndRemoveUntil(
+                                  MaterialPageRoute(
+                                      builder: (context) => ForestDataScreen()),
+                                  (route) => false);
+                            },
                             icon: Icon(Icons.visibility),
                           )),
                         ],

@@ -45,6 +45,7 @@ class _AddForestDataState extends State<AddForestData> {
     super.initState();
     fetchUserEmail();
     _initializeTitle();
+    _getCurrentLocation;
   }
 
   Future<void> _initializeTitle() async {

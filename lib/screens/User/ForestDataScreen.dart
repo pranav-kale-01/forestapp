@@ -4,13 +4,14 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:forestapp/screens/Admin/homeAdmin.dart';
+import 'package:forestapp/screens/User/homeUser.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:excel/excel.dart';
+import 'package:file_picker/file_picker.dart';
 
 import 'ForestDetail.dart';
 
@@ -181,6 +182,18 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
     });
   }
 
+  void filterData(String? selectedTitle, {bool applyFilter = true}) {
+    setState(() {
+      if (applyFilter) {
+        _searchResult = _profileDataList
+            .where((data) => data.title == selectedTitle)
+            .toList();
+      } else {
+        _searchResult = _profileDataList;
+      }
+    });
+  }
+
 // Function to handle the search and filter actions
   void _handleSearchFilter(String searchQuery, String filterType) {
     if (searchQuery.isNotEmpty) {
@@ -218,13 +231,13 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
 // calculate total cubs and tigers
       int totalCubs = 0;
       int totalTigers = 0;
-      _profileDataList.forEach((data) {
+      _searchResult.forEach((data) {
         totalCubs += data.noOfCubs;
         totalTigers += data.noOfTigers;
       });
 
 // add data rows
-      _profileDataList.forEach((data) {
+      _searchResult.forEach((data) {
         sheet.appendRow([
           data.title,
           data.description,
@@ -253,7 +266,7 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
         '',
         '',
         'Total Cubs: ${totalCubs}',
-        'Total Tigers: ${totalTigers}',
+        'Total Cubs: ${totalTigers}',
         '',
         '',
         '',
@@ -338,8 +351,49 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
     'This Year',
     'All',
   ];
-  final List<String> _selectedOptions = [];
 
+  void clearDropdown() {
+    setState(() {
+      _selectedTitle = null; // or ""
+    });
+    filterData(null,
+        applyFilter:
+            false); // call filterData with null or "" and applyFilter set to false
+  }
+
+  // New functions for filtering by number of tigers and cubs:
+  void filterByTigers(int? numberOfTigers) {
+    setState(() {
+      if (numberOfTigers != null) {
+        _searchResult = _profileDataList
+            .where((profileData) => profileData.noOfTigers == numberOfTigers)
+            .toList();
+      } else {
+        _searchResult = _profileDataList;
+      }
+    });
+  }
+
+  void filterByCubs(int? numberOfCubs) {
+    setState(() {
+      if (numberOfCubs != null) {
+        _searchResult = _profileDataList
+            .where((profileData) => profileData.noOfCubs == numberOfCubs)
+            .toList();
+      } else {
+        _searchResult = _profileDataList;
+      }
+    });
+  }
+
+  int? _selectedTigers;
+  int? _selectedCubs;
+
+  final TextEditingController tigersController = TextEditingController();
+  final TextEditingController cubsController = TextEditingController();
+
+  final List<String> _selectedOptions = [];
+  String? _selectedTitle;
   void _showFilterDialog() {
     showDialog(
       context: context,
@@ -349,96 +403,164 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
             borderRadius: BorderRadius.circular(10.0),
           ),
           title: Text('Filter'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Filter options:'),
-              const SizedBox(height: 8.0),
-              Wrap(
-                spacing: 8.0,
-                runSpacing: 8.0,
-                children: [
-                  for (final option in _filterOptions)
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _selectedOptions.contains(option)
-                            ? Colors.green
-                            : Colors.lightGreen.shade600,
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Filter options:'),
+                const SizedBox(height: 8.0),
+                Wrap(
+                  spacing: 8.0,
+                  runSpacing: 8.0,
+                  children: [
+                    for (final option in _filterOptions)
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _selectedOptions.contains(option)
+                              ? Colors.green
+                              : Colors.lightGreen.shade600,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            if (_selectedOptions.contains(option)) {
+                              _selectedOptions.remove(option);
+                            } else {
+                              _selectedOptions.add(option);
+                            }
+                            _selectedFilter = _selectedOptions.join(',');
+                          });
+                          _handleSearchFilter(_searchController.text,
+                              _selectedFilter.simplifyText());
+                          // Navigator.pop(context);
+                        },
+                        child: Text(option),
                       ),
-                      onPressed: () {
+                  ],
+                ),
+                const SizedBox(height: 8.0),
+                Text("Filter by Tiger name"),
+                Row(
+                  children: [
+                    DropdownButton<String>(
+                      value: _selectedTitle, // the currently selected title
+                      items: _profileDataList.map((profileData) {
+                        return DropdownMenuItem<String>(
+                          value: profileData.title,
+                          child: Text(profileData.title),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
                         setState(() {
-                          if (_selectedOptions.contains(option)) {
-                            _selectedOptions.remove(option);
-                          } else {
-                            _selectedOptions.add(option);
-                          }
-                          _selectedFilter = _selectedOptions.join(',');
+                          _selectedTitle = newValue!;
                         });
-                        _handleSearchFilter(_searchController.text,
-                            _selectedFilter.simplifyText());
-                        // Navigator.pop(context);
+                        filterData(newValue!, applyFilter: true);
                       },
-                      child: Text(option),
                     ),
-                ],
-              ),
-              const SizedBox(height: 16.0),
-              Text('Selected options:'),
-              const SizedBox(height: 8.0),
-              Wrap(
-                spacing: 8.0,
-                runSpacing: 8.0,
-                children: [
-                  for (final option in _selectedOptions)
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                      ),
+                    SizedBox(
+                      width: 10,
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.clear),
                       onPressed: () {
-                        setState(() {
-                          _selectedOptions.remove(option);
-                        });
-                        _handleSearchFilter(_searchController.text,
-                            _selectedFilter.simplifyText());
-                        // Navigator.pop(context);
+                        clearDropdown();
                       },
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(option),
-                          const SizedBox(width: 4.0),
-                          Icon(Icons.clear, size: 16.0),
-                        ],
-                      ),
                     ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+                const SizedBox(height: 8.0),
+                Column(
+                  children: [
+                    TextField(
+                      decoration: InputDecoration(
+                        labelText: 'Number of tigers',
+                      ),
+                      keyboardType: TextInputType.number,
+                      controller: tigersController,
+                      onChanged: (String newValue) {
+                        setState(() {
+                          _selectedTigers = int.tryParse(newValue);
+                        });
+                        filterByTigers(_selectedTigers);
+                      },
+                    ),
+                    TextField(
+                      decoration: InputDecoration(
+                        labelText: 'Number of cubs',
+                      ),
+                      keyboardType: TextInputType.number,
+                      controller: cubsController,
+                      onChanged: (String newValue) {
+                        setState(() {
+                          _selectedCubs = int.tryParse(newValue);
+                        });
+                        filterByCubs(_selectedCubs);
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16.0),
+                Text('Selected options:'),
+                const SizedBox(height: 8.0),
+                Wrap(
+                  spacing: 8.0,
+                  runSpacing: 8.0,
+                  children: [
+                    for (final option in _selectedOptions)
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            if (_selectedOptions.contains(option)) {
+                              _selectedOptions.remove(option);
+                            } else {
+                              _selectedOptions.add(option);
+                            }
+                            _selectedFilter = _selectedOptions.join(',');
+                          });
+                          _handleSearchFilter(_searchController.text,
+                              _selectedFilter.simplifyText());
+                          // Navigator.pop(context);
+                        },
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(option),
+                            const SizedBox(width: 4.0),
+                            Icon(Icons.clear, size: 16.0),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: Text('Close'),
             ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    Colors.greenAccent.shade400, // Background color
-                // Text Color (Foreground color)
-              ),
-              onPressed: () {
-                setState(() {
-                  _selectedFilter = _selectedOptions.join(',');
-                });
-                _handleSearchFilter(
-                    _searchController.text, _selectedFilter.simplifyText());
-                Navigator.pop(context);
+            // ElevatedButton(
+            //   style: ElevatedButton.styleFrom(
+            //     backgroundColor:
+            //         Colors.greenAccent.shade400, // Background color
+            //     // Text Color (Foreground color)
+            //   ),
+            //   onPressed: () {
+            //     setState(() {
+            //       _selectedFilter = _selectedOptions.join(',');
+            //     });
+            //     _handleSearchFilter(
+            //         _searchController.text, _selectedFilter.simplifyText());
+            //     Navigator.pop(context);
 
-                print(_selectedFilter.simplifyText());
-              },
-              child: Text('Apply'),
-            ),
+            //     print(_selectedFilter.simplifyText());
+            //   },
+            //   child: Text('Apply'),
+            // ),
           ],
         );
       },
@@ -473,7 +595,7 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                     onPressed: () {
                       Navigator.of(context).pushAndRemoveUntil(
                           MaterialPageRoute(
-                              builder: (context) => const HomeAdmin(
+                              builder: (context) => const HomeUser(
                                     title: '',
                                   )),
                           (route) => false);

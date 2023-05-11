@@ -1,10 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:syncfusion_flutter_maps/maps.dart';
 import 'dart:math' as math;
-
+import '../loginScreen.dart';
 import 'ForestDataScreen.dart';
 
 class ProfileData {
@@ -27,17 +27,23 @@ class ProfileData {
   });
 }
 
-class MapScreen extends StatefulWidget {
+class ForestMapScreen extends StatefulWidget {
   final double latitude;
   final double longitude;
+  final String userName;
+  final String tigerName;
 
-  MapScreen({required this.latitude, required this.longitude});
+  ForestMapScreen(
+      {required this.latitude,
+      required this.longitude,
+      required this.userName,
+      required this.tigerName});
 
   @override
-  _MapScreenState createState() => _MapScreenState();
+  _ForestMapScreenState createState() => _ForestMapScreenState();
 }
 
-class _MapScreenState extends State<MapScreen> {
+class _ForestMapScreenState extends State<ForestMapScreen> {
   late String _userEmail;
   late List<ProfileData> _profileDataList = [];
 
@@ -46,17 +52,52 @@ class _MapScreenState extends State<MapScreen> {
 
   late MapZoomPanBehavior _zoomPanBehavior;
   late List<MapLatLng> _markers;
+  late double _zoomLevel;
 
   @override
   void initState() {
     super.initState();
 
+    _markers = [
+      MapLatLng(widget.latitude, widget.longitude),
+    ];
+
     fetchUserProfileData();
-    _zoomPanBehavior = MapZoomPanBehavior(
-      enableDoubleTapZooming: true, // enable or disable double tap zooming
-      enablePinching: true, // enable or disable pinching to zoom
-      enablePanning: true, // enable or disable panning
-    );
+
+    _zoomLevel = calculateZoomLevel(_markers);
+    _zoomPanBehavior = MapZoomPanBehavior(zoomLevel: _zoomLevel);
+
+    if (_markers.isNotEmpty) {
+      // Set zoom level based on the marker location
+      _zoomPanBehavior.zoomLevel = 15;
+      _zoomPanBehavior.focalLatLng = _markers.first;
+    }
+  }
+
+  double calculateZoomLevel(List<MapLatLng> markers) {
+    if (markers.isEmpty) {
+      return 1;
+    }
+
+    double maxLat = -90;
+    double minLat = 90;
+    double maxLon = -180;
+    double minLon = 180;
+
+    for (MapLatLng marker in markers) {
+      maxLat = math.max(maxLat, marker.latitude);
+      minLat = math.min(minLat, marker.latitude);
+      maxLon = math.max(maxLon, marker.longitude);
+      minLon = math.min(minLon, marker.longitude);
+    }
+
+    double deltaLat = maxLat - minLat;
+    double deltaLon = maxLon - minLon;
+    double zoomLat = math.log(360 / deltaLat) / math.ln2;
+    double zoomLon = math.log(360 / deltaLon) / math.ln2;
+    double zoom = math.min(zoomLat, zoomLon);
+
+    return zoom;
   }
 
   Future<void> fetchUserEmail() async {
@@ -84,10 +125,10 @@ class _MapScreenState extends State<MapScreen> {
     setState(() {
       _profileDataList = profileDataList;
 
-      _markers = profileDataList
-          .map((profileData) => MapLatLng(
-              profileData.location.latitude, profileData.location.longitude))
-          .toList();
+      // _markers = profileDataList
+      //     .map((profileData) => MapLatLng(
+      //         profileData.location.latitude, profileData.location.longitude))
+      //     .toList();
     });
   }
 
@@ -108,14 +149,21 @@ class _MapScreenState extends State<MapScreen> {
                 end: Alignment.bottomRight,
               ),
             )),
-        title: Text("Map"),
+        title: Text(widget.tigerName),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(
+                    builder: (context) => const ForestDataScreen()),
+                (route) => false);
+          },
+        ),
       ),
       body: SfMaps(
         layers: [
           MapTileLayer(
             urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-            initialZoomLevel: 13,
-            initialFocalLatLng: MapLatLng(18.4593867, 73.8494929),
             zoomPanBehavior: _zoomPanBehavior,
             markerBuilder: (BuildContext context, int index) {
               return MapMarker(
@@ -132,7 +180,7 @@ class _MapScreenState extends State<MapScreen> {
                       context: context,
                       builder: (_) => AlertDialog(
                         title: Text(
-                          'Tiger: ${_profileDataList[index].title}, Added by: ${_profileDataList[index].userName}',
+                          'Tiger: ${widget.tigerName}, Added by: ${widget.userName}',
                           style: TextStyle(
                               fontSize: 12, fontWeight: FontWeight.w300),
                         ),

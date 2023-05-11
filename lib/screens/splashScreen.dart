@@ -96,6 +96,7 @@ class _SplashScreenState extends State<SplashScreen> {
         gradient: LinearGradient(
           colors: [
             Colors.white,
+            Colors.white,
           ],
           begin: const FractionalOffset(0, 0),
           end: const FractionalOffset(1.0, 0.0),
@@ -128,7 +129,7 @@ class _SplashScreenState extends State<SplashScreen> {
                       decoration: TextDecoration.none,
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: Colors.black,
                       fontFamily: 'Roboto',
                     ),
                   ),

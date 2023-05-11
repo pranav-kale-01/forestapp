@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:forestapp/screens/Admin/ForestMapScreen.dart' as mp;
 import 'package:intl/intl.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 import 'ForestDataScreen.dart';
 
 class ForestDetail extends StatelessWidget {
