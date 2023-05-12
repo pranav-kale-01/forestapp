@@ -118,8 +118,8 @@ class _AddUserScreenState extends State<AddUserScreen> {
                       }
                       return null;
                     },
-                    onSaved: (value) {
-                      _name = value!;
+                    onChanged: (value) {
+                      _name = value;
                     },
                   ),
                   const SizedBox(height: 16.0),
@@ -136,8 +136,8 @@ class _AddUserScreenState extends State<AddUserScreen> {
                       }
                       return null;
                     },
-                    onSaved: (value) {
-                      _email = value!;
+                    onChanged: (value) {
+                      _email = value;
                     },
                   ),
                   const SizedBox(height: 16.0),
@@ -153,8 +153,8 @@ class _AddUserScreenState extends State<AddUserScreen> {
                       }
                       return null;
                     },
-                    onSaved: (value) {
-                      _password = value!;
+                    onChanged: (value) {
+                      _password = value;
                     },
                   ),
                   const SizedBox(height: 16.0),
@@ -170,8 +170,8 @@ class _AddUserScreenState extends State<AddUserScreen> {
                       }
                       return null;
                     },
-                    onSaved: (value) {
-                      _contactNumber = value!;
+                    onChanged: (value) {
+                      _contactNumber = value;
                     },
                   ),
                   const SizedBox(height: 16.0),
@@ -187,8 +187,8 @@ class _AddUserScreenState extends State<AddUserScreen> {
                       }
                       return null;
                     },
-                    onSaved: (value) {
-                      _aadharNumber = value!;
+                    onChanged: (value) {
+                      _aadharNumber = value;
                     },
                   ),
                   const SizedBox(height: 16.0),
@@ -204,8 +204,8 @@ class _AddUserScreenState extends State<AddUserScreen> {
                       }
                       return null;
                     },
-                    onSaved: (value) {
-                      _forestId = value!;
+                    onChanged: (value) {
+                      _forestId = value;
                     },
                   ),
                   const SizedBox(height: 16.0),

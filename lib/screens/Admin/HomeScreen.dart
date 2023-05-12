@@ -108,7 +108,78 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     if (_profileDataList.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return Scaffold(
+        appBar: AppBar(
+          elevation: 0.0,
+          flexibleSpace: Container(
+              height: 90,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.green, Colors.greenAccent],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              )),
+          title: const Text('Pench MH'),
+          actions: [
+            Column(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.logout),
+                  onPressed: () async {
+                    final confirm = await showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Confirm Logout'),
+                        content:
+                            const Text('Are you sure you want to log out?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () async {
+                              await FirebaseAuth.instance.signOut();
+                              // ignore: use_build_context_synchronously
+                              Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const LoginScreen()),
+                                (route) => false,
+                              );
+                            },
+                            child: const Text('Logout'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirm == true) {
+                      // perform logout
+                    }
+                  },
+                ),
+                // const Text("Logout"),
+              ],
+            ),
+          ],
+        ),
+        body: Center(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                "No Data Found.....",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+              ),
+              SizedBox(
+                width: 5,
+              ),
+              CircularProgressIndicator()
+            ],
+          ),
+        ),
+      );
     }
     return Scaffold(
       appBar: AppBar(

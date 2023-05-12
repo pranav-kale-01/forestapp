@@ -94,7 +94,36 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     if (_profileDataList.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return Scaffold(
+        appBar: AppBar(
+          elevation: 0.0,
+          flexibleSpace: Container(
+              height: 90,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.green, Colors.greenAccent],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              )),
+          title: Text("Map"),
+        ),
+        body: Center(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                "No Data Found.....",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+              ),
+              SizedBox(
+                width: 5,
+              ),
+              CircularProgressIndicator()
+            ],
+          ),
+        ),
+      );
     }
     return Scaffold(
       appBar: AppBar(
