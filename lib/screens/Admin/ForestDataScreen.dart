@@ -128,7 +128,8 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
         start = DateTime(now.year, now.month, now.day);
         break;
       case 'Yesterday':
-        start = DateTime(now.year, now.month, now.day - 1);
+        var yesterday = new DateTime.now().subtract(Duration(days:1));
+        start = DateTime(yesterday.year, yesterday.month, yesterday.day - 1);
         break;
       case 'This Week':
         start = DateTime(now.year, now.month, now.day - now.weekday + 1);
@@ -277,7 +278,7 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
       if (storagePermission != PermissionStatus.granted) {
         throw Exception('Storage permission not granted');
       }
-      directory = await getExternalStorageDirectory();
+      directory = await getApplicationDocumentsDirectory();
       String newPath = "";
       print(directory);
 
@@ -693,18 +694,20 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                                               ),
                                             ),
                                             const SizedBox(height: 8.0),
-                                            Text(
-                                              DateFormat('MMM d, yyyy h:mm a')
-                                                  .format(profileData.datetime!
-                                                      .toDate()),
-                                            ),
+
                                           ],
                                         ),
-                                        const SizedBox(height: 8.0),
+                                        const SizedBox(height: 5.0),
+                                        Text(
+                                          DateFormat('MMM d, yyyy h:mm a')
+                                              .format(profileData.datetime!
+                                              .toDate()),
+                                        ),
+                                        const SizedBox(height: 5.0),
                                         Text(
                                           profileData.userName,
                                         ),
-                                        const SizedBox(height: 8.0),
+                                        const SizedBox(height: 5.0),
                                         Text(
                                           profileData.userEmail,
                                         ),
