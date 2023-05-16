@@ -1,10 +1,12 @@
+import 'package:android_intent_plus/android_intent.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:forestapp/screens/splashScreen.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:hexcolor/hexcolor.dart';
 
 import 'package:location/location.dart';
-
 import 'package:firebase_core/firebase_core.dart';
 
 void main() async {
@@ -30,7 +32,33 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    requestLocationPermission();
+
+    checkGps();
+
+  }
+
+  void turnOnGps(){
+
+    final AndroidIntent intent = AndroidIntent(
+        action: 'android.settings.LOCATION_SOURCE_SETTINGS');
+    intent.launch();
+    Navigator.of(context, rootNavigator: true).pop();
+
+}
+
+
+  Future<void> checkGps() async{
+    final location = Location();
+
+    Geolocator.isLocationServiceEnabled().then((isGpsOn){
+
+        if(isGpsOn){
+          requestLocationPermission();
+        }else{
+          turnOnGps();
+        }
+
+    });
   }
 
   Future<void> requestLocationPermission() async {
@@ -65,11 +93,6 @@ class _MyAppState extends State<MyApp> {
             .copyWith(secondary: _accentColor),
       ),
       home: const SplashScreen(title: 'Flutter Login UI'),
-
-      // initialRoute: '/',
-      // routes: {
-      //   '/': (context) => const HomeScreen(),
-      // },
     );
   }
 }
