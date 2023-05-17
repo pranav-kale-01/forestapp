@@ -695,14 +695,16 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                                                 fontWeight: FontWeight.bold,
                                               ),
                                             ),
-                                            const SizedBox(height: 8.0),
-                                            Text(
+                                            
+                                            
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8.0),
+                                        Text(
                                               DateFormat('MMM d, yyyy h:mm a')
                                                   .format(profileData.datetime!
                                                       .toDate()),
                                             ),
-                                          ],
-                                        ),
                                         const SizedBox(height: 8.0),
                                         Text(
                                           profileData.userName,

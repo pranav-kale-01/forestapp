@@ -8,6 +8,7 @@ import 'package:forestapp/screens/loginScreen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key, required this.title}) : super(key: key);
 
@@ -122,34 +123,33 @@ class _SplashScreenState extends State<SplashScreen> {
               padding: const EdgeInsets.only(bottom: 30.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Tiger love',
-                    style: TextStyle(
-                      decoration: TextDecoration.none,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                      fontFamily: 'Roboto',
-                    ),
+                children:[
+                  SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: Image.asset(
+                    'assets/flag.png',
+                    width: 20,
+                    height: 20
+                   ),
                   ),
-                  SizedBox(width: 8),
-                  Icon(
-                    Icons.flag,
-                    color: Colors.white,
+                  SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: Icon(Icons.favorite, color: Colors.redAccent),
                   ),
-                  Text(
-                    'India',
-                    //  style: GoogleFonts.roboto(),
-                    style: TextStyle(
-                      decoration: TextDecoration.none,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      fontFamily: 'Roboto',
-                    ),
+                  SizedBox(
+                  width: 2,
+                  height: 2,
+                  
+                ),
+                  Container(
+                    margin: EdgeInsets.only(top: 5),
+                    width: 20,
+                    height: 20,
+                    child: Image.asset('assets/t.png', width: 24, height: 25),
                   ),
-                ],
+                ]
               ),
             ),
           ],

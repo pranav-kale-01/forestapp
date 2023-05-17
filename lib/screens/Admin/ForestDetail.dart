@@ -181,6 +181,10 @@ class ForestDetail extends StatelessWidget {
                       },
                       child: Text("Delete"),
                     ),
+                    SizedBox(
+                      width: 10,
+                    ),
+                   
                   ],
                 ),
                 SizedBox(height: 16),
