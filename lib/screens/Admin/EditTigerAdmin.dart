@@ -6,8 +6,6 @@ import 'package:forestapp/common/models/TigerModel.dart';
 import 'package:forestapp/screens/Admin/ForestDataScreen.dart';
 import 'package:forestapp/screens/Admin/HomeScreen.dart';
 
-
-
 class EditTigerAdmin extends StatefulWidget {
   final TigerModel tiger;
   const EditTigerAdmin({super.key, required this.tiger});
@@ -20,16 +18,14 @@ class _EditTigerAdminState extends State<EditTigerAdmin> {
   final _formKey = GlobalKey<FormState>();
   String _name = '';
   String _description = '';
-  String _noOfCubs = '';
-  String _noOfTigers = '';
+  late int _noOfCubs;
+  late int _noOfTigers;
   String _remark = '';
 
   final CollectionReference _userRef =
       FirebaseFirestore.instance.collection('forestdata');
 
   FirebaseFirestore firestore = FirebaseFirestore.instance;
-
-  
 
   @override
   Widget build(BuildContext context) {
@@ -67,7 +63,6 @@ class _EditTigerAdminState extends State<EditTigerAdmin> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                 
                   TextFormField(
                     decoration: const InputDecoration(
                       labelText: 'Name',
@@ -93,7 +88,7 @@ class _EditTigerAdminState extends State<EditTigerAdmin> {
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter an Description';
-                      } 
+                      }
                       return null;
                     },
                     initialValue: widget.tiger.description,
@@ -103,20 +98,20 @@ class _EditTigerAdminState extends State<EditTigerAdmin> {
                   ),
                   const SizedBox(height: 16.0),
                   TextFormField(
-                    obscureText: true,
+                    keyboardType: TextInputType.number,
                     decoration: const InputDecoration(
-                      labelText: 'No. of Cubs',
                       border: OutlineInputBorder(),
+                      labelText: 'Number of cubs',
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please enter a Cubs';
+                        return 'Please enter a valid number of cubs';
                       }
                       return null;
                     },
                     initialValue: widget.tiger.noOfCubs.toString(),
                     onSaved: (value) {
-                      _noOfCubs = value!;
+                      _noOfCubs = int.parse(value!);
                     },
                   ),
                   const SizedBox(height: 16.0),
@@ -125,7 +120,7 @@ class _EditTigerAdminState extends State<EditTigerAdmin> {
                       labelText: 'No. of Tigers',
                       border: OutlineInputBorder(),
                     ),
-                    keyboardType: TextInputType.phone,
+                    keyboardType: TextInputType.number,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter a Tigers';
@@ -134,7 +129,7 @@ class _EditTigerAdminState extends State<EditTigerAdmin> {
                     },
                     initialValue: widget.tiger.noOfTigers.toString(),
                     onSaved: (value) {
-                      _noOfTigers = value!;
+                      _noOfTigers = int.parse(value!);
                     },
                   ),
                   const SizedBox(height: 16.0),
@@ -156,14 +151,11 @@ class _EditTigerAdminState extends State<EditTigerAdmin> {
                       _remark = value!;
                     },
                   ),
-            
                   const SizedBox(height: 16.0),
                   ElevatedButton(
                     onPressed: () async {
                       if (_formKey.currentState!.validate()) {
                         _formKey.currentState!.save();
-
-                       
 
                         // Update the tiger data in the Firebase Firestore
                         final CollectionReference tigersRef =
@@ -172,7 +164,7 @@ class _EditTigerAdminState extends State<EditTigerAdmin> {
                           'title': _name,
                           'description': _description,
                           'number_of_cubs': _noOfCubs,
-                          'number_of_tigers': _noOfTigers,
+                          'number_of_tiger': _noOfTigers,
                           'remark': _remark
                         };
                         try {
@@ -184,13 +176,13 @@ class _EditTigerAdminState extends State<EditTigerAdmin> {
                               tigersRef.doc(doc.id).update(userData);
                             });
                           });
-                          
+
                           Navigator.of(context).pushAndRemoveUntil(
                               MaterialPageRoute(
                                   builder: (context) =>
                                       const ForestDataScreen()),
                               (route) => false);
-                          
+
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text('Tiger updated successfully'),

@@ -14,8 +14,6 @@ import 'package:intl/intl.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:excel/excel.dart';
 
-
-
 class ForestDataScreen extends StatefulWidget {
   const ForestDataScreen({Key? key}) : super(key: key);
 
@@ -101,7 +99,7 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
         start = DateTime(now.year, now.month, now.day);
         break;
       case 'Yesterday':
-        var yesterday = new DateTime.now().subtract(Duration(days:1));
+        var yesterday = new DateTime.now().subtract(Duration(days: 1));
         start = DateTime(yesterday.year, yesterday.month, yesterday.day - 1);
         break;
       case 'This Week':
@@ -667,14 +665,13 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                                               ),
                                             ),
                                             const SizedBox(height: 8.0),
-
                                           ],
                                         ),
                                         const SizedBox(height: 5.0),
                                         Text(
                                           DateFormat('MMM d, yyyy h:mm a')
                                               .format(profileData.datetime!
-                                              .toDate()),
+                                                  .toDate()),
                                         ),
                                         const SizedBox(height: 5.0),
                                         Text(
@@ -693,8 +690,11 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                                           ),
                                           onPressed: () {
                                             Navigator.of(context).push(
-                                                    MaterialPageRoute(builder: (context) =>
-                                                            ForestDetail(forestData: profileData)));
+                                                MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        ForestDetail(
+                                                            forestData:
+                                                                profileData)));
                                           },
                                           label: const Text("View"),
                                           icon: const Icon(
