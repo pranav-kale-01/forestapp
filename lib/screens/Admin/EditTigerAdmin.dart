@@ -103,7 +103,7 @@ class _EditTigerAdminState extends State<EditTigerAdmin> {
                   ),
                   const SizedBox(height: 16.0),
                   TextFormField(
-                    obscureText: true,
+                   
                     decoration: const InputDecoration(
                       labelText: 'No. of Cubs',
                       border: OutlineInputBorder(),
@@ -172,7 +172,7 @@ class _EditTigerAdminState extends State<EditTigerAdmin> {
                           'title': _name,
                           'description': _description,
                           'number_of_cubs': _noOfCubs,
-                          'number_of_tigers': _noOfTigers,
+                          'number_of_tiger': _noOfTigers,
                           'remark': _remark
                         };
                         try {
