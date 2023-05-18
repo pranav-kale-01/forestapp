@@ -23,7 +23,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
   String _email = '';
   String _password = '';
 
-  String _contactNumber = '';
+  String _contactNumber = ''; 
   String _aadharNumber = '';
   String _forestId = '';
   File? _imageFile;

@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:forestapp/common/models/TigerModel.dart';
 import 'package:forestapp/screens/User/homeUser.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -15,35 +16,6 @@ import 'package:file_picker/file_picker.dart';
 
 import 'ForestDetail.dart';
 
-class ProfileData {
-  final String title;
-  final String description;
-  final String imageUrl;
-  final String userName;
-  final String userEmail;
-  final Timestamp? datetime;
-  final GeoPoint location;
-  final int noOfCubs;
-  final int noOfTigers;
-  final String remark;
-  final String userContact;
-  final String userImage;
-
-  ProfileData({
-    required this.title,
-    required this.description,
-    required this.imageUrl,
-    required this.userName,
-    required this.userEmail,
-    this.datetime,
-    required this.location,
-    required this.noOfCubs,
-    required this.noOfTigers,
-    required this.remark,
-    required this.userContact,
-    required this.userImage,
-  });
-}
 
 class ForestDataScreen extends StatefulWidget {
   const ForestDataScreen({Key? key}) : super(key: key);
@@ -56,8 +28,8 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
   late final WebViewController controller;
 
   late String _userEmail;
-  late List<ProfileData> _profileDataList = [];
-  late List<ProfileData> _searchResult = [];
+  late List<TigerModel> _profileDataList = [];
+  late List<TigerModel> _searchResult = [];
 
   final TextEditingController _searchController = TextEditingController();
 
@@ -89,7 +61,8 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
         .get();
     final profileDataList = userSnapshot.docs
         .map(
-          (doc) => ProfileData(
+          (doc) => TigerModel(
+            id: doc['id'],
             imageUrl: doc['imageUrl'],
             title: doc['title'],
             description: doc['description'],
@@ -150,7 +123,7 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
         return;
     }
 
-    List<ProfileData> tempList = [];
+    List<TigerModel> tempList = [];
     _profileDataList.forEach((profileData) {
       if (profileData.datetime != null &&
           profileData.datetime!.toDate().isAfter(start)) {
@@ -165,7 +138,7 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
 
 // Function to search the list based on the user input
   void _searchList(String searchQuery) {
-    List<ProfileData> tempList = [];
+    List<TigerModel> tempList = [];
     _profileDataList.forEach((profileData) {
       if (profileData.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
           profileData.userName
@@ -722,13 +695,12 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                                           ),
                                           onPressed: () {
                                             Navigator.of(context)
-                                                .pushAndRemoveUntil(
+                                                .push(
                                                     MaterialPageRoute(
                                                         builder: (context) =>
                                                             ForestDetail(
                                                                 forestData:
-                                                                    profileData)),
-                                                    (route) => false);
+                                                                    profileData)));
                                           },
                                           label: const Text("View"),
                                           icon: const Icon(

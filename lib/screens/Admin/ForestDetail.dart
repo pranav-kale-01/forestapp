@@ -1,11 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:forestapp/common/models/TigerModel.dart';
+import 'package:forestapp/screens/Admin/EditTigerAdmin.dart';
 import 'package:forestapp/screens/Admin/ForestMapScreen.dart' as mp;
 import 'package:intl/intl.dart';
 import 'ForestDataScreen.dart';
 
+
 class ForestDetail extends StatelessWidget {
-  final ProfileData forestData;
+  final TigerModel forestData;
 
   const ForestDetail({Key? key, required this.forestData}) : super(key: key);
 
@@ -184,19 +187,26 @@ class ForestDetail extends StatelessWidget {
                     SizedBox(
                       width: 10,
                     ),
-                   
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            Colors.green.shade400, // Background color
+                        // Text Color (Foreground color)
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => EditTigerAdmin(tiger: this.forestData))
+                        );
+                            
+                      },
+                      child: const Text("Edit"),
+                    ),
                   ],
                 ),
                 SizedBox(height: 16),
-                // Expanded(
-                //   child: WebViewWidget(
-                //       controller: WebViewController()
-                //         ..loadRequest(
-                //           Uri.parse(
-                //               'https://www.google.com/maps/search/?api=1&query=${forestData.location.latitude.toString()},${forestData.location.longitude.toString()}'),
-                //         )
-                //         ..setJavaScriptMode(JavaScriptMode.unrestricted)),
-                // ),
+               
               ],
             ),
           ),

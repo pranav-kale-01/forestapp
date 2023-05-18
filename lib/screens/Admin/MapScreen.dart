@@ -144,7 +144,7 @@ class _MapScreenState extends State<MapScreen> {
           MapTileLayer(
             urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
             initialZoomLevel: 13,
-            initialFocalLatLng: MapLatLng(18.4593867, 73.8494929),
+            initialFocalLatLng: MapLatLng(21.5549701, 79.1735154),
             zoomPanBehavior: _zoomPanBehavior,
             markerBuilder: (BuildContext context, int index) {
               return MapMarker(

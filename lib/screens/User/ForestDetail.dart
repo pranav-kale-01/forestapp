@@ -1,11 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:forestapp/common/models/TigerModel.dart';
+import 'package:forestapp/screens/Admin/EditTigerAdmin.dart';
+import 'package:forestapp/screens/User/EditTigerUser.dart';
 import 'package:forestapp/screens/User/ForestMapScreen.dart' as mp;
 import 'package:intl/intl.dart';
 import 'ForestDataScreen.dart';
 
 class ForestDetail extends StatelessWidget {
-  final ProfileData forestData;
+  final TigerModel forestData;
 
   const ForestDetail({Key? key, required this.forestData}) : super(key: key);
 
@@ -180,6 +183,25 @@ class ForestDetail extends StatelessWidget {
                         }
                       },
                       child: Text("Delete"),
+                      
+                    ),
+                    SizedBox(
+                      width: 10,
+                    ),
+                     ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            Colors.green.shade400, // Background color
+                        // Text Color (Foreground color)
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) =>
+                                    EditTigerUser(tiger: this.forestData)));
+                      },
+                      child: const Text("Edit"),
                     ),
                   ],
                 ),
