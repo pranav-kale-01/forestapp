@@ -86,6 +86,7 @@ class _EditTigerUserState extends State<EditTigerUser> {
                   ),
                   const SizedBox(height: 16.0),
                   TextFormField(
+                    keyboardType: TextInputType.number,
                     decoration: const InputDecoration(
                       labelText: 'Description',
                       border: OutlineInputBorder(),
@@ -103,6 +104,7 @@ class _EditTigerUserState extends State<EditTigerUser> {
                   ),
                   const SizedBox(height: 16.0),
                   TextFormField(
+                    keyboardType: TextInputType.number,
                     decoration: const InputDecoration(
                       labelText: 'No. of Cubs',
                       border: OutlineInputBorder(),
