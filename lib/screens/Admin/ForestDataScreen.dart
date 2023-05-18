@@ -65,8 +65,8 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
             userEmail: doc['user_email'],
             datetime: doc['createdAt'] as Timestamp?,
             location: doc['location'] as GeoPoint,
-            noOfCubs: int.parse(doc['number_of_cubs']),
-            noOfTigers: int.parse(doc['number_of_tiger']),
+            noOfCubs: doc['number_of_cubs'],
+            noOfTigers: doc['number_of_tiger'],
             remark: doc['remark'],
             userContact: doc['user_contact'],
             userImage: doc['user_imageUrl'],
@@ -85,7 +85,6 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
       totalCubs += profileData.noOfCubs;
       totalTigers += profileData.noOfTigers;
     });
-
   }
 
   // Function to filter the list based on the selected filter
