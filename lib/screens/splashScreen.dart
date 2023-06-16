@@ -6,8 +6,6 @@ import 'package:forestapp/screens/Admin/homeAdmin.dart';
 import 'package:forestapp/screens/User/homeUser.dart';
 import 'package:forestapp/screens/loginScreen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:google_fonts/google_fonts.dart';
-
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key, required this.title}) : super(key: key);
@@ -19,18 +17,18 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  bool _isVisible = false;
-  // late String _userEmail;
-
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  String? _userEmail;
   User? _user;
+  String? _userEmail;
+  bool _isVisible = false;
+  bool _isAdmin = false;
 
   @override
   void initState() {
     fetchUserEmail();
     super.initState();
+
     // Listen to auth state changes
     _auth.authStateChanges().listen((User? user) {
       if (user != null) {
@@ -50,6 +48,11 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> fetchUserEmail() async {
     final prefs = await SharedPreferences.getInstance();
     final userEmail = prefs.getString('userEmail');
+    if( prefs.getBool('isAdmin') != null ) {
+      _isAdmin = prefs.getBool('isAdmin')!;
+    }
+
+
     setState(() {
       _userEmail = userEmail;
     });
@@ -58,7 +61,7 @@ class _SplashScreenState extends State<SplashScreen> {
   _SplashScreenState() {
     Timer(const Duration(milliseconds: 3000), () {
       setState(() {
-        if (_user != null) {
+        if (_isAdmin) {
           Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(
                 builder: (context) => const HomeAdmin(
@@ -115,7 +118,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 child: SizedBox(
                   width: 200,
                   height: 200,
-                  child: Image.asset('assets/penchlogo.png'),
+                  child: Image.asset('assets/splash_screen.jpg'),
                 ),
               ),
             ),
@@ -147,7 +150,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     margin: EdgeInsets.only(top: 5),
                     width: 20,
                     height: 20,
-                    child: Image.asset('assets/t.png', width: 26, height: 26),
+                    child: Image.asset('assets/splash_screen.jpg', width: 26, height: 26),
                   ),
                 ]
               ),

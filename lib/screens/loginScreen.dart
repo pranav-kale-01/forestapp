@@ -18,13 +18,241 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final Key _formKey = GlobalKey<FormState>();
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  // final FirebaseAuth _auth = FirebaseAuth.instance;
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  String? _errorMessage;
+  // String? _errorMessage;
+
+  void loginAsAdmin() async {
+    try {
+      // Get the user document from Firestore based on the email entered
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email',
+          isEqualTo: _emailController
+              .text
+              .trim())
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        // Get the first document from the query snapshot
+        DocumentSnapshot userDoc = querySnapshot.docs.first;
+
+        debugPrint( userDoc.get('privileged_user').toString() );
+
+        // checking if user has proper privileges or not
+        if (!userDoc.get('privileged_user')) {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text(
+                    'User is an Admin'),
+                content: const Text(
+                    'This User does not have the privilege to login as an Admin.'),
+                actions: <Widget>[
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context)
+                          .pop();
+                    },
+                    child: const Text('OK'),
+                  ),
+                ],
+              );
+            },
+          );
+          return;
+        }
+      }
+    } on FirebaseAuthException catch (e) {
+      // Handle any errors that occur during sign in
+      if (e.code == 'user-not-found') {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text(
+                  'User not found'),
+              content: const Text(
+                  'No user found for that email.'),
+              actions: <Widget>[
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context)
+                        .pop();
+                  },
+                  child: const Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
+      }
+      else if (e.code == 'wrong-password') {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text(
+                  'Wrong password'),
+              content: const Text(
+                  'Wrong password provided for that user.'),
+              actions: <Widget>[
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context)
+                        .pop();
+                  },
+                  child: const Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
+      }
+    }
+
+    // Authenticate the user with Firebase
+    FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+    ).then((value) async {
+        await FirebaseAuth.instance.setPersistence(
+            Persistence.LOCAL);
+    }).catchError((error) {
+        // handle error
+    });
+
+    // Get an instance of shared preferences
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    // Store the email in shared preferences
+    prefs.setBool('isAdmin', true );
+    prefs.setString('userEmail', _emailController.text.trim());
+
+    // Navigate to the HomeAdmin screen on successful login
+    Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+          const HomeAdmin(title: 'hello'),
+        ),
+      );
+  }
+
+  void loginAsUser() async {
+    try {
+      // Get the user document from Firestore based on the email entered
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email',
+          isEqualTo: _emailController
+              .text
+              .trim())
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        // Get the first document from the query snapshot
+        DocumentSnapshot userDoc = querySnapshot.docs.first;
+
+        // checking if user has proper privileges or not
+        if( userDoc.get('privileged_user') ) {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text(
+                    'User is an Admin'),
+                content: const Text(
+                    'The User you are trying to log in with is an Admin. Please Login using Admin to continue'),
+                actions: <Widget>[
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context)
+                          .pop();
+                    },
+                    child: const Text('OK'),
+                  ),
+                ],
+              );
+            },
+          );
+          return;
+        }
+
+        // Compare the entered password with the password in Firestore
+        if (userDoc.get('password') == _passwordController.text) {
+          // Navigate to the HomeAdmin screen on successful login
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+              const HomeUser(
+                  title: 'hello'),
+            ),
+          );
+          // Get an instance of shared preferences
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+
+          // Store the email in shared preferences
+          prefs.setString('userEmail', _emailController.text.trim());
+        }
+        else {
+          // Show an alert dialog for wrong password
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text(
+                    'Wrong password'),
+                content: const Text(
+                    'Wrong password provided for that user.'),
+                actions: <Widget>[
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context)
+                          .pop();
+                    },
+                    child: const Text('OK'),
+                  ),
+                ],
+              );
+            },
+          );
+        }
+      } else {
+        // Show an alert dialog for user not found
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text(
+                  'User not found'),
+              content: const Text(
+                  'No user found for that email.'),
+              actions: <Widget>[
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context)
+                        .pop();
+                  },
+                  child: const Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
+      }
+    } catch (e) {
+      // Handle any errors that occur during sign in
+    }
+}
 
   @override
   Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SingleChildScrollView(
@@ -33,22 +261,19 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               SafeArea(
                 child: Container(
-                    padding: const EdgeInsets.fromLTRB(20, 200, 20, 10),
-                    margin: const EdgeInsets.fromLTRB(
-                        20, 10, 20, 10), // This will be the login form
+                    padding: const EdgeInsets.fromLTRB( 20, 100, 20, 10),
+                    margin: const EdgeInsets.fromLTRB( 10, 10, 10, 10),
                     child: Column(
                       children: [
                         SizedBox(
-                          width: 100,
-                          height: 100,
-                          child: Image.asset('assets/penchlogo.png'),
+                          height: 130,
+                          child: Image.asset('assets/splash_screen.jpg'),
                         ),
-                        const SizedBox(height: 10.0),
-                        const Text(
-                          'Login into your account',
-                          style: TextStyle(color: Colors.grey),
+
+                        const SizedBox(
+                          height: 90,
                         ),
-                        const SizedBox(height: 30.0),
+
                         Form(
                             key: _formKey,
                             child: Column(
@@ -60,7 +285,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     controller: _emailController,
                                     decoration: ThemeHelper()
                                         .textInputDecoration(
-                                            'Email', 'Enter your user name'),
+                                        'Email', 'Email'),
                                     validator: (value) {
                                       if (value!.isEmpty) {
                                         return 'Please enter your email address';
@@ -69,7 +294,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     },
                                   ),
                                 ),
-                                const SizedBox(height: 30.0),
+                                const SizedBox(height: 20.0),
                                 Container(
                                   decoration:
                                       ThemeHelper().inputBoxDecorationShaddow(),
@@ -78,7 +303,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     obscureText: true,
                                     decoration: ThemeHelper()
                                         .textInputDecoration(
-                                            'Password', 'Enter your password'),
+                                            'Password', 'Password'),
                                     validator: (value) {
                                       if (value!.isEmpty) {
                                         return 'Please enter your password';
@@ -87,224 +312,69 @@ class _LoginScreenState extends State<LoginScreen> {
                                     },
                                   ),
                                 ),
-                                const SizedBox(height: 15.0),
+                                const SizedBox(height: 20.0),
                                 Container(
                                   margin:
                                       const EdgeInsets.fromLTRB(10, 0, 10, 20),
-                                  alignment: Alignment.topRight,
+                                  alignment: Alignment.center,
                                   child: GestureDetector(
                                     onTap: () {
                                       // Navigator.push( context, MaterialPageRoute( builder: (context) => ForgotPasswordPage()), );
                                     },
                                     child: const Text(
-                                      "Forgot your password?",
+                                      "Forgot password",
                                       style: TextStyle(
-                                        color: Colors.grey,
+                                        color: Colors.black,
                                       ),
                                     ),
                                   ),
                                 ),
                                 Container(
-                                  decoration: ThemeHelper()
-                                      .buttonBoxDecoration(context),
+                                  padding: const EdgeInsets.fromLTRB(
+                                      0, 5, 0, 5
+                                  ),
+                                  width: mediaQuery.size.width,
+                                  constraints: BoxConstraints(
+                                    maxWidth: 350,
+                                  ),
+                                  decoration: ThemeHelper().buttonBoxDecoration(context),
                                   child: ElevatedButton(
                                     style: ThemeHelper().buttonStyle(),
-                                    child: Padding(
-                                      padding: const EdgeInsets.fromLTRB(
-                                          40, 10, 40, 10),
-                                      child: Text(
-                                        'Sign In As Admin'.toUpperCase(),
-                                        style: const TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.white),
-                                      ),
+                                    child: const Text(
+                                      'Login',
+                                      style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white),
                                     ),
                                     onPressed: () async {
-                                      try {
-                                        // Authenticate the user with Firebase
-                                        UserCredential userCredential =
-                                            await FirebaseAuth.instance
-                                                .signInWithEmailAndPassword(
-                                          email: _emailController.text.trim(),
-                                          password: _passwordController.text,
-                                        );
-                                        FirebaseAuth.instance
-                                            .signInWithEmailAndPassword(
-                                          email: _emailController.text.trim(),
-                                          password: _passwordController.text,
-                                        )
-                                            .then((value) async {
-                                          await FirebaseAuth.instance
-                                              .setPersistence(
-                                                  Persistence.LOCAL);
-                                          // user is now signed in and persistence is enabled
-                                        }).catchError((error) {
-                                          // handle error
-                                        });
-
-                                        // Navigate to the HomeAdmin screen on successful login
-                                        Navigator.pushReplacement(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                const HomeAdmin(title: 'hello'),
-                                          ),
-                                        );
-                                      } on FirebaseAuthException catch (e) {
-                                        // Handle any errors that occur during sign in
-                                        if (e.code == 'user-not-found') {
-                                          showDialog(
-                                            context: context,
-                                            builder: (BuildContext context) {
-                                              return AlertDialog(
-                                                title: const Text(
-                                                    'User not found'),
-                                                content: const Text(
-                                                    'No user found for that email.'),
-                                                actions: <Widget>[
-                                                  ElevatedButton(
-                                                    onPressed: () {
-                                                      Navigator.of(context)
-                                                          .pop();
-                                                    },
-                                                    child: const Text('OK'),
-                                                  ),
-                                                ],
-                                              );
-                                            },
-                                          );
-                                        } else if (e.code == 'wrong-password') {
-                                          showDialog(
-                                            context: context,
-                                            builder: (BuildContext context) {
-                                              return AlertDialog(
-                                                title: const Text(
-                                                    'Wrong password'),
-                                                content: const Text(
-                                                    'Wrong password provided for that user.'),
-                                                actions: <Widget>[
-                                                  ElevatedButton(
-                                                    onPressed: () {
-                                                      Navigator.of(context)
-                                                          .pop();
-                                                    },
-                                                    child: const Text('OK'),
-                                                  ),
-                                                ],
-                                              );
-                                            },
-                                          );
-                                        }
-                                      }
+                                      loginAsUser();
                                     },
                                   ),
                                 ),
                                 const SizedBox(
-                                  height: 10,
+                                  height: 20,
                                 ),
                                 Container(
-                                  decoration: ThemeHelper()
-                                      .buttonBoxDecoration(context),
+                                  padding: const EdgeInsets.fromLTRB(
+                                    0, 5, 0, 5
+                                  ),
+                                  decoration: ThemeHelper().buttonBoxDecoration(context),
+                                  width: mediaQuery.size.width,
+                                  constraints: BoxConstraints(
+                                    maxWidth: 350,
+                                  ),
                                   child: ElevatedButton(
                                     style: ThemeHelper().buttonStyle(),
-                                    child: Padding(
-                                      padding: const EdgeInsets.fromLTRB(
-                                          40, 10, 40, 10),
-                                      child: Text(
-                                        'Sign In As User'.toUpperCase(),
-                                        style: const TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.white),
-                                      ),
+                                    child: const Text(
+                                      'Login as admin',
+                                      style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white),
                                     ),
                                     onPressed: () async {
-                                      try {
-                                        // Get the user document from Firestore based on the email entered
-                                        QuerySnapshot querySnapshot =
-                                            await FirebaseFirestore.instance
-                                                .collection('users')
-                                                .where('email',
-                                                    isEqualTo: _emailController
-                                                        .text
-                                                        .trim())
-                                                .get();
-
-                                        if (querySnapshot.docs.isNotEmpty) {
-                                          // Get the first document from the query snapshot
-                                          DocumentSnapshot userDoc =
-                                              querySnapshot.docs.first;
-
-                                          // Compare the entered password with the password in Firestore
-                                          if (userDoc.get('password') ==
-                                              _passwordController.text) {
-                                            // Navigate to the HomeAdmin screen on successful login
-                                            Navigator.pushReplacement(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) =>
-                                                    const HomeUser(
-                                                        title: 'hello'),
-                                              ),
-                                            );
-                                            // Get an instance of shared preferences
-                                            SharedPreferences prefs =
-                                                await SharedPreferences
-                                                    .getInstance();
-
-// Store the email in shared preferences
-                                            prefs.setString('userEmail',
-                                                _emailController.text.trim());
-                                          } else {
-                                            // Show an alert dialog for wrong password
-                                            showDialog(
-                                              context: context,
-                                              builder: (BuildContext context) {
-                                                return AlertDialog(
-                                                  title: const Text(
-                                                      'Wrong password'),
-                                                  content: const Text(
-                                                      'Wrong password provided for that user.'),
-                                                  actions: <Widget>[
-                                                    ElevatedButton(
-                                                      onPressed: () {
-                                                        Navigator.of(context)
-                                                            .pop();
-                                                      },
-                                                      child: const Text('OK'),
-                                                    ),
-                                                  ],
-                                                );
-                                              },
-                                            );
-                                          }
-                                        } else {
-                                          // Show an alert dialog for user not found
-                                          showDialog(
-                                            context: context,
-                                            builder: (BuildContext context) {
-                                              return AlertDialog(
-                                                title: const Text(
-                                                    'User not found'),
-                                                content: const Text(
-                                                    'No user found for that email.'),
-                                                actions: <Widget>[
-                                                  ElevatedButton(
-                                                    onPressed: () {
-                                                      Navigator.of(context)
-                                                          .pop();
-                                                    },
-                                                    child: const Text('OK'),
-                                                  ),
-                                                ],
-                                              );
-                                            },
-                                          );
-                                        }
-                                      } catch (e) {
-                                        // Handle any errors that occur during sign in
-                                      }
+                                      loginAsAdmin();
                                     },
                                   ),
                                 ),

@@ -47,7 +47,7 @@ class _HomeUserState extends State<HomeUser> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_add),
-            label: 'Add',
+            label: 'Add Forest',
             backgroundColor: Colors.black,
           ),
           BottomNavigationBarItem(

@@ -1,18 +1,12 @@
-// ignore_for_file: unnecessary_null_comparison
-
 import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:forestapp/common/models/TigerModel.dart';
-import 'package:forestapp/screens/User/homeUser.dart';
+import 'package:forestapp/common/models/ConflictModel.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 import 'package:excel/excel.dart';
-import 'package:file_picker/file_picker.dart';
 
 import 'ForestDetail.dart';
 
@@ -25,122 +19,97 @@ class ForestDataScreen extends StatefulWidget {
 }
 
 class _ForestDataScreenState extends State<ForestDataScreen> {
-  late final WebViewController controller;
-
-  late String _userEmail;
-  late List<TigerModel> _profileDataList = [];
-  late List<TigerModel> _searchResult = [];
-
   final TextEditingController _searchController = TextEditingController();
+
+  late List<ConflictModel> _profileDataList = [];
+  late List<ConflictModel> _searchResult = [];
+  final Map<String, List<DropdownMenuItem<String>>> _dynamicLists = {};
+
+  final List<String> _dateDropdownOptions = [
+    'today',
+    'yesterday',
+    'this Week',
+    'this Month',
+    'this Year',
+    'all',
+  ];
+
+  String _selectedFilter = 'All';
+  String? _selectedRange;
+  String? _selectedConflict;
+  String? _selectedBt;
+  String? _selectedDate;
 
   @override
   void initState() {
     super.initState();
-    fetchUserEmail();
-    controller = WebViewController()
-      ..loadRequest(
-        Uri.parse(
-            'https://www.google.com/maps/search/?api=1&query=45.523064,-122.676483'),
-      )
-      ..setJavaScriptMode(JavaScriptMode.unrestricted);
-  }
-
-  Future<void> fetchUserEmail() async {
-    final prefs = await SharedPreferences.getInstance();
-    final userEmail = prefs.getString('userEmail');
-    setState(() {
-      _userEmail = userEmail ?? '';
-    });
     fetchUserProfileData();
   }
 
+
   Future<void> fetchUserProfileData() async {
-    final userSnapshot = await FirebaseFirestore.instance
-        .collection('forestdata')
-        .where('user_email', isEqualTo: _userEmail)
-        .get();
+    final userSnapshot = await FirebaseFirestore.instance.collection('forestdata').get();
+
     final profileDataList = userSnapshot.docs
         .map(
-          (doc) => TigerModel(
-            id: doc['id'],
-            imageUrl: doc['imageUrl'],
-            title: doc['title'],
-            description: doc['description'],
-            userName: doc['user_name'],
-            userEmail: doc['user_email'],
-            datetime: doc['createdAt'] as Timestamp?,
-            location: doc['location'] as GeoPoint,
-            noOfCubs: doc['number_of_cubs'],
-            noOfTigers: doc['number_of_tiger'],
-            remark: doc['remark'],
-            userContact: doc['user_contact'],
-            userImage: doc['user_imageUrl'],
-          ),
-        )
-        .toList();
+          (doc) => ConflictModel(
+        id: doc['id'],
+        range: doc['range'],
+        round: doc['round'],
+        bt: doc['bt'],
+        cNoName: doc['c_no_name'],
+        conflict: doc['conflict'],
+        notes: doc['notes'],
+        person_age: doc['person_age'],
+        imageUrl: doc['imageUrl'],
+        userName: doc['user_name'],
+        userEmail: doc['user_email'],
+        person_gender: doc['person_gender'],
+        pincodeName: doc['pincode_name'],
+        sp_causing_death: doc['sp_causing_death'],
+        village_name: doc['village_name'],
+        person_name: doc['person_name'],
+        datetime: doc['createdAt'] as Timestamp?,
+        location: doc['location'] as GeoPoint,
+        userContact: doc['user_contact'],
+        userImage: doc['user_imageUrl'],
+      ),
+    ).toList();
+
     setState(() {
       _profileDataList = profileDataList;
       _searchResult = profileDataList;
     });
 
-    int totalCubs = 0;
-    int totalTigers = 0;
+    // getting all possible ranges
+    // fetching the list of attributes from firebase
+    final docSnapshot = await FirebaseFirestore.instance.collection('dynamic_lists').get();
 
-    _profileDataList.forEach((profileData) {
-      totalCubs += profileData.noOfCubs;
-      totalTigers += profileData.noOfTigers;
-    });
+    for( var doc in docSnapshot.docs ) {
+      List<DropdownMenuItem<String>>? tempList = [];
 
-    print('Total Cubs: $totalCubs');
-    print('Total Tigers: $totalTigers');
-  }
-
-  // Function to filter the list based on the selected filter
-  void _applyFilter(String filterType) {
-    DateTime now = DateTime.now();
-    DateTime start;
-    switch (filterType) {
-      case 'Today':
-        start = DateTime(now.year, now.month, now.day);
-        break;
-      case 'Yesterday':
-        start = DateTime(now.year, now.month, now.day - 1);
-        break;
-      case 'This Week':
-        start = DateTime(now.year, now.month, now.day - now.weekday + 1);
-        break;
-      case 'This Month':
-        start = DateTime(now.year, now.month, 1);
-        break;
-      case 'This Year':
-        start = DateTime(now.year, 1, 1);
-        break;
-      case 'All':
-        start = DateTime(now.year, 1, 1);
-        break;
-      default:
-        print('Invalid filter type: $filterType');
-        return;
+      for (var att in doc.get('values')) {
+        tempList.add(
+            DropdownMenuItem<String>(
+              value: att.toString() ,
+              child: Text(att.toString()),
+            )
+        );
+      }
+      _dynamicLists[doc.id] = tempList;
     }
 
-    List<TigerModel> tempList = [];
-    _profileDataList.forEach((profileData) {
-      if (profileData.datetime != null &&
-          profileData.datetime!.toDate().isAfter(start)) {
-        tempList.add(profileData);
-      }
-    });
-
-    setState(() {
-      _searchResult = tempList;
-    });
+    _selectedRange = _dynamicLists['range']?.first.value;
+    _selectedConflict = _dynamicLists['conflict']?.first.value;
+    _selectedBt = _dynamicLists['bt']?.first.value?.toLowerCase();
   }
+
 
 // Function to search the list based on the user input
   void _searchList(String searchQuery) {
-    List<TigerModel> tempList = [];
+    List<ConflictModel> tempList = [];
     _profileDataList.forEach((profileData) {
-      if (profileData.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
+      if (profileData.village_name.toLowerCase().contains(searchQuery.toLowerCase()) ||
           profileData.userName
               .toLowerCase()
               .contains(searchQuery.toLowerCase()) ||
@@ -155,24 +124,89 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
     });
   }
 
-  void filterData(String? selectedTitle, {bool applyFilter = true}) {
-    setState(() {
-      if (applyFilter) {
-        _searchResult = _profileDataList
-            .where((data) => data.title == selectedTitle)
-            .toList();
-      } else {
-        _searchResult = _profileDataList;
+  void filterData(String filterAttribute, String? selectedTitle, {bool applyFilter = true}) {
+    if( filterAttribute == 'range' ) {
+      setState(() {
+        if (applyFilter) {
+          _searchResult = _profileDataList
+              .where((data) => data.range == selectedTitle)
+              .toList();
+        } else {
+          _searchResult = _profileDataList;
+        }
+      });
+    }
+    else if( filterAttribute == 'conflict' ) {
+      setState(() {
+        if (applyFilter) {
+          _searchResult = _profileDataList
+              .where((data) => data.conflict == selectedTitle)
+              .toList();
+        } else {
+          _searchResult = _profileDataList;
+        }
+      });
+    }
+    else if ( filterAttribute == 'bt' ) {
+      setState(() {
+        if (applyFilter) {
+          _searchResult = _profileDataList
+              .where((data) => data.bt == selectedTitle)
+              .toList();
+        } else {
+          _searchResult = _profileDataList;
+        }
+      });
+    }
+    else {
+      DateTime now = DateTime.now();
+      DateTime start;
+
+      switch (selectedTitle?.toLowerCase()) {
+        case 'today':
+          start = DateTime(now.year, now.month, now.day);
+          break;
+        case 'yesterday':
+          start = DateTime(now.year, now.month, now.day - 1);
+          break;
+        case 'this week':
+          start = DateTime(now.year, now.month, now.day - now.weekday + 1);
+          break;
+        case 'this month':
+          start = DateTime(now.year, now.month, 1);
+          break;
+        case 'this year':
+          start = DateTime(now.year, 1, 1);
+          break;
+        case 'all':
+          start = DateTime(now.year, 1, 1);
+          break;
+        default:
+          print('Invalid filter type: $selectedTitle');
+          return;
       }
-    });
+
+      List<ConflictModel> tempList = [];
+      _profileDataList.forEach((profileData) {
+        print( profileData.datetime!.toDate() );
+
+        if (profileData.datetime != null && profileData.datetime!.toDate().isAfter(start)) {
+          tempList.add(profileData);
+        }
+      });
+
+      setState(() {
+        _searchResult = tempList;
+      });
+    }
   }
 
-// Function to handle the search and filter actions
+  // Function to handle the search and filter actions
   void _handleSearchFilter(String searchQuery, String filterType) {
     if (searchQuery.isNotEmpty) {
       _searchList(searchQuery);
     } else if (filterType.isNotEmpty) {
-      _applyFilter(filterType);
+      filterData( 'date' , filterType.toLowerCase());
     } else {
       _searchResult = _profileDataList;
     }
@@ -186,76 +220,65 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
 
       // add header row
       sheet.appendRow([
-        'Title',
-        'Description',
-        'Image URL',
-        'User Name',
-        'User Email',
+        'Range',
+        'Round',
+        'Bits',
+        'village Name'
+            'CNo/S.No Name',
+        'Pincode Name',
+        'conflict',
+        'Name',
+        'Age',
+        'gender',
+        'SP Causing Death',
+        'notes',
+        'Username'
+            'User Email',
+        'User Contact',
+        'location',
         'Created At',
-        'Latitude',
-        'Longitude',
-        'Number Of Cubs',
-        'Number Of Tiger',
-        'Remark',
-        'Contact Number',
-        'User Profile',
       ]);
 
-// calculate total cubs and tigers
-      int totalCubs = 0;
-      int totalTigers = 0;
-      _searchResult.forEach((data) {
-        totalCubs += data.noOfCubs;
-        totalTigers += data.noOfTigers;
-      });
-
-// add data rows
+      // add data rows
       _searchResult.forEach((data) {
         sheet.appendRow([
-          data.title,
-          data.description,
-          data.imageUrl,
+          data.range,
+          data.round,
+          data.bt,
+          data.village_name,
+          data.cNoName,
+          data.pincodeName,
+          data.conflict,
+          data.person_name,
+          data.person_age,
+          data.person_gender,
+          data.sp_causing_death,
+          data.notes,
           data.userName,
           data.userEmail,
-          data.datetime?.toDate().toString(),
-          data.location.latitude,
-          data.location.longitude,
-          data.noOfCubs,
-          data.noOfTigers,
-          data.remark,
           data.userContact,
-          data.userImage,
+          data.location,
+          data.datetime,
         ]);
       });
-
-// add row with total cubs and tigers for all data
-      sheet.appendRow([
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        'Total Cubs: ${totalCubs}',
-        'Total Cubs: ${totalTigers}',
-        '',
-        '',
-        '',
-      ]);
 
       // save the Excel file
       final fileBytes = excel.encode();
       int fileCount = 0;
+
       String fileName = 'forest_data.xlsx';
-      final storagePermission = await Permission.storage.request();
+
+      final storagePermission = await Permission.manageExternalStorage.request();
+      if( storagePermission.isDenied || storagePermission.isRestricted ) {
+        openAppSettings();
+      }
+
       if (storagePermission != PermissionStatus.granted) {
         throw Exception('Storage permission not granted');
       }
       directory = await getExternalStorageDirectory();
+
       String newPath = "";
-      print(directory);
 
       List<String> paths = directory!.path.split("/");
       for (int x = 1; x < paths.length; x++) {
@@ -266,7 +289,7 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
           break;
         }
       }
-      newPath = newPath + "/ForestApp";
+      newPath = newPath + "/ConflictApp/data";
       directory = Directory(newPath);
 
       if (!await directory.exists()) {
@@ -287,7 +310,7 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Excel file saved to folder ForestApp',
+            'Excel file saved to folder conflictApp/data',
             style: TextStyle(
               color: Colors.white,
               fontSize: 16,
@@ -298,6 +321,14 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
+          ),
+          action: SnackBarAction(
+            onPressed: () async {
+              //Use the path to launch the directory with the native file explorer
+              await OpenFilex.open('${directory?.path}/$fileName');
+            },
+            label: "Open",
+            textColor: Colors.black,
           ),
         ),
       );
@@ -312,229 +343,220 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
     }
   }
 
-  String _selectedFilter = 'All';
-  DateTime _fromDate = DateTime.now();
-  DateTime _toDate = DateTime.now();
-
-  final List<String> _filterOptions = [
-    'Today',
-    'Yesterday',
-    'This Week',
-    'This Month',
-    'This Year',
-    'All',
-  ];
-
-  void clearDropdown() {
-    setState(() {
-      _selectedTitle = null; // or ""
-    });
-    filterData(null,
-        applyFilter:
-            false); // call filterData with null or "" and applyFilter set to false
+  void clearDropdown( String filterAttribute ) {
+    if( filterAttribute == 'range' ) {
+      setState(() {
+        _selectedRange = null; // or ""
+      });
+      filterData('range', null, applyFilter: false); // call filterData with null or "" and applyFilter set to false
+    }
+    else if( filterAttribute == 'conflict' ) {
+      setState(() {
+        _selectedConflict = null; // or ""
+      });
+      filterData('conflict', null, applyFilter: false); // call filterData with null or "" and applyFilter set to false
+    }
+    else if( filterAttribute == 'bt' ) {
+      setState(() {
+        _selectedBt = null; // or ""
+      });
+      filterData('bt', null, applyFilter: false); // call filterData with null or "" and applyFilter set to false
+    }
+    else {
+      setState(() {
+        _selectedDate = null; // or ""
+      });
+      filterData('date', null, applyFilter: false); // call filterData with null or "" and applyFilter set to false
+    }
   }
 
-  // New functions for filtering by number of tigers and cubs:
-  void filterByTigers(int? numberOfTigers) {
-    setState(() {
-      if (numberOfTigers != null) {
-        _searchResult = _profileDataList
-            .where((profileData) => profileData.noOfTigers == numberOfTigers)
-            .toList();
-      } else {
-        _searchResult = _profileDataList;
-      }
-    });
-  }
-
-  void filterByCubs(int? numberOfCubs) {
-    setState(() {
-      if (numberOfCubs != null) {
-        _searchResult = _profileDataList
-            .where((profileData) => profileData.noOfCubs == numberOfCubs)
-            .toList();
-      } else {
-        _searchResult = _profileDataList;
-      }
-    });
-  }
-
-  int? _selectedTigers;
-  int? _selectedCubs;
-
-  final TextEditingController tigersController = TextEditingController();
-  final TextEditingController cubsController = TextEditingController();
-
-  final List<String> _selectedOptions = [];
-  String? _selectedTitle;
   void _showFilterDialog() {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10.0),
-          ),
-          title: Text('Filter'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Filter options:'),
-                const SizedBox(height: 8.0),
-                Wrap(
-                  spacing: 8.0,
-                  runSpacing: 8.0,
+        return StatefulBuilder(
+          builder: (context,setState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.0),
+              ),
+              title: Text('Filter'),
+              content: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    for (final option in _filterOptions)
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _selectedOptions.contains(option)
-                              ? Colors.green
-                              : Colors.lightGreen.shade600,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            if (_selectedOptions.contains(option)) {
-                              _selectedOptions.remove(option);
-                            } else {
-                              _selectedOptions.add(option);
-                            }
-                            _selectedFilter = _selectedOptions.join(',');
-                          });
-                          _handleSearchFilter(_searchController.text,
-                              _selectedFilter.simplifyText());
-                          // Navigator.pop(context);
-                        },
-                        child: Text(option),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 8.0),
-                Text("Filter by Tiger name"),
-                Row(
-                  children: [
-                    DropdownButton<String>(
-                      value: _selectedTitle, // the currently selected title
-                      items: _profileDataList.map((profileData) {
-                        return DropdownMenuItem<String>(
-                          value: profileData.title,
-                          child: Text(profileData.title),
-                        );
-                      }).toList(),
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          _selectedTitle = newValue!;
-                        });
-                        filterData(newValue!, applyFilter: true);
-                      },
-                    ),
+                    const SizedBox(height: 8.0),
+                    Text("Filter by Range"),
                     SizedBox(
-                      width: 10,
-                    ),
-                    IconButton(
-                      icon: Icon(Icons.clear),
-                      onPressed: () {
-                        clearDropdown();
-                      },
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8.0),
-                Column(
-                  children: [
-                    TextField(
-                      decoration: InputDecoration(
-                        labelText: 'Number of tigers',
+                      width: MediaQuery.of(context).size.width,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                alignment: Alignment.centerRight,
+                                value: _selectedRange, // the currently selected title
+                                items:  _dynamicLists['range'],
+                                onChanged: (String? newValue) {
+                                  setState(() {
+                                    _selectedRange = newValue!;
+                                  });
+                                  filterData('range', newValue!, applyFilter: true);
+                                },
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 10,
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.clear),
+                            onPressed: () {
+                              clearDropdown('range');
+                            },
+                          ),
+                        ],
                       ),
-                      keyboardType: TextInputType.number,
-                      controller: tigersController,
-                      onChanged: (String newValue) {
-                        setState(() {
-                          _selectedTigers = int.tryParse(newValue);
-                        });
-                        filterByTigers(_selectedTigers);
-                      },
                     ),
-                    TextField(
-                      decoration: InputDecoration(
-                        labelText: 'Number of cubs',
-                      ),
-                      keyboardType: TextInputType.number,
-                      controller: cubsController,
-                      onChanged: (String newValue) {
-                        setState(() {
-                          _selectedCubs = int.tryParse(newValue);
-                        });
-                        filterByCubs(_selectedCubs);
-                      },
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16.0),
-                Text('Selected options:'),
-                const SizedBox(height: 8.0),
-                Wrap(
-                  spacing: 8.0,
-                  runSpacing: 8.0,
-                  children: [
-                    for (final option in _selectedOptions)
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            if (_selectedOptions.contains(option)) {
-                              _selectedOptions.remove(option);
-                            } else {
-                              _selectedOptions.add(option);
-                            }
-                            _selectedFilter = _selectedOptions.join(',');
-                          });
-                          _handleSearchFilter(_searchController.text,
-                              _selectedFilter.simplifyText());
-                          // Navigator.pop(context);
-                        },
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(option),
-                            const SizedBox(width: 4.0),
-                            Icon(Icons.clear, size: 16.0),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('Close'),
-            ),
-            // ElevatedButton(
-            //   style: ElevatedButton.styleFrom(
-            //     backgroundColor:
-            //         Colors.greenAccent.shade400, // Background color
-            //     // Text Color (Foreground color)
-            //   ),
-            //   onPressed: () {
-            //     setState(() {
-            //       _selectedFilter = _selectedOptions.join(',');
-            //     });
-            //     _handleSearchFilter(
-            //         _searchController.text, _selectedFilter.simplifyText());
-            //     Navigator.pop(context);
 
-            //     print(_selectedFilter.simplifyText());
-            //   },
-            //   child: Text('Apply'),
-            // ),
-          ],
+                    const SizedBox(height: 8.0),
+                    Text("Filter by Conflict Name"),
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                alignment: Alignment.centerRight,
+                                value: _selectedConflict, // the currently selected title
+                                items:  _dynamicLists['conflict'],
+                                onChanged: (String? newValue) {
+                                  setState(() {
+                                    _selectedConflict = newValue!;
+                                  });
+                                  filterData('conflict', newValue!, applyFilter: true);
+                                },
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 10,
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.clear),
+                            onPressed: () {
+                              clearDropdown('conflict');
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 8.0),
+                    Text("Filter by Bits"),
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                alignment: Alignment.centerRight,
+                                value: _selectedBt, // the currently selected title
+                                items:  _dynamicLists['bt'],
+                                onChanged: (String? newValue) {
+                                  setState(() {
+                                    _selectedBt = newValue!;
+                                  });
+                                  filterData('bt', newValue!, applyFilter: true);
+                                },
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 10,
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.clear),
+                            onPressed: () {
+                              clearDropdown('bt');
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 8.0),
+                    Text("Filter by Date"),
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                alignment: Alignment.centerRight,
+                                value: _selectedDate, // the currently selected title
+                                items:  _dateDropdownOptions.map( (item) {
+                                  return DropdownMenuItem<String>(
+                                    child: Text(item.toLowerCase()),
+                                    value: item.toLowerCase(),
+                                  );
+                                }
+                                ).toList(),
+                                onChanged: (String? newValue) {
+                                  setState(() {
+                                    _selectedDate = newValue!;
+                                  });
+                                  filterData('date', newValue!.toLowerCase(), applyFilter: true);
+                                },
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 10,
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.clear),
+                            onPressed: () {
+                              clearDropdown('date');
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('Close'),
+                ),
+                // ElevatedButton(
+                //   style: ElevatedButton.styleFrom(
+                //     backgroundColor:
+                //         Colors.greenAccent.shade400, // Background color
+                //     // Text Color (Foreground color)
+                //   ),
+                //   onPressed: () {
+                //     setState(() {
+                //       _selectedFilter = _selectedOptions.join(',');
+                //     });
+                //     _handleSearchFilter(
+                //         _searchController.text, _selectedFilter.simplifyText());
+                //     Navigator.pop(context);
+
+                //     print(_selectedFilter.simplifyText());
+                //   },
+                //   child: Text('Apply'),
+                // ),
+              ],
+            );
+          },
         );
       },
     );
@@ -542,38 +564,39 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // if (_searchResult.isEmpty) {
-    //   return const Center(child: CircularProgressIndicator());
-    // }
     return MaterialApp(
         debugShowCheckedModeBanner: false,
         home: Scaffold(
           resizeToAvoidBottomInset: false,
-          appBar: PreferredSize(
-            preferredSize: const Size.fromHeight(0.0), // hide the app bar
-            child: AppBar(
-              backgroundColor: Colors.transparent,
-              elevation: 0.0,
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            flexibleSpace: Container(
+              height: 120,
+              decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.green, Colors.greenAccent],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(10),
+                    bottomRight: Radius.circular(10),
+                  )
+              ),
+            ),
+            title: const Text(
+              'Pench MH',
+              style: TextStyle(
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           body: Column(
             children: [
               Row(
                 children: [
-                  IconButton(
-                    icon: Icon(
-                      Icons.arrow_back,
-                      color: Colors.black,
-                    ),
-                    onPressed: () {
-                      Navigator.of(context).pushAndRemoveUntil(
-                          MaterialPageRoute(
-                              builder: (context) => const HomeUser(
-                                    title: '',
-                                  )),
-                          (route) => false);
-                    },
-                  ),
                   Padding(
                     padding: EdgeInsets.all(16.0),
                     child: Row(
@@ -627,95 +650,99 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
               ),
               _searchResult.isEmpty
                   ? Text(
-                      "No result found....",
-                      style:
-                          TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
-                    )
+                "No result found....",
+                style:
+                TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+              )
                   : Expanded(
-                      child: ListView.builder(
-                        itemCount: _searchResult.length,
-                        itemBuilder: (context, index) {
-                          final profileData = _searchResult[index];
-                          return Card(
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                SizedBox(
-                                  width: 120.0,
-                                  height: 120.0,
-                                  child: Image.network(
-                                    profileData.imageUrl,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                                const SizedBox(
-                                  width: 20,
-                                ),
-                                Expanded(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: <Widget>[
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text(
-                                              profileData.title,
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                            
-                                            
-                                          ],
-                                        ),
-                                        const SizedBox(height: 8.0),
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 8.0, ),
+                  child: ListView.builder(
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: _searchResult.length,
+                    itemBuilder: (context, index) {
+                      final profileData = _searchResult[index];
+                      return Card(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(
+                              width: 120.0,
+                              height: 120.0,
+                              child: Image.network(
+                                profileData.imageUrl,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            const SizedBox(
+                              width: 20,
+                            ),
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Column(
+                                  crossAxisAlignment:
+                                  CrossAxisAlignment.start,
+                                  children: <Widget>[
+                                    Row(
+                                      mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                      children: [
                                         Text(
-                                              DateFormat('MMM d, yyyy h:mm a')
-                                                  .format(profileData.datetime!
-                                                      .toDate()),
-                                            ),
-                                        const SizedBox(height: 8.0),
-                                        Text(
-                                          profileData.userName,
-                                        ),
-                                        const SizedBox(height: 8.0),
-                                        Text(
-                                          profileData.userEmail,
-                                        ),
-                                        const SizedBox(height: 8.0),
-                                        ElevatedButton.icon(
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Color.fromARGB(255,
-                                                3, 8, 35), // Background color
-                                            // Text Color (Foreground color)
+                                          profileData.village_name,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
                                           ),
-                                          onPressed: () {
-                                            Navigator.of(context)
-                                                .push(
-                                                    MaterialPageRoute(
-                                                        builder: (context) =>
-                                                            ForestDetail(
-                                                                forestData:
-                                                                    profileData)));
-                                          },
-                                          label: const Text("View"),
-                                          icon: const Icon(
-                                              Icons.arrow_right_alt_outlined),
                                         ),
+
+
                                       ],
                                     ),
-                                  ),
+                                    const SizedBox(height: 8.0),
+                                    Text(
+                                      DateFormat('MMM d, yyyy h:mm a')
+                                          .format(profileData.datetime!
+                                          .toDate()),
+                                    ),
+                                    const SizedBox(height: 8.0),
+                                    Text(
+                                      profileData.userName,
+                                    ),
+                                    const SizedBox(height: 8.0),
+                                    Text(
+                                      profileData.userEmail,
+                                    ),
+                                    const SizedBox(height: 8.0),
+                                    ElevatedButton.icon(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Color.fromARGB(255,
+                                            3, 8, 35), // Background color
+                                        // Text Color (Foreground color)
+                                      ),
+                                      onPressed: () {
+                                        Navigator.of(context)
+                                            .push(
+                                            MaterialPageRoute(
+                                                builder: (context) =>
+                                                    ForestDetail(
+                                                        forestData:
+                                                        profileData)));
+                                      },
+                                      label: const Text("View"),
+                                      icon: const Icon(
+                                          Icons.arrow_right_alt_outlined),
+                                    ),
+                                  ],
                                 ),
-                              ],
+                              ),
                             ),
-                          );
-                        },
-                      ),
-                    ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
             ],
           ),
         ));

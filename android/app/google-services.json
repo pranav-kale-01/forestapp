@@ -1,36 +1,26 @@
 {
   "project_info": {
-    "project_number": "716226720902",
-    "project_id": "pench-app",
-    "storage_bucket": "pench-app.appspot.com"
+    "project_number": "464886748295",
+    "project_id": "conflict-pench-firebase",
+    "storage_bucket": "conflict-pench-firebase.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:716226720902:android:94710978d6024539ab0d07",
+        "mobilesdk_app_id": "1:464886748295:android:7c885928f097ece0d9d422",
         "android_client_info": {
-          "package_name": "com.example.forestapp"
+          "package_name": "com.example.forestapp1"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "716226720902-l2rg2remla97qtstc40op82ulic9a7lh.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDmAcGCWIfT0j1NCCgjeD6yt-mwbthB1KY"
+          "current_key": "AIzaSyBH6o_0Iw1JfXRa609AxOihNJonlMg_LyA"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "716226720902-l2rg2remla97qtstc40op82ulic9a7lh.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }

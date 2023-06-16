@@ -3,25 +3,29 @@ import 'package:hexcolor/hexcolor.dart';
 
 class ThemeHelper {
   InputDecoration textInputDecoration(
-      [String lableText = "", String hintText = ""]) {
+      [String labelText = "", String hintText = ""]) {
     return InputDecoration(
-      labelText: lableText,
-      hintText: hintText,
-      fillColor: Colors.white,
-      filled: true,
-      contentPadding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
-      focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(100.0),
-          borderSide: const BorderSide(color: Colors.grey)),
-      enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(100.0),
-          borderSide: BorderSide(color: Colors.grey.shade400)),
-      errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(100.0),
-          borderSide: const BorderSide(color: Colors.red, width: 2.0)),
-      focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(100.0),
-          borderSide: const BorderSide(color: Colors.red, width: 2.0)),
+        fillColor: Colors.white,
+        filled: true,
+        enabledBorder: OutlineInputBorder(
+            borderSide: const BorderSide(
+                color: Color(0xFFC9C9C9),
+                width: 1.0
+            ),
+            borderRadius: BorderRadius.circular(20.0)
+        ),
+        focusedBorder: OutlineInputBorder(
+            borderSide: const BorderSide(
+                color: Color(0xFF959595),
+                width: 2.0
+            ),
+            borderRadius: BorderRadius.circular(20.0)
+        ),
+        hintText: hintText,
+        hintStyle: TextStyle(
+          fontSize: 14.0,
+          color: Colors.grey,
+        )
     );
   }
 
@@ -35,29 +39,32 @@ class ThemeHelper {
     ]);
   }
 
-  BoxDecoration buttonBoxDecoration(BuildContext context,
-      [String color1 = "", String color2 = ""]) {
-    Color c1 = Theme.of(context).primaryColor;
-    Color c2 = Theme.of(context).colorScheme.secondary;
-    if (color1.isEmpty == false) {
-      c1 = HexColor(color1);
-    }
-    if (color2.isEmpty == false) {
-      c2 = HexColor(color2);
-    }
+  BoxDecoration buttonBoxDecoration(
+    BuildContext context, [String color1 = "", String color2 = ""]) {
+
+      Color c1 = Theme.of(context).primaryColor;
+      Color c2 = Theme.of(context).colorScheme.secondary;
+
+      if (color1.isEmpty == false) {
+        c1 = HexColor(color1);
+      }
+      if (color2.isEmpty == false) {
+        c2 = HexColor(color2);
+      }
 
     return BoxDecoration(
-      boxShadow: const [
-        BoxShadow(color: Colors.black26, offset: Offset(0, 4), blurRadius: 5.0)
+      boxShadow: [
+        BoxShadow(
+          color: Colors.grey.shade500,
+          blurRadius: 10,
+          offset: const Offset(2, 2),
+        )
       ],
       gradient: LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         stops: const [0.0, 1.0],
-        colors: [
-          c1,
-          c2,
-        ],
+        colors: [ c1, c2, ],
       ),
       color: Colors.lightGreen.shade300,
       borderRadius: BorderRadius.circular(30),

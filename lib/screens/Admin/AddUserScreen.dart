@@ -6,6 +6,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
+import '../../common/themeHelper.dart';
+
 class AddUserScreen extends StatefulWidget {
   const AddUserScreen({super.key});
 
@@ -22,47 +24,62 @@ class _AddUserScreenState extends State<AddUserScreen> {
   String _aadharNumber = '';
   String _forestId = '';
   File? _imageFile;
-  final CollectionReference _userRef =
-      FirebaseFirestore.instance.collection('users');
+  final CollectionReference _userRef = FirebaseFirestore.instance.collection('users');
 
   FirebaseFirestore firestore = FirebaseFirestore.instance;
 
-  void _getImage() async {
-    final pickedFile =
-        await ImagePicker().pickImage(source: ImageSource.gallery);
+  File? _image;
+  File? _aadharImage;
+  File? _forestIDImage;
+  String? _currentLocation;
+  bool _isProcessing = false;
+
+  Future<void> _pickImage(ImageSource source) async {
+    final pickedFile = await ImagePicker().pickImage(source: source);
     setState(() {
-      _imageFile = pickedFile != null ? File(pickedFile.path) : null;
+      _image = File(pickedFile!.path);
     });
   }
 
-  bool _isProcessing = false;
+  Future<void> _pickAadharImage(ImageSource source) async {
+    final pickedFile = await ImagePicker().pickImage(source: source);
+    setState(() {
+      _aadharImage = File(pickedFile!.path);
+    });
+  }
+
+  Future<void> _pickForestIDImage(ImageSource source) async {
+    final pickedFile = await ImagePicker().pickImage(source: source);
+    setState(() {
+      _forestIDImage = File(pickedFile!.path);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        elevation: 0.0,
+        elevation: 0,
         flexibleSpace: Container(
-            height: 90,
-            decoration: BoxDecoration(
+          height: 120,
+          decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [Colors.green, Colors.greenAccent],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-            )),
-        // title: const Text('Pench MH'),
-        title: const Center(
-          child: Text(
-            'Add Guard',
-            style: TextStyle(
-              fontSize: 24.0,
-              fontWeight: FontWeight.bold,
-            ),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(15),
+                bottomRight: Radius.circular(15),
+              )
           ),
         ),
-        backgroundColor: Colors.transparent,
-        // elevation: 0.0,
+        title: const Text(
+          'Add Guard',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
       body: SafeArea(
         child: Padding(
@@ -70,48 +87,24 @@ class _AddUserScreenState extends State<AddUserScreen> {
           child: Form(
             key: _formKey,
             child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  GestureDetector(
-                    onTap: _getImage,
-                    child: Container(
-                      height: 150.0,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                      child: _imageFile == null
-                          ? Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: const [
-                                Icon(
-                                  Icons.add_a_photo,
-                                  size: 50.0,
-                                ),
-                                Text(
-                                  'Add Photo',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            )
-                          : ClipRRect(
-                              borderRadius: BorderRadius.circular(8.0),
-                              child: Image.file(
-                                _imageFile!,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
+                  const SizedBox(height: 16.0),
+                  Text(
+                    "Name",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 16.0),
+                  const SizedBox(
+                    height: 10,
+                  ),
                   TextFormField(
-                    decoration: const InputDecoration(
-                      labelText: 'Name',
-                      border: OutlineInputBorder(),
-                    ),
+                    decoration: ThemeHelper().textInputDecoration(
+                        'Name', 'Enter Name'),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter a name';
@@ -123,10 +116,17 @@ class _AddUserScreenState extends State<AddUserScreen> {
                     },
                   ),
                   const SizedBox(height: 16.0),
+                  Text(
+                    "Email",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 10.0),
                   TextFormField(
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      border: OutlineInputBorder(),
+                    decoration: ThemeHelper().textInputDecoration(
+                      'Email', 'Enter Email'
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -140,12 +140,22 @@ class _AddUserScreenState extends State<AddUserScreen> {
                       _email = value;
                     },
                   ),
+
                   const SizedBox(height: 16.0),
+                  Text(
+                    "Password",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 10,
+                  ),
                   TextFormField(
                     obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Password',
-                      border: OutlineInputBorder(),
+                    decoration: ThemeHelper().textInputDecoration(
+                      'Password', 'Enter Password'
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -158,10 +168,19 @@ class _AddUserScreenState extends State<AddUserScreen> {
                     },
                   ),
                   const SizedBox(height: 16.0),
+                  Text(
+                    "Contact Number",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 10,
+                  ),
                   TextFormField(
-                    decoration: const InputDecoration(
-                      labelText: 'Contact Number',
-                      border: OutlineInputBorder(),
+                    decoration: ThemeHelper().textInputDecoration(
+                      'Contact Number', 'Enter Contact Number'
                     ),
                     keyboardType: TextInputType.phone,
                     validator: (value) {
@@ -175,10 +194,19 @@ class _AddUserScreenState extends State<AddUserScreen> {
                     },
                   ),
                   const SizedBox(height: 16.0),
+                  Text(
+                    "Aadhar Number",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 10,
+                  ),
                   TextFormField(
-                    decoration: const InputDecoration(
-                      labelText: 'Aadhar Number',
-                      border: OutlineInputBorder(),
+                    decoration: ThemeHelper().textInputDecoration(
+                      'Aadhar Number', 'Enter Aadhar Number'
                     ),
                     keyboardType: TextInputType.phone,
                     validator: (value) {
@@ -192,10 +220,19 @@ class _AddUserScreenState extends State<AddUserScreen> {
                     },
                   ),
                   const SizedBox(height: 16.0),
+                  Text(
+                    "Forest ID",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 10,
+                  ),
                   TextFormField(
-                    decoration: const InputDecoration(
-                      labelText: 'Forest ID',
-                      border: OutlineInputBorder(),
+                    decoration: ThemeHelper().textInputDecoration(
+                        'ForestID', 'Enter ForestID'
                     ),
                     keyboardType: TextInputType.phone,
                     validator: (value) {
@@ -208,11 +245,190 @@ class _AddUserScreenState extends State<AddUserScreen> {
                       _forestId = value;
                     },
                   ),
+
+                  const SizedBox(height: 16.0),
+                  if (_image != null)
+                    Container(
+                      height: 200,
+                      margin: const EdgeInsets.only(bottom: 20),
+                      decoration: BoxDecoration(
+                        image: DecorationImage(
+                          image: FileImage(_image!),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+
+                  ElevatedButton(
+                    style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.all<Color>(Colors.green.shade400),
+                        shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                            RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(25.0),
+                            )
+                        )
+                    ),
+                    onPressed: () {
+                      showModalBottomSheet(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return SafeArea(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                ListTile(
+                                  leading: const Icon(Icons.camera_alt),
+                                  title: const Text('Take a photo'),
+                                  onTap: () {
+                                    _pickImage(ImageSource.camera);
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                                ListTile(
+                                  leading: const Icon(Icons.photo_library),
+                                  title: const Text('Choose from gallery'),
+                                  onTap: () {
+                                    _pickImage(ImageSource.gallery);
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    },
+                    child: Padding(
+                        padding: const EdgeInsets.symmetric( vertical: 20.0, ),
+                        child: Text(_image == null ? 'Add Photo' : 'Change Photo')
+                    ),
+                  ),
+
+                  const SizedBox(height: 16.0),
+                  if (_aadharImage != null)
+                    Container(
+                      height: 200,
+                      margin: const EdgeInsets.only(bottom: 20),
+                      decoration: BoxDecoration(
+                        image: DecorationImage(
+                          image: FileImage(_aadharImage!),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+
+                  ElevatedButton(
+                    style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.all<Color>(Colors.green.shade400),
+                        shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                            RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(25.0),
+                            )
+                        )
+                    ),
+                    onPressed: () {
+                      showModalBottomSheet(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return SafeArea(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                ListTile(
+                                  leading: const Icon(Icons.camera_alt),
+                                  title: const Text('Take a photo'),
+                                  onTap: () {
+                                    _pickAadharImage(ImageSource.camera);
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                                ListTile(
+                                  leading: const Icon(Icons.photo_library),
+                                  title: const Text('Choose from gallery'),
+                                  onTap: () {
+                                    _pickAadharImage(ImageSource.gallery);
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    },
+                    child: Padding(
+                        padding: const EdgeInsets.symmetric( vertical: 20.0, ),
+                        child: Text( _aadharImage == null ? 'Add Aadhar Photo' : 'Change Aadhar Photo')
+                    ),
+                  ),
+
+                  const SizedBox(height: 16.0),
+                  if (_forestIDImage != null)
+                    Container(
+                      height: 200,
+                      margin: const EdgeInsets.only(bottom: 20),
+                      decoration: BoxDecoration(
+                        image: DecorationImage(
+                          image: FileImage(_forestIDImage!),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+
+                  ElevatedButton(
+                    style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.all<Color>(Colors.green.shade400),
+                        shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                            RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(25.0),
+                            )
+                        )
+                    ),
+                    onPressed: () {
+                      showModalBottomSheet(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return SafeArea(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                ListTile(
+                                  leading: const Icon(Icons.camera_alt),
+                                  title: const Text('Take a photo'),
+                                  onTap: () {
+                                    _pickForestIDImage(ImageSource.camera);
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                                ListTile(
+                                  leading: const Icon(Icons.photo_library),
+                                  title: const Text('Choose from gallery'),
+                                  onTap: () {
+                                    _pickForestIDImage(ImageSource.gallery);
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    },
+                    child: Padding(
+                        padding: const EdgeInsets.symmetric( vertical: 20.0, ),
+                        child: Text( _forestIDImage == null ? 'Add ForestID Photo' : 'Change ForestID Photo')
+                    ),
+                  ),
+
                   const SizedBox(height: 16.0),
                   ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color.fromARGB(255, 3, 8, 35),
-                      foregroundColor: Colors.white,
+                    style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.all<Color>(Colors.green.shade400),
+                        shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                            RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(25.0),
+                            )
+                        )
                     ),
                     onPressed: _isProcessing
                         ? null
@@ -223,12 +439,9 @@ class _AddUserScreenState extends State<AddUserScreen> {
                               });
 
                               // Check if email already exists in database
-                              final CollectionReference usersRef =
-                                  FirebaseFirestore.instance
-                                      .collection('users');
-                              final QuerySnapshot emailSnapshot = await usersRef
-                                  .where('email', isEqualTo: _email)
-                                  .get();
+                              final CollectionReference usersRef = FirebaseFirestore.instance .collection('users');
+                              final QuerySnapshot emailSnapshot = await usersRef.where('email', isEqualTo: _email).get();
+
                               if (emailSnapshot.docs.isNotEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
@@ -245,17 +458,33 @@ class _AddUserScreenState extends State<AddUserScreen> {
                               }
 
                               // Upload the image to Firebase Storage and get the URL
-                              final Reference storageRef = FirebaseStorage
-                                  .instance
+                              Reference storageRef = FirebaseStorage.instance
                                   .ref()
                                   .child('user-images')
-                                  .child(_imageFile!.path);
-                              final UploadTask uploadTask =
-                                  storageRef.putFile(_imageFile!);
-                              final TaskSnapshot downloadUrl =
-                                  await uploadTask.whenComplete(() => null);
-                              final String imageUrl =
-                                  await downloadUrl.ref.getDownloadURL();
+                                  .child("$_forestId/$_forestId.jpg");
+
+                              UploadTask uploadTask = storageRef.putFile(_image!);
+                              TaskSnapshot downloadUrl = await uploadTask.whenComplete(() => null);
+                              final String imageUrl = await downloadUrl.ref.getDownloadURL();
+
+                              // Upload the aadhar image to Firebase Storage and get the URL
+                              storageRef = FirebaseStorage.instance
+                                  .ref()
+                                  .child('user-images')
+                                  .child("$_forestId/${_forestId}_aadhar.jpg");
+                              uploadTask = storageRef.putFile(_aadharImage!);
+                              downloadUrl = await uploadTask.whenComplete(() => null);
+                              final String aadharImageUrl = await downloadUrl.ref.getDownloadURL();
+
+                              // Upload the forestId image to Firebase Storage and get the URL
+                              storageRef = FirebaseStorage.instance
+                                  .ref()
+                                  .child('user-images')
+                                  .child("$_forestId/${_forestId}_forestID.jpg");
+
+                              uploadTask = storageRef.putFile(_forestIDImage!);
+                              downloadUrl = await uploadTask.whenComplete(() => null);
+                              final String forestIdImageUrl = await downloadUrl.ref.getDownloadURL();
 
                               // Add the user data to the Firebase Firestore
                               final Map<String, dynamic> userData = {
@@ -263,10 +492,14 @@ class _AddUserScreenState extends State<AddUserScreen> {
                                 'email': _email,
                                 'password': _password,
                                 'contactNumber': _contactNumber,
-                                'imageUrl': imageUrl,
                                 'aadharNumber': _aadharNumber,
                                 'forestID': _forestId,
+                                'imageUrl': imageUrl,
+                                'aadharImageUrl' : aadharImageUrl,
+                                'forestIDImageUrl' : forestIdImageUrl,
+                                'privileged_user' : false,
                               };
+
                               try {
                                 await usersRef.add(userData);
                                 ScaffoldMessenger.of(context).showSnackBar(
@@ -274,10 +507,14 @@ class _AddUserScreenState extends State<AddUserScreen> {
                                     content: Text('User added successfully'),
                                   ),
                                 );
+
                                 _formKey.currentState!.reset();
                                 setState(() {
                                   _imageFile = null;
                                 });
+
+                                Navigator.of(context).pop();
+
                               } catch (error) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
@@ -292,8 +529,13 @@ class _AddUserScreenState extends State<AddUserScreen> {
                             }
                           },
                     child: _isProcessing
-                        ? CircularProgressIndicator()
-                        : const Text('Save'),
+                        ? const Padding(
+                          padding: const EdgeInsets.symmetric( vertical: 20.0, ),
+                          child: CircularProgressIndicator(),
+                        ) : const Padding(
+                            padding: const EdgeInsets.symmetric( vertical: 20.0, ),
+                            child: Text('Save'),
+                        ),
                   )
                 ],
               ),

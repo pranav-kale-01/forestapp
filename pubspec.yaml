@@ -63,6 +63,7 @@ dependencies:
   path_provider: ^2.0.14
   google_fonts: ^4.0.4
   android_intent_plus: ^4.0.0
+  open_filex: ^4.3.2
 
 dev_dependencies:
   flutter_test:
@@ -83,7 +84,7 @@ flutter_icons:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^2.0.0
+  flutter_lints: ^2.0.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

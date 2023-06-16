@@ -1,7 +1,6 @@
 // ignore_for_file: library_private_types_in_public_api, unnecessary_null_comparison
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -67,7 +66,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         imageUrl: userData['imageUrl'],
         aadharNumber: userData['aadharNumber'],
         forestId: userData['forestID'],
-        // numberOfForestsAdded: userData['numberOfForestsAdded']
       );
     });
   }
@@ -80,50 +78,67 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        elevation: 0.0,
-        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: Container(
+          height: 120,
+          decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.green, Colors.greenAccent],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(15),
+                bottomRight: Radius.circular(15),
+              )
+          ),
+        ),
         title: const Text(
-          'Profile',
+          'Pench MH',
           style: TextStyle(
-            fontSize: 24.0,
             fontWeight: FontWeight.bold,
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              final confirm = await showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('Confirm Logout'),
-                  content: const Text('Are you sure you want to log out?'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: const Text('Cancel'),
-                    ),
-                    TextButton(
-                      onPressed: () async {
-                        SharedPreferences prefs =
+          Column(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.logout),
+                onPressed: () async {
+                  final confirm = await showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Confirm Logout'),
+                      content: const Text('Are you sure you want to log out?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () async {
+                            SharedPreferences prefs =
                             await SharedPreferences.getInstance();
-                        prefs.remove('userEmail');
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const LoginScreen()),
-                          (route) => false,
-                        );
-                      },
-                      child: const Text('Logout'),
+                            prefs.remove('userEmail');
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const LoginScreen()),
+                                  (route) => false,
+                            );
+                          },
+                          child: const Text('Logout'),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              );
-              if (confirm == true) {
-                // perform logout
-              }
-            },
+                  );
+                  if (confirm == true) {
+                    // perform logout
+                  }
+                },
+              ),
+              // const Text("Logout"),
+            ],
           ),
         ],
       ),

@@ -4,7 +4,7 @@
 
 TigerTracker is a Flutter application designed for tracking tigers in the forest. It provides a comprehensive solution with separate admin and user interfaces, backed by Firebase for seamless real-time data management. 🌳
 
-![TigerTracker](screenshot.png)
+![TigerTracker](screenshot.jpg)
 
 ## 📚 Introduction
 

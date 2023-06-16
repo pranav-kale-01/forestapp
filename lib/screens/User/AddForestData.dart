@@ -1,5 +1,4 @@
 // ignore_for_file: library_private_types_in_public_api, use_build_context_synchronously
-
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -9,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../common/themeHelper.dart';
 import 'homeUser.dart';
 
 class ProfileData {
@@ -16,7 +16,6 @@ class ProfileData {
   final String email;
   final String contactNumber;
   final String imageUrl;
-  // final int numberOfForestsAdded;
 
   ProfileData({
     required this.name,
@@ -36,21 +35,46 @@ class AddForestData extends StatefulWidget {
 }
 
 class _AddForestDataState extends State<AddForestData> {
+  final _formKey = GlobalKey<FormState>();
+
+  final _villageNameController = TextEditingController();
+  final _cNoController = TextEditingController();
+  final _pincodeNameController = TextEditingController();
+  final _personNameController = TextEditingController();
+  final _personAgeController = TextEditingController();
+  final _personGenderController = TextEditingController();
+  final _spCausingDeathController = TextEditingController();
+  final _notesController = TextEditingController();
+
+  String? selectedRange;
+  String? selectedRound;
+  String? selectedBt;
+  String? selectedConflict;
+
+  // list of errors for validation
+  bool conflictError = false;
+  bool villageNameError = false;
+  bool cnoError = false;
+  bool pincodeError = false;
+  bool nameError = false;
+  bool ageError = false;
+  bool genderError = false;
+  bool spError = false;
+  bool notesError = false;
+
+  Color conflictFieldColor = Colors.black.withOpacity(0.1);
+
+  File? _image;
   late String _userEmail;
   late ProfileData _profileData;
-  String _selectedValue = 'no remark';
+  
+  Map<String, List<dynamic>> dynamicLists = {};
 
   @override
   void initState() {
     super.initState();
     fetchUserEmail();
-    _initializeTitle();
-    _getCurrentLocation;
-  }
-
-  Future<void> _initializeTitle() async {
-    final uniqueTitle = await getUniqueTitle();
-    _titleController.text = uniqueTitle;
+    fetchDynamicLists();
   }
 
   Future<void> fetchUserEmail() async {
@@ -79,14 +103,6 @@ class _AddForestDataState extends State<AddForestData> {
     });
   }
 
-  final _formKey = GlobalKey<FormState>();
-  final _titleController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  final _numberOfTigersController = TextEditingController();
-  final _numberOfCubsController = TextEditingController();
-  File? _image;
-  String? _currentLocation;
-
   Future<void> _pickImage(ImageSource source) async {
     final pickedFile = await ImagePicker().pickImage(source: source);
     setState(() {
@@ -94,17 +110,24 @@ class _AddForestDataState extends State<AddForestData> {
     });
   }
 
-  Future<void> _getCurrentLocation() async {
-    final position = await Geolocator.getCurrentPosition();
-    setState(() {
-      _currentLocation =
-          'Latitude: ${position.latitude}, Longitude: ${position.longitude}';
-    });
-  }
+  // Future<void> _getCurrentLocation() async {
+  //   final position = await Geolocator.getCurrentPosition();
+  //   setState(() {
+  //     _currentLocation =
+  //         'Latitude: ${position.latitude}, Longitude: ${position.longitude}';
+  //   });
+  // }
 
   void _onSubmitPressed() async {
     // Validate the form
-    if (!_formKey.currentState!.validate()) {
+
+    // if selected conflict is None then asking the user to select any other conflict
+    if( selectedConflict == "None" ) {
+      conflictError = true;
+
+      setState(() {
+        conflictFieldColor = Colors.red;
+      });
       return;
     }
 
@@ -144,11 +167,18 @@ class _AddForestDataState extends State<AddForestData> {
       final docRef = FirebaseFirestore.instance.collection('forestdata').doc();
       final data = {
         'id': docRef.id,
-        'number_of_tiger': int.parse(_numberOfTigersController.text.trim()),
-        'number_of_cubs': int.parse(_numberOfCubsController.text.trim()),
-        'remark': _selectedValue,
-        'title': _titleController.text.trim(),
-        'description': _descriptionController.text.trim(),
+        "range" : selectedRange,
+        "round" : selectedRound,
+        'bt' : selectedBt,
+        "village_name" : _villageNameController.text,
+        "c_no_name" : _cNoController.text,
+        "conflict" : selectedConflict,
+        "person_name" : _personNameController.text,
+        "pincode_name" : _pincodeNameController.text,
+        "person_age" : _personAgeController.text,
+        "person_gender" : _personGenderController.text,
+        "sp_causing_death" : _spCausingDeathController.text,
+        "notes" : _notesController.text,
         'imageUrl': imageUrl,
         'location': location,
         'user_name': _profileData.name,
@@ -159,9 +189,6 @@ class _AddForestDataState extends State<AddForestData> {
       };
 
       await docRef.set(data);
-
-      _titleController.clear();
-      _descriptionController.clear();
 
       // Hide the loading spinner
       Navigator.pop(context);
@@ -188,7 +215,10 @@ class _AddForestDataState extends State<AddForestData> {
           ],
         ),
       );
-    } catch (error) {
+    } catch (error, stacktrace ) {
+      debugPrint( error.toString() );
+      debugPrint( stacktrace.toString() );
+
       // Hide the loading spinner
       Navigator.pop(context);
 
@@ -197,7 +227,7 @@ class _AddForestDataState extends State<AddForestData> {
         context: context,
         builder: (BuildContext context) => AlertDialog(
           title: const Text('Error'),
-          content: const Text('Failed to upload data.'),
+          content: Text('Failed to upload data. Error : ${error}'),
           actions: <Widget>[
             TextButton(
               child: const Text('OK'),
@@ -239,46 +269,383 @@ class _AddForestDataState extends State<AddForestData> {
     return uniqueTitle;
   }
 
+  Future<void> fetchDynamicLists() async {
+    final userSnapshot = await FirebaseFirestore.instance
+        .collection('dynamic_lists')
+        .get();
+
+    final userData = userSnapshot.docs;
+
+    for( var item in userData ) {
+      dynamicLists[item.id] = item['values'];
+    }
+    
+    // setting the dynamic list for conflict with value none 
+    dynamicLists['conflict']?.add('None');
+
+    setState(() {
+      selectedRange = dynamicLists['range']!.first.toString();
+      selectedRound = dynamicLists['round']!.first.toString();
+      selectedBt = dynamicLists['beat']!.first.toString();
+      selectedConflict = "None";
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        elevation: 0.0,
-        flexibleSpace: Container(
-            height: 90,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.green, Colors.greenAccent],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            )),
-        // title: const Text('Pench MH'),
-        title: const Center(
-          child: Text(
-            'Add Forest Data',
-            style: TextStyle(
-              fontSize: 24.0,
-              fontWeight: FontWeight.bold,
+      elevation: 0,
+      flexibleSpace: Container(
+        height: 120,
+        decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.green, Colors.greenAccent],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-          ),
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(15),
+              bottomRight: Radius.circular(15),
+            )
         ),
-        backgroundColor: Colors.transparent,
-        // elevation: 0.0,
       ),
-      body: Form(
+      title: const Text(
+        'Pench MH',
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    ),
+    body: dynamicLists.isEmpty ? Center(
+      child: CircularProgressIndicator(),
+      ) : Form(
         key: _formKey,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12 ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(
-                height: 60,
+                height: 15,
               ),
+              Text(
+                "Add Forest Data",
+                style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold
+                ),
+              ),
+
+              SizedBox(
+                height: 30,
+              ),
+
+              // fields for all values
+              Text(
+                "Range",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              DropdownButtonFormField(
+                decoration: ThemeHelper().textInputDecoration(
+                    'Range', 'Enter Range'
+                ),
+                value: selectedRange,
+                items: dynamicLists['range']!.map( (e) => DropdownMenuItem(
+                  child: Text(e.toString()),
+                  value: e.toString(),
+                ),
+                ).toList(),
+                onChanged: (Object? value) {
+                  selectedRange = value.toString();
+                },
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+
+              Text(
+                "Round",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              DropdownButtonFormField(
+                decoration: ThemeHelper().textInputDecoration(
+                    'Round', 'Enter Round'
+                ),
+                value: selectedRound,
+                items: dynamicLists['round']!.map( (e) => DropdownMenuItem(
+                  child: Text(e.toString()),
+                  value: e.toString(),
+                ),
+                ).toList(),
+                onChanged: (Object? value) {
+                  selectedRound = value.toString();
+                },
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+
+              Text(
+                "Bits",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              DropdownButtonFormField(
+                decoration: ThemeHelper().textInputDecoration(
+                    'Beats', 'Enter Beats'
+                ),
+                value: selectedBt,
+                items: dynamicLists['beat']!.map( (e) => DropdownMenuItem(
+                  child: Text(e.toString()),
+                  value: e.toString(),
+                ),
+                ).toList(),
+                onChanged: (Object? value) {
+                  selectedBt = value.toString();
+                },
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+
+              Text(
+                "Village Name",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              TextFormField(
+                controller: _villageNameController,
+                decoration: ThemeHelper()
+                    .textInputDecoration(
+                    'Village name', 'Enter Village name'),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+
+              Text(
+                "CN/S.NO name",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              TextFormField(
+                controller: _cNoController,
+                decoration: ThemeHelper()
+                    .textInputDecoration(
+                    'cn/s.no_name', 'Enter CN/S.NO name'),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+
+              Text(
+                "Pincode Name",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              TextFormField(
+                controller: _pincodeNameController,
+                decoration: ThemeHelper()
+                    .textInputDecoration(
+                    'pincode_name', 'Enter pincode Name'),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+
+              Text(
+                "Conflict",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              DropdownButtonFormField(
+                decoration: ThemeHelper().textInputDecoration(
+                    'Conflict', 'Select Conflict'
+                ).copyWith(
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: conflictFieldColor,
+                      width: 1,
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+                value: selectedConflict,
+                items: dynamicLists['conflict']!.map( (e) => DropdownMenuItem(
+                  child: Text(e.toString()),
+                  value: e.toString(),
+                ),
+                ).toList(),
+                onChanged: (Object? value) {
+                  if( value != "None" ) {
+                    setState(() {
+                      conflictError = false;
+                      conflictFieldColor = Colors.black.withOpacity(0.1);
+                    });
+                  }
+
+                  selectedConflict = value.toString();
+                },
+              ),
+              if( conflictError )
+                Padding(
+                  padding: const EdgeInsets.symmetric( vertical: 5.0, horizontal: 10.0, ),
+                  child: Text(
+                    "Please Select a valid conflict",
+                    style: TextStyle(
+                      color: Colors.red,
+                    ),
+                  ),
+                ),
+              const SizedBox(
+                height: 10,
+              ),
+              Text(
+                "Name",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              TextFormField(
+                controller: _personNameController,
+                decoration: ThemeHelper()
+                    .textInputDecoration(
+                    'person_name', 'Enter name'),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+
+              Text(
+                "Age",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              TextFormField(
+                controller: _personAgeController,
+                decoration: ThemeHelper()
+                    .textInputDecoration(
+                    'person_age', 'Enter Age'),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+
+              Text(
+                "Gender",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              TextFormField(
+                controller: _personGenderController,
+                decoration: ThemeHelper()
+                    .textInputDecoration(
+                    'person_gender', 'Enter Gender'),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+
+
+              Text(
+                "sp causing death",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              TextFormField(
+                controller: _spCausingDeathController,
+                decoration: ThemeHelper()
+                    .textInputDecoration(
+                    'sp_causing_death', 'sp causing death'),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+
+              Text(
+                "notes",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              TextFormField(
+                  controller: _notesController,
+                  decoration: ThemeHelper()
+                      .textInputDecoration(
+                      'notes', 'Notes'),
+                  maxLines: null,
+                  keyboardType: TextInputType.multiline
+              ),
+              const SizedBox(
+                height: 25,
+              ),
+
               if (_image != null)
                 Container(
                   height: 200,
+                  margin: const EdgeInsets.only(bottom: 20),
                   decoration: BoxDecoration(
                     image: DecorationImage(
                       image: FileImage(_image!),
@@ -286,12 +653,15 @@ class _AddForestDataState extends State<AddForestData> {
                     ),
                   ),
                 ),
+
               ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  backgroundColor:
-                      Color.fromARGB(255, 3, 8, 35), // Background color
-                  // Text Color (Foreground color)
+                style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.all<Color>(Colors.green.shade400),
+                    shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                        RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25.0),
+                        )
+                    )
                 ),
                 onPressed: () {
                   showModalBottomSheet(
@@ -323,112 +693,30 @@ class _AddForestDataState extends State<AddForestData> {
                     },
                   );
                 },
-                child: Text(_image == null ? 'Add Photo' : 'Change Photo'),
-              ),
-              TextFormField(
-                controller: _titleController,
-                decoration: const InputDecoration(
-                  labelText: 'Title',
+                child: Padding(
+                    padding: const EdgeInsets.symmetric( vertical: 20.0, ),
+                    child: Text(_image == null ? 'Add Photo' : 'Change Photo')
                 ),
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return 'Please enter a title';
-                  }
-                  return null;
-                },
               ),
-              TextFormField(
-                controller: _numberOfTigersController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Number of tigers',
-                ),
-                validator: (value) {
-                  final intValue = int.tryParse(value!);
-                  if (intValue == null) {
-                    return 'Please enter a valid number';
-                  }
-                  // Add any additional validation checks here
-                  return null;
-                },
+
+              const SizedBox(
+                height: 20,
               ),
-              TextFormField(
-                controller: _numberOfCubsController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Number of cubs',
-                ),
-                validator: (value) {
-                  final intValue = int.tryParse(value!);
-                  if (intValue == null) {
-                    return 'Please enter a valid number';
-                  }
-                  // Add any additional validation checks here
-                  return null;
-                },
-              ),
-              DropdownButton<String>(
-                value: _selectedValue,
-                onChanged: (value) {
-                  setState(() {
-                    _selectedValue = value!;
-                  });
-                },
-                items: const [
-                  DropdownMenuItem(
-                    value: 'no remark',
-                    child: Text('Remark'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'injured',
-                    child: Text('Injured'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'pregnant',
-                    child: Text('Pregnant'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'killed',
-                    child: Text('Killed'),
-                  ),
-                ],
-              ),
-              TextFormField(
-                controller: _descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Description',
-                ),
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return 'Please enter a description';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              if (_currentLocation == null)
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor:
-                        Color.fromARGB(255, 3, 8, 35), // Background color
-                    // Text Color (Foreground color)
-                  ),
-                  onPressed: _getCurrentLocation,
-                  child: const Text('Get Current Location'),
-                )
-              else
-                Text(_currentLocation!),
-              const SizedBox(height: 16),
+
               ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  backgroundColor:
-                      Color.fromARGB(255, 3, 8, 35), // Background color
-                  // Text Color (Foreground color)
+                style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.all<Color>(Colors.green.shade400),
+                    shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                        RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25.0),
+                        )
+                    )
                 ),
-                onPressed: _onSubmitPressed,
-                child: const Text('Submit'),
+                onPressed: () => _onSubmitPressed(),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric( vertical: 18.0),
+                  child: Text("Submit"),
+                ),
               ),
             ],
           ),

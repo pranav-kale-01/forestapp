@@ -1,11 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:syncfusion_flutter_maps/maps.dart';
 import 'dart:math' as math;
-import '../loginScreen.dart';
-import 'ForestDataScreen.dart';
 
 class ProfileData {
   final String title;
@@ -44,11 +42,8 @@ class ForestMapScreen extends StatefulWidget {
 }
 
 class _ForestMapScreenState extends State<ForestMapScreen> {
-  late String _userEmail;
-  late List<ProfileData> _profileDataList = [];
 
-  late int _count;
-  late int _countUser;
+  late List<ProfileData> _profileDataList = [];
 
   late MapZoomPanBehavior _zoomPanBehavior;
   late List<MapLatLng> _markers;
@@ -101,10 +96,10 @@ class _ForestMapScreenState extends State<ForestMapScreen> {
   }
 
   Future<void> fetchUserEmail() async {
-    final prefs = await SharedPreferences.getInstance();
-    final userEmail = prefs.getString('userEmail');
+    // final prefs = await SharedPreferences.getInstance();
+    // final userEmail = prefs.getString('userEmail');
     setState(() {
-      _userEmail = userEmail ?? '';
+      // _userEmail = userEmail ?? '';
     });
   }
 
@@ -153,10 +148,11 @@ class _ForestMapScreenState extends State<ForestMapScreen> {
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () {
-            Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(
-                    builder: (context) => const ForestDataScreen()),
-                (route) => false);
+            Navigator.of(context).pop();
+            // Navigator.of(context).pushAndRemoveUntil(
+            //     MaterialPageRoute(
+            //         builder: (context) => const ForestDataScreen()),
+            //     (route) => false);
           },
         ),
       ),
