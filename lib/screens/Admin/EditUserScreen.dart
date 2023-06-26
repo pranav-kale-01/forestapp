@@ -415,6 +415,8 @@ class _EditUserScreenState extends State<EditUserScreen> {
                             ),
                           );
 
+                          Navigator.of(context).pop();
+
                         } catch (error) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
