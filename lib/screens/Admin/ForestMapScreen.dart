@@ -149,10 +149,6 @@ class _ForestMapScreenState extends State<ForestMapScreen> {
           icon: Icon(Icons.arrow_back),
           onPressed: () {
             Navigator.of(context).pop();
-            // Navigator.of(context).pushAndRemoveUntil(
-            //     MaterialPageRoute(
-            //         builder: (context) => const ForestDataScreen()),
-            //     (route) => false);
           },
         ),
       ),

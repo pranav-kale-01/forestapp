@@ -4,29 +4,14 @@ import 'package:forestapp/common/models/ConflictModel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../widgets/home_screen_list_tile.dart';
-import '../loginScreen.dart';
-
-
-class ProfileData {
-  final String title;
-  final String description;
-  final String imageUrl;
-  final String userName;
-  final String userEmail;
-  final Timestamp? datetime;
-
-  ProfileData({
-    required this.title,
-    required this.description,
-    required this.imageUrl,
-    required this.userName,
-    required this.userEmail,
-    this.datetime,
-  });
-}
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final Function(int) changeIndex;
+
+  const HomeScreen({
+    super.key,
+    required this.changeIndex
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -65,34 +50,48 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> fetchUserProfileData() async {
+    _TotalConflictsCount = 0;
+    _humansInjuredCount = 0;
+    _cattleInjuredCount = 0;
+    _cropDamagedCount = 0;
+    _humansKilledCount = 0;
+    _cattleKilledCount = 0;
+
     final userSnapshot = await FirebaseFirestore.instance
         .collection('forestdata')
         .where('user_email', isEqualTo: _userEmail)
-        .limit(5)
+        .orderBy('createdAt', descending: true)
         .get();
 
     final List<ConflictModel> profileDataList = [];
 
     for( var item in userSnapshot.docs ) {
-      if( item['conflict'] == 'cattle injured' ) {
+      if (item['conflict'] == 'cattle injured') {
         _cattleInjuredCount += 1;
       }
-      else if( item['conflict'] == 'cattle killed' ) {
+      else if (item['conflict'] == 'cattle killed') {
         _cattleKilledCount += 1;
       }
-      else if( item['conflict'] == 'humans injured'  ) {
+      else if (item['conflict'] == 'humans injured') {
         _humansInjuredCount += 1;
       }
-      else if( item['conflict'] == 'humans killed'  ) {
+      else if (item['conflict'] == 'humans killed') {
         _humansKilledCount += 1;
       }
-      else if( item['conflict'] == 'crop damaged' ) {
-        _cropDamagedCount += 1 ;
+      else if (item['conflict'] == 'crop damaged') {
+        _cropDamagedCount += 1;
+      }
+    }
+
+    int count = 0;
+    for( var item in userSnapshot.docs ) {
+      if( count >= 5 ) {
+        break;
       }
 
       profileDataList.add(
           ConflictModel(
-              id: item['id'],
+              id: item.id,
               range: item['range'],
               round: item['round'],
               bt: item['bt'],
@@ -114,6 +113,8 @@ class _HomeScreenState extends State<HomeScreen> {
               userImage: item['user_imageUrl'],
           )
       );
+
+      count += 1;
     }
 
     setState(() {
@@ -136,9 +137,8 @@ class _HomeScreenState extends State<HomeScreen> {
     return snapshot.size;
   }
 
-  // late final int numberOfTigers;
-  final CollectionReference users =
-      FirebaseFirestore.instance.collection('users');
+
+  final CollectionReference users = FirebaseFirestore.instance.collection('users');
 
   @override
   Widget build(BuildContext context) {
@@ -442,13 +442,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 SizedBox(
                   height: mediaQuery.size.height * 0.37,
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    child: Column(
-                      children: _profileDataList.map((forestData) =>  HomeScreenListTile(
-                          forestData: forestData,
-                        ),
-                      ).toList(),
+                  child: RefreshIndicator(
+                    onRefresh: fetchUserProfileData,
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: Column(
+                        children: _profileDataList.map((forestData) =>  HomeScreenListTile(
+                            forestData: forestData,
+                            changeIndex: widget.changeIndex,
+                          ),
+                        ).toList(),
+                      ),
                     ),
                   ),
                 ),

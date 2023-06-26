@@ -7,10 +7,14 @@ import 'package:forestapp/screens/Admin/AddUserScreen.dart';
 import 'package:forestapp/screens/Admin/EditUserScreen.dart';
 import 'package:forestapp/screens/Admin/UserDetails.dart';
 import '../../common/models/UserModel.dart';
-import 'homeAdmin.dart';
 
 class UserScreen extends StatefulWidget {
-  const UserScreen({super.key});
+  final Function(int) changeIndex;
+
+  const UserScreen({
+    super.key,
+    required this.changeIndex,
+  });
 
   @override
   State<UserScreen> createState() => _UserScreenState();
@@ -71,6 +75,7 @@ class _UserScreenState extends State<UserScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         elevation: 0,
         flexibleSpace: Container(
@@ -100,7 +105,9 @@ class _UserScreenState extends State<UserScreen> {
                 onPressed: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                        builder: (context) => AddUserScreen(),
+                        builder: (context) => AddUserScreen(
+                          changeIndex: widget.changeIndex,
+                        ),
                     )
                   );
                 },
@@ -119,8 +126,7 @@ class _UserScreenState extends State<UserScreen> {
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
                 stream: users.snapshots(),
-                builder: (BuildContext context,
-                    AsyncSnapshot<QuerySnapshot> snapshot) {
+                builder: (streamContext,snapshot) {
                   if( snapshot.hasData ) {
                     if ( _searchResult.isEmpty) {
                       return Center(
@@ -135,7 +141,7 @@ class _UserScreenState extends State<UserScreen> {
                       return ListView.builder(
                         physics: const BouncingScrollPhysics(),
                         itemCount: documents.length,
-                        itemBuilder: (BuildContext context, int index) {
+                        itemBuilder: (innerContext, index) {
                           final data = documents[index].data() as Map<String, dynamic>;
 
                           return InkWell(
@@ -181,11 +187,12 @@ class _UserScreenState extends State<UserScreen> {
                                     IconButton(
                                       icon: const Icon(Icons.edit),
                                       onPressed: () {
-                                        Navigator.of(context).push(
+                                        Navigator.of(innerContext).push(
                                           MaterialPageRoute(
-                                            builder: (context) =>
+                                            builder: (innerContext) =>
                                                 EditUserScreen(
                                                   user: data,
+                                                  changeIndex: widget.changeIndex,
                                                 )
                                           ),
                                         );

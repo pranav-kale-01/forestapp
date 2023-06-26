@@ -4,7 +4,12 @@ import 'package:flutter/material.dart';
 import '../../common/models/DynamicListsModel.dart';
 
 class EditListsScreen extends StatefulWidget {
-  const EditListsScreen({Key? key}) : super(key: key);
+  final Function(int) changeIndex;
+
+  const EditListsScreen({
+    Key? key,
+    required this.changeIndex,
+  }) : super(key: key);
 
   @override
   _EditListsScreenState createState() => _EditListsScreenState();
@@ -37,6 +42,11 @@ class _EditListsScreenState extends State<EditListsScreen> {
     });
   }
 
+  void _onItemTapped(int index) {
+    widget.changeIndex( index );
+    Navigator.of(context).pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
@@ -64,6 +74,33 @@ class _EditListsScreenState extends State<EditListsScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+            backgroundColor: Colors.black,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_sharp),
+            label: 'Guard',
+            backgroundColor: Colors.black,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.eco),
+            label: 'Forest Data',
+            backgroundColor: Colors.black,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.map),
+            label: 'Maps',
+            backgroundColor: Colors.black,
+          ),
+        ],
+        currentIndex: 0,
+        selectedItemColor: Colors.green,
+        onTap: _onItemTapped,
       ),
       body: attributeList.isEmpty ? Center(
         child: CircularProgressIndicator(),

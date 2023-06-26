@@ -9,7 +9,13 @@ import '../../common/themeHelper.dart';
 
 class EditUserScreen extends StatefulWidget {
   final Map<String, dynamic> user;
-  const EditUserScreen({super.key, required this.user});
+  final Function(int) changeIndex;
+
+  const EditUserScreen({
+    super.key,
+    required this.user,
+    required this.changeIndex,
+  });
 
   @override
   _EditUserScreenState createState() => _EditUserScreenState();
@@ -66,6 +72,11 @@ class _EditUserScreenState extends State<EditUserScreen> {
     });
   }
 
+  void _onItemTapped(int index) {
+    widget.changeIndex( index );
+    Navigator.of(context).pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -91,6 +102,33 @@ class _EditUserScreenState extends State<EditUserScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+            backgroundColor: Colors.black,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_sharp),
+            label: 'Guard',
+            backgroundColor: Colors.black,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.eco),
+            label: 'Forest Data',
+            backgroundColor: Colors.black,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.map),
+            label: 'Maps',
+            backgroundColor: Colors.black,
+          ),
+        ],
+        currentIndex: 1,
+        selectedItemColor: Colors.green,
+        onTap: _onItemTapped,
       ),
       body: SafeArea(
         child: Padding(

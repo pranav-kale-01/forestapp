@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:forestapp/common/models/ConflictModel.dart';
 import 'package:intl/intl.dart';
-import '../screens/User/ForestDetail.dart';
+import '../screens/Admin/ForestDetail.dart';
 
 class HomeScreenListTile extends StatefulWidget {
-  final ConflictModel forestData;
+  final Function(int) changeIndex;
+  ConflictModel forestData;
 
   HomeScreenListTile({
     Key? key,
     required this.forestData,
+    required this.changeIndex,
   }) : super(key: key);
 
   @override
@@ -34,6 +36,14 @@ class _HomeScreenListTileState extends State<HomeScreenListTile> {
                 builder: (context) =>
                     ForestDetail(
                         forestData: widget.forestData,
+                        currentIndex: 0,
+                        changeIndex: widget.changeIndex,
+                        changeData: (ConflictModel newData) {
+                          print( "test " );
+                          setState(() {
+                            widget.forestData = newData;
+                          });
+                        }
                     )
             )
         );

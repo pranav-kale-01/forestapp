@@ -14,13 +14,13 @@ class ForestMapScreen extends StatefulWidget {
   final double latitude;
   final double longitude;
   final String userName;
-  final String tigerName;
+  final String conflictName;
 
   ForestMapScreen(
       {required this.latitude,
       required this.longitude,
       required this.userName,
-      required this.tigerName});
+      required this.conflictName});
 
   @override
   _ForestMapScreenState createState() => _ForestMapScreenState();
@@ -197,7 +197,7 @@ class _ForestMapScreenState extends State<ForestMapScreen> {
           ),
         ),
         title: Text(
-          widget.tigerName,
+          widget.userName,
           style: TextStyle(
             fontWeight: FontWeight.bold,
           ),
@@ -256,7 +256,7 @@ class _ForestMapScreenState extends State<ForestMapScreen> {
                               builder: (_) => Padding(
                                 padding: const EdgeInsets.all(8.0),
                                 child: Text(
-                                  'Conflict: ${widget.tigerName}, Added by: ${widget.userName}',
+                                  'Conflict: ${widget.conflictName}, Added by: ${widget.userName}',
                                 ),
                               ),
                             );
@@ -274,7 +274,7 @@ class _ForestMapScreenState extends State<ForestMapScreen> {
                 color: Colors.white,
                 padding: const EdgeInsets.all(8.0),
                 child: Text(
-                  'Conflict: ${widget.tigerName}, Added by: ${widget.userName}',
+                  'Conflict: ${widget.conflictName}, Added by: ${widget.userName}',
                 ),
               ),
           ],

@@ -9,7 +9,12 @@ import 'package:firebase_storage/firebase_storage.dart';
 import '../../common/themeHelper.dart';
 
 class AddUserScreen extends StatefulWidget {
-  const AddUserScreen({super.key});
+  final Function(int) changeIndex;
+
+  const AddUserScreen({
+    super.key,
+    required this.changeIndex,
+  });
 
   @override
   _AddUserScreenState createState() => _AddUserScreenState();
@@ -55,9 +60,41 @@ class _AddUserScreenState extends State<AddUserScreen> {
     });
   }
 
+  void _onItemTapped(int index) {
+    widget.changeIndex( index );
+    Navigator.of(context).pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+            backgroundColor: Colors.black,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_sharp),
+            label: 'Guard',
+            backgroundColor: Colors.black,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.eco),
+            label: 'Forest Data',
+            backgroundColor: Colors.black,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.map),
+            label: 'Maps',
+            backgroundColor: Colors.black,
+          ),
+        ],
+        currentIndex: 1,
+        selectedItemColor: Colors.green,
+        onTap: _onItemTapped,
+      ),
       appBar: AppBar(
         elevation: 0,
         flexibleSpace: Container(

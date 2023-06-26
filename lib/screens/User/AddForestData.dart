@@ -110,26 +110,18 @@ class _AddForestDataState extends State<AddForestData> {
     });
   }
 
-  // Future<void> _getCurrentLocation() async {
-  //   final position = await Geolocator.getCurrentPosition();
-  //   setState(() {
-  //     _currentLocation =
-  //         'Latitude: ${position.latitude}, Longitude: ${position.longitude}';
-  //   });
-  // }
-
   void _onSubmitPressed() async {
     // Validate the form
 
     // if selected conflict is None then asking the user to select any other conflict
-    if( selectedConflict == "None" ) {
-      conflictError = true;
-
-      setState(() {
-        conflictFieldColor = Colors.red;
-      });
-      return;
-    }
+    // if( selectedConflict == "None" ) {
+    //   conflictError = true;
+    //
+    //   setState(() {
+    //     conflictFieldColor = Colors.red;
+    //   });
+    //   return;
+    // }
 
     // Show a loading spinner while the data is being uploaded
     showDialog(
@@ -203,13 +195,15 @@ class _AddForestDataState extends State<AddForestData> {
             TextButton(
               child: const Text('OK'),
               onPressed: () {
-                Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(
-                      builder: (context) => const HomeUser(
-                        title: 'title',
-                      ),
-                    ),
-                    (route) => false);
+                Navigator.of(context).pop();
+
+                // Navigator.of(context).pushAndRemoveUntil(
+                //     MaterialPageRoute(
+                //       builder: (context) => const HomeUser(
+                //         title: 'title',
+                //       ),
+                //     ),
+                //     (route) => false);
               },
             ),
           ],
@@ -232,13 +226,14 @@ class _AddForestDataState extends State<AddForestData> {
             TextButton(
               child: const Text('OK'),
               onPressed: () {
-                Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(
-                      builder: (context) => const HomeUser(
-                        title: 'title',
-                      ),
-                    ),
-                    (route) => false);
+                Navigator.of(context).pop();
+                // Navigator.of(context).pushAndRemoveUntil(
+                //     MaterialPageRoute(
+                //       builder: (context) => const HomeUser(
+                //         title: 'title',
+                //       ),
+                //     ),
+                //     (route) => false);
               },
             ),
           ],
@@ -400,7 +395,7 @@ class _AddForestDataState extends State<AddForestData> {
               ),
 
               Text(
-                "Bits",
+                "Beats",
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -516,12 +511,12 @@ class _AddForestDataState extends State<AddForestData> {
                 ),
                 ).toList(),
                 onChanged: (Object? value) {
-                  if( value != "None" ) {
-                    setState(() {
-                      conflictError = false;
-                      conflictFieldColor = Colors.black.withOpacity(0.1);
-                    });
-                  }
+                  // if( value != "None" ) {
+                  //   setState(() {
+                  //     conflictError = false;
+                  //     conflictFieldColor = Colors.black.withOpacity(0.1);
+                  //   });
+                  // }
 
                   selectedConflict = value.toString();
                 },

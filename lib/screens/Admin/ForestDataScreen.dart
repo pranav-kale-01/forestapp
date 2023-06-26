@@ -10,9 +10,13 @@ import 'package:excel/excel.dart';
 
 import 'ForestDetail.dart';
 
-
 class ForestDataScreen extends StatefulWidget {
-  const ForestDataScreen({Key? key}) : super(key: key);
+  final Function(int) changeScreen;
+
+  const ForestDataScreen({
+    Key? key,
+    required this.changeScreen,
+  }) : super(key: key);
 
   @override
   State<ForestDataScreen> createState() => _ForestDataScreenState();
@@ -53,7 +57,7 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
     final profileDataList = userSnapshot.docs
         .map(
           (doc) => ConflictModel(
-            id: doc['id'],
+            id: doc.id,
             range: doc['range'],
             round: doc['round'],
             bt: doc['bt'],
@@ -103,7 +107,6 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
     _selectedConflict = _dynamicLists['conflict']?.first.value;
     _selectedBt = _dynamicLists['bt']?.first.value?.toLowerCase();
   }
-
 
 // Function to search the list based on the user input
   void _searchList(String searchQuery) {
@@ -222,7 +225,7 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
       sheet.appendRow([
         'Range',
         'Round',
-        'Bits',
+        'Beat',
         'village Name'
         'CNo/S.No Name',
         'Pincode Name',
@@ -452,7 +455,7 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                     ),
 
                     const SizedBox(height: 8.0),
-                    Text("Filter by Bits"),
+                    Text("Filter by Beats"),
                     SizedBox(
                       width: MediaQuery.of(context).size.width,
                       child: Row(
@@ -561,7 +564,6 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-        debugShowCheckedModeBanner: false,
         home: Scaffold(
           resizeToAvoidBottomInset: false,
           appBar: AppBar(
@@ -582,7 +584,7 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
               ),
             ),
             title: const Text(
-              'Pench MH',
+              'Forest Data',
               style: TextStyle(
                 color: Colors.black,
                 fontWeight: FontWeight.bold,
@@ -656,7 +658,7 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                   child: ListView.builder(
                     physics: const BouncingScrollPhysics(),
                     itemCount: _searchResult.length,
-                    itemBuilder: (context, index) {
+                    itemBuilder: (innerContext, index) {
                       final profileData = _searchResult[index];
                       return Card(
                         child: Row(
@@ -716,13 +718,23 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                                         // Text Color (Foreground color)
                                       ),
                                       onPressed: () {
-                                        Navigator.of(context)
-                                            .push(
+                                        Navigator.of(context).push(
                                             MaterialPageRoute(
                                                 builder: (context) =>
                                                     ForestDetail(
-                                                        forestData:
-                                                        profileData)));
+                                                        forestData: profileData,
+                                                        currentIndex: 2,
+                                                        changeIndex: widget.changeScreen,
+                                                        changeData: (ConflictModel newData) {
+                                                          print( "test " );
+                                                          setState(() {
+                                                            _searchResult[index] = newData;
+                                                          });
+                                                        }
+
+                                                    ),
+                                            ),
+                                        );
                                       },
                                       label: const Text("View"),
                                       icon: const Icon(

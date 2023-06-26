@@ -168,7 +168,7 @@ class _MapScreenState extends State<MapScreen> {
     final userSnapshot = await FirebaseFirestore.instance.collection('forestdata').get();
     final profileDataList = userSnapshot.docs
         .map((doc) => ConflictModel(
-            id: doc['id'],
+            id: doc.id,
             range: doc['range'],
             round: doc['round'],
             bt: doc['bt'],

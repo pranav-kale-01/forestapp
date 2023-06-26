@@ -9,7 +9,12 @@ import '../loginScreen.dart';
 
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final Function(int) changeScreen;
+
+  const HomeScreen({
+    super.key,
+    required this.changeScreen
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -36,14 +41,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> fetchUserProfileData() async {
-    final userSnapshot = await FirebaseFirestore.instance
+    _TotalConflictsCount = 0;
+    _humansInjuredCount = 0;
+    _cattleInjuredCount = 0;
+    _cropDamagedCount = 0;
+    _humansKilledCount = 0;
+    _cattleKilledCount = 0;
+
+    var userSnapshot = await FirebaseFirestore.instance
         .collection('forestdata')
-        .limit(5)
+        .orderBy('createdAt', descending: true)
         .get();
-
-    print( userSnapshot.size );
-
-    List<ConflictModel> profileDataList = [];
 
     for( var item in userSnapshot.docs ) {
       if( item['conflict'] == 'cattle injured' ) {
@@ -61,10 +69,19 @@ class _HomeScreenState extends State<HomeScreen> {
       else if( item['conflict'] == 'crop damaged' ) {
         _cropDamagedCount += 1 ;
       }
+    }
+
+    List<ConflictModel> profileDataList = [];
+
+    int count = 0;
+    for( var item in userSnapshot.docs ) {
+      if( count >= 5 ) {
+        break;
+      }
 
       profileDataList.add(
           ConflictModel(
-            id: item['id'],
+            id: item.id,
             range: item['range'],
             round: item['round'],
             bt: item['bt'],
@@ -86,6 +103,8 @@ class _HomeScreenState extends State<HomeScreen> {
             userImage: item['user_imageUrl'],
           )
       );
+
+      count+=1;
     }
 
     setState(() {
@@ -201,7 +220,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       onPressed: () async {
                         Navigator.of(context).push(
-                          MaterialPageRoute(builder: (context) => EditListsScreen()
+                          MaterialPageRoute(builder: (context) => EditListsScreen(
+                            changeIndex: widget.changeScreen,
+                          )
                           )
                         );
                       },
@@ -467,13 +488,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 SizedBox(
                   height: mediaQuery.size.height * 0.32,
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    child: Column(
-                      children: _profileDataList.map((forestData) =>  HomeScreenListTile(
-                        forestData: forestData,
+                  child: RefreshIndicator(
+                    onRefresh: fetchUserProfileData,
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: Column(
+                        children: _profileDataList.map((forestData) =>  HomeScreenListTile(
+                          forestData: forestData,
+                          changeIndex: widget.changeScreen,
+                        ),
+                        ).toList(),
                       ),
-                      ).toList(),
                     ),
                   ),
                 ),

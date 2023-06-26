@@ -1,21 +1,51 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:forestapp/common/models/ConflictModel.dart';
-import 'package:forestapp/screens/Admin/EditTigerAdmin.dart';
+import 'package:forestapp/screens/Admin/EditConflictScreen.dart';
 import 'package:intl/intl.dart';
 
-import '../User/ForestDataScreen.dart';
 import '../User/ForestMapScreen.dart';
 
+class ForestDetail extends StatefulWidget {
+  ConflictModel forestData;
+  final int currentIndex;
+  final Function(int) changeIndex;
+  final Function( ConflictModel ) changeData;
 
-class ForestDetail extends StatelessWidget {
-  final ConflictModel forestData;
 
-  const ForestDetail({Key? key, required this.forestData}) : super(key: key);
+  ForestDetail({
+    Key? key,
+    required this.forestData,
+    required this.currentIndex,
+    required this.changeIndex,
+    required this.changeData
+  }) : super(key: key);
+
+
+  @override
+  _ForestDetailState createState() => _ForestDetailState();
+}
+
+class _ForestDetailState extends State<ForestDetail> {
+  void _changeData( ConflictModel newData ) {
+    setState(() {
+      widget.forestData = newData;
+    });
+
+    // also passing the value back to home screen
+    widget.changeData( newData );
+  }
+
+  void _onItemTapped(int index) {
+    widget.changeIndex( index );
+    Navigator.of(context).pop();
+  }
+
 
   @override
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
+
     return Scaffold(
       appBar:AppBar(
         backgroundColor: Colors.white,
@@ -41,13 +71,40 @@ class ForestDetail extends StatelessWidget {
           ),
         ),
       ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+            backgroundColor: Colors.black,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_sharp),
+            label: 'Guard',
+            backgroundColor: Colors.black,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.eco),
+            label: 'Forest Data',
+            backgroundColor: Colors.black,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.map),
+            label: 'Maps',
+            backgroundColor: Colors.black,
+          ),
+        ],
+        currentIndex: widget.currentIndex,
+        selectedItemColor: Colors.green,
+        onTap: _onItemTapped,
+      ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           AspectRatio(
             aspectRatio: 16 / 9,
             child: Image.network(
-              forestData.imageUrl,
+              widget.forestData.imageUrl,
               fit: BoxFit.cover,
             ),
           ),
@@ -61,7 +118,7 @@ class ForestDetail extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      forestData.village_name,
+                      widget.forestData.village_name,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 24,
@@ -71,44 +128,44 @@ class ForestDetail extends StatelessWidget {
                     Row(
                       children: [
                         CircleAvatar(
-                          backgroundImage: NetworkImage(forestData.userImage),
+                          backgroundImage: NetworkImage(widget.forestData.userImage),
                         ),
                         SizedBox(width: 8),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(forestData.userName),
-                            Text(forestData.userEmail),
+                            Text(widget.forestData.userName),
+                            Text(widget.forestData.userEmail),
                           ],
                         ),
                       ],
                     ),
                     SizedBox(height: 16),
-                    Text( "Created At: " + DateFormat('MMM d, yyyy h:mm a').format(forestData.datetime!.toDate()),),
+                    Text( "Created At: " + DateFormat('MMM d, yyyy h:mm a').format(widget.forestData.datetime!.toDate()),),
                     SizedBox(height: 16),
-                    Text( 'Latitude: ${forestData.location.latitude}, Longitude: ${forestData.location.longitude}'),
+                    Text( 'Latitude: ${widget.forestData.location.latitude}, Longitude: ${widget.forestData.location.longitude}'),
                     SizedBox(height: 16),
-                    Text('Range: ${forestData.range}'),
+                    Text('Range: ${widget.forestData.range}'),
                     SizedBox(height: 16),
-                    Text('Round: ${forestData.round}'),
+                    Text('Round: ${widget.forestData.round}'),
                     SizedBox(height: 16),
-                    Text('Bt: ${forestData.bt}'),
+                    Text('Bt: ${widget.forestData.bt}'),
                     SizedBox(height: 16),
-                    Text('C.No/S.No Name: ${forestData.cNoName}'),
+                    Text('C.No/S.No Name: ${widget.forestData.cNoName}'),
                     SizedBox(height: 16),
-                    Text('Conflict: ${forestData.conflict}'),
+                    Text('Conflict: ${widget.forestData.conflict}'),
                     SizedBox(height: 16),
-                    Text('Name: ${forestData.person_name}'),
+                    Text('Name: ${widget.forestData.person_name}'),
                     SizedBox(height: 16),
-                    Text('Age: ${forestData.person_age}'),
+                    Text('Age: ${widget.forestData.person_age}'),
                     SizedBox(height: 16),
-                    Text('Gender: ${forestData.person_gender}'),
+                    Text('Gender: ${widget.forestData.person_gender}'),
                     SizedBox(height: 16),
-                    Text('Sp Causing Death: ${forestData.sp_causing_death}'),
+                    Text('Sp Causing Death: ${widget.forestData.sp_causing_death}'),
                     SizedBox(height: 16),
-                    Text('Notes: ${forestData.notes}'),
+                    Text('Notes: ${widget.forestData.notes}'),
                     SizedBox(height: 16),
-                    Text('Guard Contact: ${forestData.userContact}'),
+                    Text('Guard Contact: ${widget.forestData.userContact}'),
                     SizedBox(height: 16),
                   ],
                 ),
@@ -130,10 +187,10 @@ class ForestDetail extends StatelessWidget {
                     Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (context) => ForestMapScreen(
-                          latitude: forestData.location.latitude,
-                          longitude: forestData.location.longitude,
-                          userName: forestData.userName,
-                          tigerName: forestData.village_name,
+                          latitude: widget.forestData.location.latitude,
+                          longitude: widget.forestData.location.longitude,
+                          userName: widget.forestData.userName,
+                          conflictName: widget.forestData.village_name,
                         ),
                       ),
                     );
@@ -174,20 +231,19 @@ class ForestDetail extends StatelessWidget {
                         final snapshot = await FirebaseFirestore.instance
                             .collection('forestdata')
                             .where('user_email',
-                            isEqualTo: forestData.userEmail)
+                            isEqualTo: widget.forestData.userEmail)
                             .get();
                         if (snapshot.docs.isNotEmpty) {
                           await snapshot.docs.first.reference.delete();
-                          Navigator.of(context).pushAndRemoveUntil(
-                              MaterialPageRoute(
-                                  builder: (context) =>
-                                  const ForestDataScreen()),
-                                  (route) => false);
+                          Navigator.of(context).pop();
+
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text('User deleted successfully.'),
                             ),
                           );
+
+                          Navigator.of(context).pop();
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
@@ -219,7 +275,12 @@ class ForestDetail extends StatelessWidget {
                     Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => EditTigerAdmin(conflictData: forestData,))
+                            builder: (context) => EditConflict(
+                              changeData: _changeData,
+                              conflictData: widget.forestData,
+                              currentIndex: widget.currentIndex,
+                              changeIndex: widget.changeIndex,
+                            ))
                     );
 
                   },

@@ -1,5 +1,6 @@
 // ignore_for_file: library_private_types_in_public_api, avoid_unnecessary_containers
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:forestapp/screens/User/ProfileScreen.dart';
 
@@ -18,13 +19,29 @@ class HomeUser extends StatefulWidget {
 
 class _HomeUserState extends State<HomeUser> {
   int _selectedIndex = 0;
+  late final List<Widget> _widgetOptions;
 
-  static final List<Widget> _widgetOptions = <Widget>[
-    const HomeScreen(),
-    AddForestData(),
-    const ForestDataScreen(),
-    const ProfileScreen(),
-  ];
+  @override
+  void initState() {
+    super.initState();
+
+    _widgetOptions = <Widget>[
+      HomeScreen(
+        changeIndex: _changeIndex,
+      ),
+      AddForestData(),
+      ForestDataScreen(
+        changeScreen: _changeIndex,
+      ),
+      const ProfileScreen(),
+    ];
+  }
+
+  void _changeIndex( int index ) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
 
   void _onItemTapped(int index) {
     setState(() {

@@ -21,15 +21,34 @@ class HomeAdmin extends StatefulWidget {
 class _HomeAdminState extends State<HomeAdmin> {
   int _selectedIndex = 0;
 
-  static final List<Widget> _widgetOptions = <Widget>[
-    HomeScreen(),
-    const UserScreen(),
-    const ForestDataScreen(),
-    MapScreen(
-      latitude: 37.4220,
-      longitude: -122.0841,
-    ),
-  ];
+  late final List<Widget> _widgetOptions;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _widgetOptions = <Widget>[
+      HomeScreen(
+        changeScreen: _changeIndex
+      ),
+      UserScreen(
+        changeIndex: _changeIndex,
+      ),
+      ForestDataScreen(
+        changeScreen: _changeIndex,
+      ),
+      MapScreen(
+        latitude: 37.4220,
+        longitude: -122.0841,
+      ),
+    ];
+  }
+
+  void _changeIndex( int index ) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -74,18 +93,3 @@ class _HomeAdminState extends State<HomeAdmin> {
   }
 }
 
-class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      child: const Center(
-        child: Text(
-          'Map Screen',
-          style: TextStyle(fontSize: 30),
-        ),
-      ),
-    );
-  }
-}

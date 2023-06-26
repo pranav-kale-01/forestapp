@@ -12,7 +12,12 @@ import 'ForestDetail.dart';
 
 
 class ForestDataScreen extends StatefulWidget {
-  const ForestDataScreen({Key? key}) : super(key: key);
+  final Function(int) changeScreen;
+
+  const ForestDataScreen({
+    Key? key,
+    required this.changeScreen,
+  }) : super(key: key);
 
   @override
   State<ForestDataScreen> createState() => _ForestDataScreenState();
@@ -24,6 +29,7 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
   late List<ConflictModel> _profileDataList = [];
   late List<ConflictModel> _searchResult = [];
   final Map<String, List<DropdownMenuItem<String>>> _dynamicLists = {};
+  List<dynamic> filterList = [];
 
   final List<String> _dateDropdownOptions = [
     'today',
@@ -31,10 +37,9 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
     'this Week',
     'this Month',
     'this Year',
-    'all',
   ];
 
-  String _selectedFilter = 'All';
+  String _selectedFilter = 'this Year';
   String? _selectedRange;
   String? _selectedConflict;
   String? _selectedBt;
@@ -51,9 +56,8 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
     final userSnapshot = await FirebaseFirestore.instance.collection('forestdata').get();
 
     final profileDataList = userSnapshot.docs
-        .map(
-          (doc) => ConflictModel(
-        id: doc['id'],
+        .map( (doc) => ConflictModel(
+        id: doc.id,
         range: doc['range'],
         round: doc['round'],
         bt: doc['bt'],
@@ -124,7 +128,7 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
     });
   }
 
-  void filterData(String filterAttribute, String? selectedTitle, {bool applyFilter = true}) {
+  void filterData( String filterAttribute, String? selectedTitle, {bool applyFilter = true}) {
     if( filterAttribute == 'range' ) {
       setState(() {
         if (applyFilter) {
@@ -147,7 +151,7 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
         }
       });
     }
-    else if ( filterAttribute == 'bt' ) {
+    else if ( filterAttribute == 'beat' ) {
       setState(() {
         if (applyFilter) {
           _searchResult = _profileDataList
@@ -170,7 +174,7 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
           start = DateTime(now.year, now.month, now.day - 1);
           break;
         case 'this week':
-          start = DateTime(now.year, now.month, now.day - now.weekday + 1);
+          start = DateTime(now.year, now.month, now.day).subtract( Duration( days: DateTime.now().weekday ) );
           break;
         case 'this month':
           start = DateTime(now.year, now.month, 1);
@@ -178,18 +182,15 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
         case 'this year':
           start = DateTime(now.year, 1, 1);
           break;
-        case 'all':
-          start = DateTime(now.year, 1, 1);
-          break;
         default:
           print('Invalid filter type: $selectedTitle');
           return;
       }
 
+      print( start.toString() );
+
       List<ConflictModel> tempList = [];
       _profileDataList.forEach((profileData) {
-        print( profileData.datetime!.toDate() );
-
         if (profileData.datetime != null && profileData.datetime!.toDate().isAfter(start)) {
           tempList.add(profileData);
         }
@@ -222,9 +223,9 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
       sheet.appendRow([
         'Range',
         'Round',
-        'Bits',
+        'Beat',
         'village Name'
-            'CNo/S.No Name',
+        'CNo/S.No Name',
         'Pincode Name',
         'conflict',
         'Name',
@@ -233,7 +234,7 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
         'SP Causing Death',
         'notes',
         'Username'
-            'User Email',
+        'User Email',
         'User Contact',
         'location',
         'Created At',
@@ -396,7 +397,6 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                           Expanded(
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
-                                alignment: Alignment.centerRight,
                                 value: _selectedRange, // the currently selected title
                                 items:  _dynamicLists['range'],
                                 onChanged: (String? newValue) {
@@ -430,7 +430,7 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                           Expanded(
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
-                                alignment: Alignment.centerRight,
+
                                 value: _selectedConflict, // the currently selected title
                                 items:  _dynamicLists['conflict'],
                                 onChanged: (String? newValue) {
@@ -456,7 +456,7 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                     ),
 
                     const SizedBox(height: 8.0),
-                    Text("Filter by Bits"),
+                    Text("Filter by Beats"),
                     SizedBox(
                       width: MediaQuery.of(context).size.width,
                       child: Row(
@@ -464,14 +464,13 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                           Expanded(
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
-                                alignment: Alignment.centerRight,
                                 value: _selectedBt, // the currently selected title
-                                items:  _dynamicLists['bt'],
+                                items:  _dynamicLists['beat'],
                                 onChanged: (String? newValue) {
                                   setState(() {
                                     _selectedBt = newValue!;
                                   });
-                                  filterData('bt', newValue!, applyFilter: true);
+                                  filterData('beat', newValue!, applyFilter: true);
                                 },
                               ),
                             ),
@@ -498,7 +497,6 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                           Expanded(
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
-                                alignment: Alignment.centerRight,
                                 value: _selectedDate, // the currently selected title
                                 items:  _dateDropdownOptions.map( (item) {
                                   return DropdownMenuItem<String>(
@@ -536,24 +534,6 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                   onPressed: () => Navigator.pop(context),
                   child: Text('Close'),
                 ),
-                // ElevatedButton(
-                //   style: ElevatedButton.styleFrom(
-                //     backgroundColor:
-                //         Colors.greenAccent.shade400, // Background color
-                //     // Text Color (Foreground color)
-                //   ),
-                //   onPressed: () {
-                //     setState(() {
-                //       _selectedFilter = _selectedOptions.join(',');
-                //     });
-                //     _handleSearchFilter(
-                //         _searchController.text, _selectedFilter.simplifyText());
-                //     Navigator.pop(context);
-
-                //     print(_selectedFilter.simplifyText());
-                //   },
-                //   child: Text('Apply'),
-                // ),
               ],
             );
           },
@@ -661,7 +641,7 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                     physics: const BouncingScrollPhysics(),
                     itemCount: _searchResult.length,
                     itemBuilder: (context, index) {
-                      final profileData = _searchResult[index];
+                      ConflictModel profileData = _searchResult[index];
                       return Card(
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -694,8 +674,6 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
-
-
                                       ],
                                     ),
                                     const SizedBox(height: 8.0),
@@ -720,13 +698,21 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                                         // Text Color (Foreground color)
                                       ),
                                       onPressed: () {
-                                        Navigator.of(context)
-                                            .push(
+                                        Navigator.of(context).push(
                                             MaterialPageRoute(
-                                                builder: (context) =>
-                                                    ForestDetail(
-                                                        forestData:
-                                                        profileData)));
+                                                builder: (context) => ForestDetail(
+                                                        forestData: profileData,
+                                                        changeIndex: widget.changeScreen,
+                                                        currentIndex: 1,
+                                                        changeData: (ConflictModel newData) {
+                                                          print( "test " );
+                                                          setState(() {
+                                                            _searchResult[index] = newData;
+                                                          });
+                                                        },
+                                                    )
+                                            )
+                                        );
                                       },
                                       label: const Text("View"),
                                       icon: const Icon(
