@@ -496,6 +496,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: _profileDataList.map((forestData) =>  HomeScreenListTile(
                           forestData: forestData,
                           changeIndex: widget.changeScreen,
+                          deleteData: (ConflictModel data) {
+                            setState(() {
+                              _profileDataList.removeWhere((element) => element.id == data.id );
+                            });
+                          },
                         ),
                         ).toList(),
                       ),

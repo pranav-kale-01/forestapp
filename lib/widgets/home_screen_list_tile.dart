@@ -5,12 +5,14 @@ import '../screens/Admin/ForestDetail.dart';
 
 class HomeScreenListTile extends StatefulWidget {
   final Function(int) changeIndex;
+  final Function(ConflictModel) deleteData;
   ConflictModel forestData;
 
   HomeScreenListTile({
     Key? key,
     required this.forestData,
     required this.changeIndex,
+    required this.deleteData
   }) : super(key: key);
 
   @override
@@ -43,7 +45,8 @@ class _HomeScreenListTileState extends State<HomeScreenListTile> {
                           setState(() {
                             widget.forestData = newData;
                           });
-                        }
+                        },
+                        deleteData: widget.deleteData,
                     )
             )
         );

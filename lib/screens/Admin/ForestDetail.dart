@@ -10,6 +10,7 @@ class ForestDetail extends StatefulWidget {
   ConflictModel forestData;
   final int currentIndex;
   final Function(int) changeIndex;
+  final Function( ConflictModel ) deleteData;
   final Function( ConflictModel ) changeData;
 
 
@@ -18,7 +19,8 @@ class ForestDetail extends StatefulWidget {
     required this.forestData,
     required this.currentIndex,
     required this.changeIndex,
-    required this.changeData
+    required this.changeData,
+    required this.deleteData
   }) : super(key: key);
 
 
@@ -228,14 +230,10 @@ class _ForestDetailState extends State<ForestDetail> {
                     );
                     if (confirm == true) {
                       try {
-                        final snapshot = await FirebaseFirestore.instance
-                            .collection('forestdata')
-                            .where('user_email',
-                            isEqualTo: widget.forestData.userEmail)
-                            .get();
-                        if (snapshot.docs.isNotEmpty) {
-                          await snapshot.docs.first.reference.delete();
-                          Navigator.of(context).pop();
+                        final snapshot = await FirebaseFirestore.instance.collection('forestdata').doc(widget.forestData.id).get();
+
+                        if (snapshot.exists) {
+                          await snapshot.reference.delete();
 
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
@@ -244,6 +242,10 @@ class _ForestDetailState extends State<ForestDetail> {
                           );
 
                           Navigator.of(context).pop();
+
+                          // updating on the parent screen
+                          widget.deleteData( widget.forestData );
+
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(

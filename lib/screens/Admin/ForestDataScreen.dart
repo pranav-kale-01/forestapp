@@ -703,8 +703,12 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                                                           setState(() {
                                                             _searchResult[index] = newData;
                                                           });
-                                                        }
-
+                                                        },
+                                                        deleteData: (ConflictModel data) {
+                                                          setState(() {
+                                                            _searchResult.removeWhere((element) => element.id == data.id );
+                                                          });
+                                                        },
                                                     ),
                                             ),
                                         );

@@ -698,22 +698,23 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                                                   MaterialPageRoute(
                                                       builder: (context) =>
                                                           ForestDetail(
-                                                            forestData:
-                                                                profileData,
-                                                            changeIndex: widget
-                                                                .changeScreen,
+                                                            forestData: profileData,
+                                                            changeIndex: widget.changeScreen,
                                                             currentIndex: 1,
-                                                            changeData:
-                                                                (ConflictModel
-                                                                    newData) {
-                                                              print("test ");
+                                                            changeData: (ConflictModel newData) {
+
                                                               setState(() {
-                                                                _searchResult[
-                                                                        index] =
-                                                                    newData;
+                                                                _searchResult[index] = newData;
                                                               });
                                                             },
-                                                          )));
+                                                            deleteData: (ConflictModel data) {
+                                                              setState(() {
+                                                                _searchResult.removeWhere((element) => element.id == data.id );
+                                                              });
+                                                            },
+                                                          )
+                                                  )
+                                              );
                                             },
                                             label: const Text("View"),
                                             icon: const Icon(
