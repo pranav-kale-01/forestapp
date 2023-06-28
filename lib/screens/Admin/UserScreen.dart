@@ -35,8 +35,6 @@ class _UserScreenState extends State<UserScreen> {
         .where( 'privileged_user', isEqualTo: false )
         .get();
 
-    print( userSnapshot.size );
-
     final profileDataList = userSnapshot.docs
         .map((doc) => UserModel(
               imageUrl: doc['imageUrl'],
@@ -54,8 +52,6 @@ class _UserScreenState extends State<UserScreen> {
     setState(() {
       _searchResult = profileDataList;
     });
-
-    print( _searchResult.first.toString() );
   }
 
 

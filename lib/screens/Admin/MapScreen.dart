@@ -65,7 +65,6 @@ class _MapScreenState extends State<MapScreen> {
       var directory = await getExternalStorageDirectory();
 
       String newPath = "";
-      print(directory);
 
       List<String> paths = directory!.path.split("/");
       for (int x = 1; x < paths.length; x++) {

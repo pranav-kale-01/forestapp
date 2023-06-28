@@ -41,7 +41,6 @@ class _HomeScreenListTileState extends State<HomeScreenListTile> {
                         currentIndex: 0,
                         changeIndex: widget.changeIndex,
                         changeData: (ConflictModel newData) {
-                          print( "test " );
                           setState(() {
                             widget.forestData = newData;
                           });

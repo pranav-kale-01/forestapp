@@ -52,7 +52,6 @@ class _ForestMapScreenState extends State<ForestMapScreen> {
       var directory = await getExternalStorageDirectory();
 
       String newPath = "";
-      print(directory);
 
       List<String> paths = directory!.path.split("/");
       for (int x = 1; x < paths.length; x++) {

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' as material;
 import 'package:forestapp/common/models/ConflictModel.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
@@ -374,30 +375,48 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 8.0),
                     Text("Filter by Range"),
+                    const SizedBox(height: 8.0),
                     SizedBox(
                       width: MediaQuery.of(context).size.width,
                       child: Row(
                         children: [
                           Expanded(
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
-                                value: _selectedRange, // the currently selected title
-                                items: _dynamicLists['range'],
-                                onChanged: (String? newValue) {
-                                  setState(() {
-                                    _selectedRange = newValue!;
-                                  });
+                            child: Container(
+                              decoration: BoxDecoration(
+                                border: material.Border.all(
+                                  color: Colors.black45,
+                                  width: 1,
+                                ),
+                                borderRadius: BorderRadius.circular( 15 ),
+                              ),
+                              width: 30,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric( horizontal: 8.0, ),
+                                child: DropdownButton<String>(
+                                  menuMaxHeight: MediaQuery.of(context).size.height * 0.5,
+                                  isExpanded: true,
+                                  underline: Container(),
+                                  value: _selectedRange, // the currently selected title
+                                  items: _dynamicLists['range'],
+                                  style: TextStyle(
+                                    // overflow: TextOverflow.ellipsis,
+                                    color: Colors.black,
+                                  ),
+                                  onChanged: (String? newValue) {
+                                    setState(() {
+                                      _selectedRange = newValue!;
+                                    });
 
-                                  filterList['range'] = newValue!;
-                                  filterData();
-                                },
+                                    filterList['range'] = newValue!;
+                                    filterData();
+                                  },
+                                ),
                               ),
                             ),
                           ),
                           SizedBox(
-                            width: 10,
+                            width: 8,
                           ),
                           IconButton(
                             icon: Icon(Icons.clear),
@@ -408,26 +427,40 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 8.0),
+
+                    const SizedBox(height: 16.0),
+
                     Text("Filter by Conflict Name"),
+                    const SizedBox(height: 8.0),
                     SizedBox(
                       width: MediaQuery.of(context).size.width,
                       child: Row(
                         children: [
                           Expanded(
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
-                                value:
-                                    _selectedConflict, // the currently selected title
-                                items: _dynamicLists['conflict'],
-                                onChanged: (String? newValue) {
-                                  setState(() {
-                                    _selectedConflict = newValue!;
-                                  });
-                                  filterList['conflict'] = newValue!;
+                            child: Container(
+                              decoration: BoxDecoration(
+                                border: material.Border.all(
+                                  color: Colors.black45,
+                                  width: 1,
+                                ),
+                                borderRadius: BorderRadius.circular( 15 ),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric( horizontal: 8.0, ),
+                                child: DropdownButton<String>(
+                                  isExpanded: true,
+                                  value: _selectedConflict, // the currently selected title
+                                  items: _dynamicLists['conflict'],
+                                  underline: Container(),
+                                  onChanged: (String? newValue) {
+                                    setState(() {
+                                      _selectedConflict = newValue!;
+                                    });
+                                    filterList['conflict'] = newValue!;
 
-                                  filterData();
-                                },
+                                    filterData();
+                                  },
+                                ),
                               ),
                             ),
                           ),
@@ -443,26 +476,38 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 8.0),
+                    const SizedBox(height: 16.0),
                     Text("Filter by Beats"),
+                    const SizedBox(height: 8.0),
                     SizedBox(
                       width: MediaQuery.of(context).size.width,
                       child: Row(
                         children: [
                           Expanded(
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
-                                value:
-                                    _selectedBt, // the currently selected title
-                                items: _dynamicLists['beat'],
-                                onChanged: (String? newValue) {
-                                  setState(() {
-                                    _selectedBt = newValue!;
-                                  });
-                                  filterList['beat'] = newValue!;
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                border: material.Border.all(
+                                  color: Colors.black45,
+                                  width: 1,
+                                ),
+                                borderRadius: BorderRadius.circular( 15 ),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric( horizontal: 8.0),
+                                child: DropdownButton<String>(
+                                  isExpanded: true,
+                                  value: _selectedBt, // the currently selected title
+                                  underline: Container(),
+                                  items: _dynamicLists['beat'],
+                                  onChanged: (String? newValue) {
+                                    setState(() {
+                                      _selectedBt = newValue!;
+                                    });
+                                    filterList['beat'] = newValue!;
 
-                                  filterData();
-                                },
+                                    filterData();
+                                  },
+                                ),
                               ),
                             ),
                           ),
@@ -478,31 +523,47 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 8.0),
+                    const SizedBox(height: 16.0),
                     Text("Filter by Date"),
+                    const SizedBox(height: 8.0),
+
                     SizedBox(
                       width: MediaQuery.of(context).size.width,
                       child: Row(
                         children: [
                           Expanded(
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
-                                value:
-                                    _selectedDate, // the currently selected title
-                                items: _dateDropdownOptions.map((item) {
-                                  return DropdownMenuItem<String>(
-                                    child: Text(item.toLowerCase()),
-                                    value: item.toLowerCase(),
-                                  );
-                                }).toList(),
-                                onChanged: (String? newValue) {
-                                  setState(() {
-                                    _selectedDate = newValue!;
-                                  });
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                border: material.Border.all(
+                                  color: Colors.black45,
+                                  width: 1,
+                                ),
+                                borderRadius: BorderRadius.circular( 15 ),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric( horizontal: 8.0),
+                                child: DropdownButton<String>(
+                                  value: _selectedDate, // the currently selected title
+                                  underline: Container(),
+                                  isExpanded: true,
+                                  items: _dateDropdownOptions.map((item) {
+                                    return DropdownMenuItem<String>(
+                                      child: Text(
+                                        item.toLowerCase(),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      value: item.toLowerCase(),
+                                    );
+                                  }).toList(),
+                                  onChanged: (String? newValue) {
+                                    setState(() {
+                                      _selectedDate = newValue!;
+                                    });
 
-                                  filterList['date'] = newValue!.toLowerCase();
-                                  filterData();
-                                },
+                                    filterList['date'] = newValue!.toLowerCase();
+                                    filterData();
+                                  },
+                                ),
                               ),
                             ),
                           ),
@@ -524,7 +585,13 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: Text('Close'),
+                  child: Text(
+                    'Close',
+                    style: TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold
+                    ),
+                  ),
                 ),
               ],
             );

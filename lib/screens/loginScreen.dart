@@ -38,8 +38,6 @@ class _LoginScreenState extends State<LoginScreen> {
         // Get the first document from the query snapshot
         DocumentSnapshot userDoc = querySnapshot.docs.first;
 
-        debugPrint( userDoc.get('privileged_user').toString() );
-
         // checking if user has proper privileges or not
         if (!userDoc.get('privileged_user')) {
           showDialog(
