@@ -233,38 +233,43 @@ class _HomeScreenState extends State<HomeScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: Container(
-                          margin: const EdgeInsets.symmetric( horizontal: 5, vertical: 5),
-                          padding: const EdgeInsets.all(15),
-                          height: mediaQuery.size.height * 0.15,
-                          decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(15),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 5),
-                                )
-                              ]
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: [
-                              Text(
-                                "Total conflicts",
-                                style: TextStyle(
-                                  fontSize: 18,
+                      child: GestureDetector(
+                        onTap: () {
+                          widget.changeScreen( 2 );
+                        },
+                        child: Container(
+                            margin: const EdgeInsets.symmetric( horizontal: 5, vertical: 5),
+                            padding: const EdgeInsets.all(15),
+                            height: mediaQuery.size.height * 0.15,
+                            decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(15),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 5),
+                                  )
+                                ]
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                              children: [
+                                Text(
+                                  "Total conflicts",
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                  ),
                                 ),
-                              ),
-                              Text(
-                                _TotalConflictsCount.toString(),
-                                style: TextStyle(
-                                  fontSize: 18,
+                                Text(
+                                  _TotalConflictsCount.toString(),
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          )
+                              ],
+                            )
+                        ),
                       ),
                     ),
                     Expanded(

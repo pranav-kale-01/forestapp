@@ -9,27 +9,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
-
-
-class ProfileData {
-  final String title;
-  final String description;
-  final String imageUrl;
-  final String userName;
-  final String userEmail;
-  final Timestamp? datetime;
-  final GeoPoint location;
-
-  ProfileData({
-    required this.title,
-    required this.description,
-    required this.imageUrl,
-    required this.userName,
-    required this.userEmail,
-    this.datetime,
-    required this.location,
-  });
-}
+import 'package:intl/intl.dart';
 
 class MapScreen extends StatefulWidget {
   final double latitude;
@@ -42,12 +22,14 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
-  // late String _userEmail;
   late List<ConflictModel> _profileDataList = [];
   late MapZoomPanBehavior _zoomPanBehavior;
   late List<MapLatLng> _markers;
   static GlobalKey previewContainer = new GlobalKey();
   int fileCount = 0 ;
+
+  bool showInfoDialog = false;
+  int _ind = 0;
 
   takeScreenShot() async{
     try {
@@ -57,9 +39,14 @@ class _MapScreenState extends State<MapScreen> {
       ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       Uint8List pngBytes = byteData!.buffer.asUint8List();
 
-      final storagePermission = await Permission.manageExternalStorage.request();
-      if( storagePermission.isDenied || storagePermission.isRestricted ) {
-        openAppSettings();
+      final storagePermission = await Permission.manageExternalStorage;
+
+      if( storagePermission.status != PermissionStatus.granted ) {
+        storagePermission.request();
+
+        if( storagePermission.status == PermissionStatus.denied || storagePermission.status == PermissionStatus.restricted ) {
+          openAppSettings();
+        }
       }
 
       var directory = await getExternalStorageDirectory();
@@ -194,13 +181,19 @@ class _MapScreenState extends State<MapScreen> {
 
       _markers = profileDataList
           .map((profileData) => MapLatLng(
-              profileData.location.latitude, profileData.location.longitude))
-          .toList();
+              profileData.location.latitude,
+              profileData.location.longitude,
+
+              // DateFormat('MMM d, yyyy h:mm a').format(widget.forestData.datetime!.toDate())
+          )
+        ).toList();
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context).size;
+
     if (_profileDataList.isEmpty) {
       return Scaffold(
         appBar: AppBar(
@@ -253,6 +246,7 @@ class _MapScreenState extends State<MapScreen> {
         ),
       );
     }
+
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
@@ -289,40 +283,101 @@ class _MapScreenState extends State<MapScreen> {
       ),
       body: RepaintBoundary(
         key: previewContainer,
-        child: SfMaps(
-          layers: [
-            MapTileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              initialZoomLevel: 13,
-              initialFocalLatLng: MapLatLng(21.5549701, 79.1735154),
-              zoomPanBehavior: _zoomPanBehavior,
-              markerBuilder: (BuildContext context, int index) {
-                return MapMarker(
-                  latitude: _markers[index].latitude,
-                  longitude: _markers[index].longitude,
-                  child: GestureDetector(
-                    child: Icon(
-                      Icons.location_on,
-                      size: 50,
-                      color: Colors.red,
-                    ),
-                    onTap: () {
-                      showDialog(
-                        context: context,
-                        builder: (_) => AlertDialog(
-                          title: Text(
-                            'Name: ${_profileDataList[index].village_name}, Added by: ${_profileDataList[index].userName}',
-                            style: TextStyle(
-                                fontSize: 12, fontWeight: FontWeight.w300),
+        child: Stack(
+          alignment: Alignment.bottomCenter,
+          children: [
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  showInfoDialog = false;
+                });
+              },
+              child: SfMaps(
+                layers: [
+                   MapTileLayer(
+                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    initialZoomLevel: 13,
+                    initialFocalLatLng: MapLatLng(21.5549701, 79.1735154),
+                    zoomPanBehavior: _zoomPanBehavior,
+                    markerBuilder: (BuildContext context, int index) {
+                      return MapMarker(
+                        latitude: _markers[index].latitude,
+                        longitude: _markers[index].longitude,
+                        child: GestureDetector(
+                          child: Icon(
+                            Icons.location_on,
+                            size: 50,
+                            color: Colors.red,
                           ),
+                          onTap: () {
+                            setState(() {
+                              _ind = index;
+                              showInfoDialog = true;
+                            });
+                          },
                         ),
                       );
                     },
+                    initialMarkersCount: _markers.length,
                   ),
-                );
-              },
-              initialMarkersCount: _markers.length,
+                ],
+              ),
             ),
+            if( showInfoDialog )
+              Container(
+                  width: mediaQuery.width * 0.96,
+                  margin: const EdgeInsets.symmetric( vertical: 8.0, ),
+                  decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular( 15.0, ),
+                      color: Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.shade500,
+                          offset: const Offset( 1, 4),
+                          blurRadius: 2,
+                        )
+                      ]
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.only(top: 12.0, left: 12.0, right: 12.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _profileDataList[_ind].village_name,
+                          style: const TextStyle(
+                              fontSize: 26,
+                              fontWeight: FontWeight.w600
+                          ),
+                        ),
+                        const SizedBox(
+                          height: 10,
+                        ),
+                        Text(
+                          "Last Updated - " + DateFormat('MMM d, yyyy h:mm a').format(_profileDataList[_ind].datetime!.toDate()),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                        const SizedBox(
+                          height: 10,
+                        ),
+                        Text(
+                          "Location - " + _profileDataList[_ind].location.latitude.toString() + "N, " + _profileDataList[_ind].location.latitude.toString() + "E",
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                        const SizedBox(
+                          height: 10,
+                        ),
+                      ],
+                    ),
+                  )
+              )
           ],
         ),
       ),
