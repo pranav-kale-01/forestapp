@@ -242,6 +242,7 @@ class _ForestDetailState extends State<ForestDetail> {
 
                           // updating on the parent screen
                           widget.deleteData( widget.forestData );
+
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(

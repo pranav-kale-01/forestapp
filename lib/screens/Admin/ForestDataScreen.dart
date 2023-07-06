@@ -769,7 +769,6 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                                                         currentIndex: 2,
                                                         changeIndex: widget.changeScreen,
                                                         changeData: (ConflictModel newData) {
-                                                          print( "test " );
                                                           setState(() {
                                                             _searchResult[index] = newData;
                                                           });
