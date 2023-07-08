@@ -19,7 +19,6 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  User? _user;
   String? _userEmail;
   bool _isVisible = false;
   bool _isAdmin = false;
@@ -28,21 +27,6 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     fetchUserEmail();
     super.initState();
-
-    // Listen to auth state changes
-    _auth.authStateChanges().listen((User? user) {
-      if (user != null) {
-        // User is logged in
-        setState(() {
-          _user = user;
-        });
-      } else {
-        // User is not logged in
-        setState(() {
-          _user = null;
-        });
-      }
-    });
   }
 
   Future<void> fetchUserEmail() async {
@@ -51,7 +35,6 @@ class _SplashScreenState extends State<SplashScreen> {
     if( prefs.getBool('isAdmin') != null ) {
       _isAdmin = prefs.getBool('isAdmin')!;
     }
-
 
     setState(() {
       _userEmail = userEmail;
@@ -64,16 +47,14 @@ class _SplashScreenState extends State<SplashScreen> {
         if (_isAdmin) {
           Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(
-                builder: (context) => const HomeAdmin(
-                  title: 'title',
-                ),
+                builder: (context) => const HomeAdmin(),
               ),
               (route) => false);
         } else if (_userEmail != null) {
           Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(
-                builder: (context) => const HomeUser(
-                  title: 'title',
+                builder: (context) => HomeUser(
+                  userEmail: _userEmail!,
                 ),
               ),
               (route) => false);

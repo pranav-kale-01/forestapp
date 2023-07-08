@@ -7,9 +7,7 @@ import 'HomeScreen.dart';
 import 'MapScreen.dart';
 
 class HomeAdmin extends StatefulWidget {
-  const HomeAdmin({Key? key, required this.title}) : super(key: key);
-
-  final String title;
+  const HomeAdmin({Key? key}) : super(key: key);
 
   @override
   _HomeAdminState createState() => _HomeAdminState();

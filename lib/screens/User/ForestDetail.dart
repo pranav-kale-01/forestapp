@@ -27,6 +27,41 @@ class ForestDetail extends StatefulWidget {
 }
 
 class _ForestDetailState extends State<ForestDetail> {
+  late final _bottomNavigator;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _bottomNavigator = BottomNavigationBar(
+      items: const <BottomNavigationBarItem>[
+        BottomNavigationBarItem(
+          icon: Icon(Icons.home),
+          label: 'Home',
+          backgroundColor: Colors.black,
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.person_add),
+          label: 'Add Forest',
+          backgroundColor: Colors.black,
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.eco),
+          label: 'Forest Data',
+          backgroundColor: Colors.black,
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.person),
+          label: 'Profile',
+          backgroundColor: Colors.black,
+        ),
+      ],
+      currentIndex: widget.currentIndex,
+      selectedItemColor: Colors.green,
+      onTap: _onItemTapped,
+    );
+  }
+
   void _changeData( ConflictModel newData ) {
     setState(() {
       widget.forestData = newData;
@@ -70,33 +105,7 @@ class _ForestDetailState extends State<ForestDetail> {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-            backgroundColor: Colors.black,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_add),
-            label: 'Add Forest',
-            backgroundColor: Colors.black,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.eco),
-            label: 'Forest Data',
-            backgroundColor: Colors.black,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-            backgroundColor: Colors.black,
-          ),
-        ],
-        currentIndex: widget.currentIndex,
-        selectedItemColor: Colors.green,
-        onTap: _onItemTapped,
-      ),
+      bottomNavigationBar: _bottomNavigator,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -186,10 +195,8 @@ class _ForestDetailState extends State<ForestDetail> {
                     Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (context) => ForestMapScreen(
-                          latitude: widget.forestData.location.latitude,
-                          longitude: widget.forestData.location.longitude,
-                          userName: widget.forestData.userName,
-                          conflictName: widget.forestData.village_name,
+                          conflictData: widget.forestData,
+                          bottomNavigator: _bottomNavigator
                         ),
                       ),
                     );

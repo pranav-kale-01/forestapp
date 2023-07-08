@@ -3,6 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:forestapp/common/models/ConflictModel.dart';
 import 'package:forestapp/screens/User/homeUser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -134,20 +135,19 @@ class _LoginScreenState extends State<LoginScreen> {
         context,
         MaterialPageRoute(
           builder: (context) =>
-          const HomeAdmin(title: 'hello'),
+          const HomeAdmin( ),
         ),
       );
   }
 
   void loginAsUser() async {
     try {
+      final userEmail = _emailController.text.trim();
+
       // Get the user document from Firestore based on the email entered
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
           .collection('users')
-          .where('email',
-          isEqualTo: _emailController
-              .text
-              .trim())
+          .where('email', isEqualTo: userEmail )
           .get();
 
       if (querySnapshot.docs.isNotEmpty) {
@@ -186,8 +186,9 @@ class _LoginScreenState extends State<LoginScreen> {
             context,
             MaterialPageRoute(
               builder: (context) =>
-              const HomeUser(
-                  title: 'hello'),
+              HomeUser(
+                  userEmail: userEmail,
+              ),
             ),
           );
           // Get an instance of shared preferences
@@ -242,8 +243,10 @@ class _LoginScreenState extends State<LoginScreen> {
           },
         );
       }
-    } catch (e) {
+    } catch (e, s) {
       // Handle any errors that occur during sign in
+      debugPrint( e.toString() );
+      debugPrint( s.toString() );
     }
 }
 

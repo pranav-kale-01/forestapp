@@ -1,26 +1,27 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:ui' as ui;
+import 'dart:math' as math;
 
+import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:syncfusion_flutter_maps/maps.dart';
-import 'dart:ui' as ui;
-import 'dart:math' as math;
+
+
+import '../../common/models/ConflictModel.dart';
 
 class ForestMapScreen extends StatefulWidget {
-  final double latitude;
-  final double longitude;
-  final String userName;
-  final String conflictName;
+  final ConflictModel conflictData;
+  final BottomNavigationBar bottomNavigator;
 
-  ForestMapScreen(
-      {required this.latitude,
-      required this.longitude,
-      required this.userName,
-      required this.conflictName});
+  ForestMapScreen({
+    required this.bottomNavigator,
+    required this.conflictData
+  });
 
   @override
   _ForestMapScreenState createState() => _ForestMapScreenState();
@@ -29,12 +30,41 @@ class ForestMapScreen extends StatefulWidget {
 class _ForestMapScreenState extends State<ForestMapScreen> {
   static GlobalKey previewContainer = new GlobalKey();
 
+  late final BottomNavigationBar _bottomNavBar;
   late MapZoomPanBehavior _zoomPanBehavior;
   late List<MapLatLng> _markers;
   late double _zoomLevel;
-  int fileCount = 0 ;
-  bool dialogOpen = false;
 
+  int fileCount = 0 ;
+  bool showInfoDialog = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _markers = [
+      MapLatLng(widget.conflictData.location.latitude, widget.conflictData.location.longitude),
+    ];
+
+    _zoomLevel = calculateZoomLevel(_markers);
+    _zoomPanBehavior = MapZoomPanBehavior(zoomLevel: _zoomLevel);
+
+    if (_markers.isNotEmpty) {
+      // Set zoom level based on the marker location
+      _zoomPanBehavior.zoomLevel = 15;
+      _zoomPanBehavior.focalLatLng = _markers.first;
+    }
+
+    _bottomNavBar = BottomNavigationBar(
+        items: widget.bottomNavigator.items,
+        currentIndex: 2,
+        onTap: (index) {
+          Navigator.of(context).pop();
+          widget.bottomNavigator.onTap!( index );
+        },
+        selectedItemColor: Colors.green,
+    );
+  }
 
   takeScreenShot() async {
     try {
@@ -131,24 +161,6 @@ class _ForestMapScreenState extends State<ForestMapScreen> {
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-
-    _markers = [
-      MapLatLng(widget.latitude, widget.longitude),
-    ];
-
-    _zoomLevel = calculateZoomLevel(_markers);
-    _zoomPanBehavior = MapZoomPanBehavior(zoomLevel: _zoomLevel);
-
-    if (_markers.isNotEmpty) {
-      // Set zoom level based on the marker location
-      _zoomPanBehavior.zoomLevel = 15;
-      _zoomPanBehavior.focalLatLng = _markers.first;
-    }
-  }
-
   double calculateZoomLevel(List<MapLatLng> markers) {
     if (markers.isEmpty) {
       return 1;
@@ -177,9 +189,10 @@ class _ForestMapScreenState extends State<ForestMapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context).size;
+
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0,
         flexibleSpace: Container(
           height: 120,
@@ -195,45 +208,40 @@ class _ForestMapScreenState extends State<ForestMapScreen> {
               )
           ),
         ),
-        title: Text(
-          widget.userName,
+        title: const Text(
+          'Map',
           style: TextStyle(
             fontWeight: FontWeight.bold,
           ),
         ),
         actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric( horizontal: 12.0),
-            child: IconButton(
-                onPressed: () {
-                  takeScreenShot();
-                },
-                icon: Icon(
-                    Icons.download_sharp
-                )
-            ),
+          IconButton(
+              onPressed: () {
+                takeScreenShot();
+              },
+              icon: Icon(
+                  Icons.download_sharp
+              )
           )
         ],
       ),
       body: RepaintBoundary(
         key: previewContainer,
         child: Stack(
-          alignment: Alignment.bottomLeft,
+          alignment: Alignment.bottomCenter,
           children: [
             GestureDetector(
               onTap: () {
-                if( dialogOpen ) {
-                  setState(() {
-                    dialogOpen = false;
-                  });
-
-                  Navigator.of(context).pop();
-                }
+                setState(() {
+                  showInfoDialog = false;
+                });
               },
               child: SfMaps(
                 layers: [
                   MapTileLayer(
                     urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    initialZoomLevel: 13,
+                    initialFocalLatLng: MapLatLng(21.5549701, 79.1735154),
                     zoomPanBehavior: _zoomPanBehavior,
                     markerBuilder: (BuildContext context, int index) {
                       return MapMarker(
@@ -247,18 +255,8 @@ class _ForestMapScreenState extends State<ForestMapScreen> {
                           ),
                           onTap: () {
                             setState(() {
-                              dialogOpen = true;
+                              showInfoDialog = true;
                             });
-
-                            showBottomSheet(
-                              context: context,
-                              builder: (_) => Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Text(
-                                  'Conflict: ${widget.conflictName}, Added by: ${widget.userName}',
-                                ),
-                              ),
-                            );
                           },
                         ),
                       );
@@ -268,17 +266,65 @@ class _ForestMapScreenState extends State<ForestMapScreen> {
                 ],
               ),
             ),
-            if( dialogOpen )
+            if( showInfoDialog )
               Container(
-                color: Colors.white,
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  'Conflict: ${widget.conflictName}, Added by: ${widget.userName}',
-                ),
-              ),
+                  width: mediaQuery.width * 0.96,
+                  margin: const EdgeInsets.symmetric( vertical: 8.0, ),
+                  decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular( 15.0, ),
+                      color: Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.shade500,
+                          offset: const Offset( 1, 4),
+                          blurRadius: 2,
+                        )
+                      ]
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.only(top: 12.0, left: 12.0, right: 12.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.conflictData.village_name,
+                          style: const TextStyle(
+                              fontSize: 26,
+                              fontWeight: FontWeight.w600
+                          ),
+                        ),
+                        const SizedBox(
+                          height: 10,
+                        ),
+                        Text(
+                          "Last Updated - " + DateFormat('MMM d, yyyy h:mm a').format(widget.conflictData.datetime!.toDate()),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                        const SizedBox(
+                          height: 10,
+                        ),
+                        Text(
+                          "Location - " + widget.conflictData.location.latitude.toString() + "N, " + widget.conflictData.location.latitude.toString() + "E",
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                        const SizedBox(
+                          height: 10,
+                        ),
+                      ],
+                    ),
+                  )
+              )
           ],
         ),
       ),
+      bottomNavigationBar: _bottomNavBar,
     );
   }
 }

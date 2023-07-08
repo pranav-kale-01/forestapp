@@ -7,9 +7,12 @@ import 'ForestDataScreen.dart';
 import 'HomeScreen.dart';
 
 class HomeUser extends StatefulWidget {
-  const HomeUser({Key? key, required this.title}) : super(key: key);
+  final String userEmail;
 
-  final String title;
+  const HomeUser({
+    Key? key,
+    required this.userEmail
+  }) : super(key: key);
 
   @override
   _HomeUserState createState() => _HomeUserState();
@@ -30,6 +33,7 @@ class _HomeUserState extends State<HomeUser> {
       AddForestData(),
       ForestDataScreen(
         changeScreen: _changeIndex,
+        userEmail: widget.userEmail,
       ),
       const ProfileScreen(),
     ];

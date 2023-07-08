@@ -12,10 +12,12 @@ import 'package:excel/excel.dart';
 import 'ForestDetail.dart';
 
 class ForestDataScreen extends StatefulWidget {
+  final String userEmail;
   final Function(int) changeScreen;
 
   const ForestDataScreen({
     Key? key,
+    required this.userEmail,
     required this.changeScreen,
   }) : super(key: key);
 
@@ -54,8 +56,10 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
   }
 
   Future<void> fetchUserProfileData() async {
-    final userSnapshot =
-        await FirebaseFirestore.instance.collection('forestdata').orderBy('createdAt',descending: true ).get();
+    final userSnapshot = await FirebaseFirestore.instance.collection('forestdata')
+        .where('user_email', isEqualTo: widget.userEmail )
+        .orderBy('createdAt',descending: true )
+        .get();
 
     final profileDataList = userSnapshot.docs.map(
           (doc) => ConflictModel(
@@ -767,7 +771,7 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                                                           ForestDetail(
                                                             forestData: profileData,
                                                             changeIndex: widget.changeScreen,
-                                                            currentIndex: 1,
+                                                            currentIndex: 2,
                                                             changeData: (ConflictModel newData) {
 
                                                               setState(() {
