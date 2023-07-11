@@ -20,18 +20,25 @@ class HomeUser extends StatefulWidget {
 
 class _HomeUserState extends State<HomeUser> {
   int _selectedIndex = 0;
+  late String _selectedConflict;
   late final List<Widget> _widgetOptions;
 
   @override
   void initState() {
     super.initState();
 
+    _selectedConflict = '';
+
     _widgetOptions = <Widget>[
       HomeScreen(
         changeIndex: _changeIndex,
+        setConflict: (String conflict) {
+          _selectedConflict = conflict;
+        }
       ),
       AddForestData(),
       ForestDataScreen(
+        defaultFilterConflict: _selectedConflict,
         changeScreen: _changeIndex,
         userEmail: widget.userEmail,
       ),
@@ -40,12 +47,50 @@ class _HomeUserState extends State<HomeUser> {
   }
 
   void _changeIndex( int index ) {
+    if( _selectedConflict.isNotEmpty ) {
+      print('iof');
+      _widgetOptions[2] = ForestDataScreen(
+        defaultFilterConflict: _selectedConflict,
+        changeScreen: _changeIndex,
+        userEmail: widget.userEmail,
+      );
+    }
+    else {
+      print('else');
+      _widgetOptions[2] = ForestDataScreen(
+        defaultFilterConflict: '',
+        changeScreen: _changeIndex,
+        userEmail: widget.userEmail,
+      );
+    }
+    _selectedConflict = '';
+
     setState(() {
       _selectedIndex = index;
     });
   }
 
   void _onItemTapped(int index) {
+    if( index == 2 ) {
+      if( _selectedConflict.isNotEmpty ) {
+        print('iof');
+        _widgetOptions[2] = ForestDataScreen(
+          defaultFilterConflict: _selectedConflict,
+          changeScreen: _changeIndex,
+          userEmail: widget.userEmail,
+        );
+      }
+      else {
+        print('else');
+        _widgetOptions[2] = ForestDataScreen(
+          defaultFilterConflict: '',
+          changeScreen: _changeIndex,
+          userEmail: widget.userEmail,
+        );
+      }
+      _selectedConflict = '';
+    }
+
     setState(() {
       _selectedIndex = index;
     });
@@ -54,7 +99,13 @@ class _HomeUserState extends State<HomeUser> {
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: () => showExitPopup(context),
+      onWillPop: () {
+        if( _selectedIndex == 0 ) {
+          return showExitPopup(context);
+        }
+        _changeIndex(0);
+        return false as Future<bool>;
+      },
       child: Scaffold(
         body: Center(
           child: _widgetOptions.elementAt(_selectedIndex),

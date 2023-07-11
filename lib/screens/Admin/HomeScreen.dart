@@ -9,11 +9,13 @@ import '../loginScreen.dart';
 
 
 class HomeScreen extends StatefulWidget {
-  final Function(int) changeScreen;
+  final Function(int) changeIndex;
+  final Function( String) setConflict;
 
   const HomeScreen({
-    super.key,
-    required this.changeScreen
+  super.key,
+  required this.setConflict,
+  required this.changeIndex
   });
 
   @override
@@ -221,7 +223,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       onPressed: () async {
                         Navigator.of(context).push(
                           MaterialPageRoute(builder: (context) => EditListsScreen(
-                            changeIndex: widget.changeScreen,
+                            changeIndex: widget.changeIndex,
                           )
                           )
                         );
@@ -235,52 +237,49 @@ class _HomeScreenState extends State<HomeScreen> {
                     Expanded(
                       child: GestureDetector(
                         onTap: () {
-                          widget.changeScreen( 2 );
+                          widget.setConflict( '' );
+                          widget.changeIndex( 2 );
                         },
-                        child: GestureDetector(
-                          onTap: () {
-                            widget.changeScreen( 2 );
-                          },
-                          child: Container(
-                              margin: const EdgeInsets.symmetric( horizontal: 5, vertical: 5),
-                              padding: const EdgeInsets.all(15),
-                              height: mediaQuery.size.height * 0.15,
-                              decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(15),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
-                                      blurRadius: 20,
-                                      offset: const Offset(0, 5),
-                                    )
-                                  ]
-                              ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                children: [
-                                  Text(
-                                    "Total conflicts",
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                    ),
+                        child: Container(
+                            margin: const EdgeInsets.symmetric( horizontal: 5, vertical: 5),
+                            padding: const EdgeInsets.all(15),
+                            height: mediaQuery.size.height * 0.15,
+                            decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(15),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 5),
+                                  )
+                                ]
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                              children: [
+                                Text(
+                                  "Total conflicts",
+                                  style: TextStyle(
+                                    fontSize: 18,
                                   ),
-                                  Text(
-                                    _TotalConflictsCount.toString(),
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                    ),
+                                ),
+                                Text(
+                                  _TotalConflictsCount.toString(),
+                                  style: TextStyle(
+                                    fontSize: 18,
                                   ),
-                                ],
-                              )
-                          ),
+                                ),
+                              ],
+                            )
                         ),
                       ),
                     ),
                     Expanded(
                       child: GestureDetector(
                         onTap: () {
-                          widget.changeScreen( 2 );
+                          widget.setConflict( 'humans injured' );
+                          widget.changeIndex( 2 );
                         },
                         child: Container(
                             margin: const EdgeInsets.symmetric( horizontal: 5, vertical: 5),
@@ -320,7 +319,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     Expanded(
                       child: GestureDetector(
                         onTap: () {
-                          widget.changeScreen( 2 );
+                          widget.setConflict( 'humans killed' );
+                          widget.changeIndex( 2 );
                         },
                         child: Container(
                             margin: const EdgeInsets.symmetric( horizontal: 5, vertical: 5),
@@ -364,7 +364,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     Expanded(
                       child: GestureDetector(
                         onTap: () {
-                          widget.changeScreen( 2 );
+                          widget.setConflict( 'cattle injured' );
+                          widget.changeIndex( 2 );
                         },
                         child: Container(
                             margin: const EdgeInsets.symmetric( horizontal: 5, vertical: 5),
@@ -404,7 +405,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     Expanded(
                       child: GestureDetector(
                         onTap: () {
-                          widget.changeScreen( 2 );
+                          widget.setConflict( 'cattle killed' );
+                          widget.changeIndex( 2 );
                         },
                         child: Container(
                             margin: const EdgeInsets.symmetric( horizontal: 5, vertical: 5),
@@ -444,7 +446,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     Expanded(
                       child: GestureDetector(
                         onTap: () {
-                          widget.changeScreen( 2 );
+                          widget.setConflict( 'crop damaged' );
+                          widget.changeIndex( 2 );
                         },
                         child: Container(
                             margin: const EdgeInsets.symmetric( horizontal: 5, vertical: 5),
@@ -465,7 +468,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
                               children: [
                                 Text(
-                                  "Crop Damage",
+                                  "Crop Damaged",
                                   style: TextStyle(
                                     fontSize: 18,
                                   ),
@@ -530,7 +533,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Column(
                         children: _profileDataList.map((forestData) =>  HomeScreenListTile(
                           forestData: forestData,
-                          changeIndex: widget.changeScreen,
+                          changeIndex: widget.changeIndex,
                           deleteData: (ConflictModel data) {
                             setState(() {
                               _profileDataList.removeWhere((element) => element.id == data.id );

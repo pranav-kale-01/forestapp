@@ -15,22 +15,28 @@ class HomeAdmin extends StatefulWidget {
 
 class _HomeAdminState extends State<HomeAdmin> {
   int _selectedIndex = 0;
-
+  late String _selectedConflict;
   late final List<Widget> _widgetOptions;
 
   @override
   void initState() {
     super.initState();
 
+    _selectedConflict = '';
+
     _widgetOptions = <Widget>[
       HomeScreen(
-        changeScreen: _changeIndex
+        changeIndex: _changeIndex,
+        setConflict: (String conflict) {
+          _selectedConflict = conflict;
+        }
       ),
       UserScreen(
         changeIndex: _changeIndex,
       ),
       ForestDataScreen(
         changeScreen: _changeIndex,
+        defaultFilterConflict: _selectedConflict,
       ),
       MapScreen(
         latitude: 37.4220,
@@ -40,12 +46,48 @@ class _HomeAdminState extends State<HomeAdmin> {
   }
 
   void _changeIndex( int index ) {
+    if( _selectedConflict.isNotEmpty ) {
+      print('iof');
+      _widgetOptions[2] = ForestDataScreen(
+        defaultFilterConflict: _selectedConflict,
+        changeScreen: _changeIndex,
+      );
+    }
+    else {
+      print('else');
+      _widgetOptions[2] = ForestDataScreen(
+        defaultFilterConflict: '',
+        changeScreen: _changeIndex,
+      );
+    }
+    _selectedConflict = '';
+
     setState(() {
       _selectedIndex = index;
     });
   }
 
   void _onItemTapped(int index) {
+    if( index == 2 ) {
+      if( _selectedConflict.isNotEmpty ) {
+        print('iof');
+        _widgetOptions[2] = ForestDataScreen(
+          defaultFilterConflict: _selectedConflict,
+          changeScreen: _changeIndex,
+
+        );
+      }
+      else {
+        print('else');
+        _widgetOptions[2] = ForestDataScreen(
+          defaultFilterConflict: '',
+          changeScreen: _changeIndex,
+
+        );
+      }
+      _selectedConflict = '';
+    }
+
     setState(() {
       _selectedIndex = index;
     });
@@ -54,7 +96,13 @@ class _HomeAdminState extends State<HomeAdmin> {
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: () => showExitPopup(context),
+      onWillPop: () {
+        if( _selectedIndex == 0 ) {
+          return showExitPopup(context);
+        }
+        _changeIndex(0);
+        return false as Future<bool>;
+      },
       child: Scaffold(
         body: Center(
           child: _widgetOptions.elementAt(_selectedIndex),

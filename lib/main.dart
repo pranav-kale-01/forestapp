@@ -7,7 +7,6 @@ import 'package:hexcolor/hexcolor.dart';
 
 import 'package:location/location.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:permission_handler/permission_handler.dart' as permission;
 
 
 void main() async {
@@ -39,11 +38,6 @@ class _MyAppState extends State<MyApp> {
     super.initState();
 
     checkGps();
-    requestFilePermission();
-  }
-
-  Future<void> requestFilePermission() async {
-    final storagePermission = await permission.Permission.manageExternalStorage.request();
   }
 
   Future<void> checkGps() async{

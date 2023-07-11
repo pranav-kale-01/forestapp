@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -13,10 +14,12 @@ import 'ForestDetail.dart';
 
 class ForestDataScreen extends StatefulWidget {
   final Function(int) changeScreen;
+  final String defaultFilterConflict;
 
   const ForestDataScreen({
     Key? key,
     required this.changeScreen,
+    required this.defaultFilterConflict,
   }) : super(key: key);
 
   @override
@@ -85,12 +88,6 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
       ),
     ).toList();
 
-    setState(() {
-      _profileDataList = profileDataList;
-      _searchResult = profileDataList;
-    });
-
-    // getting all possible ranges
     // fetching the list of attributes from firebase
     final docSnapshot = await FirebaseFirestore.instance.collection('dynamic_lists').get();
 
@@ -114,6 +111,23 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
     _selectedRange = _dynamicLists['range']?.first.value;
     _selectedConflict = _dynamicLists['conflict']?.first.value;
     _selectedBt = _dynamicLists['bt']?.first.value?.toLowerCase();
+
+
+    // if defaultFilterConflict is not null then filtering the data according to conflict
+    if( widget.defaultFilterConflict.isNotEmpty ) {
+      setState(() {
+        _profileDataList = profileDataList;
+        _searchResult = profileDataList;
+        filterList['conflict'] = widget.defaultFilterConflict;
+        filterData();
+      });
+    }
+    else {
+      setState(() {
+        _profileDataList = profileDataList;
+        _searchResult = profileDataList;
+      });
+    }
   }
 
   Future<void> exportToExcel() async {
@@ -172,10 +186,31 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
 
       String fileName = 'forest_data.xlsx';
 
-      final storagePermission = await Permission.manageExternalStorage.request();
-      if (storagePermission != PermissionStatus.granted) {
-        throw Exception('Storage permission not granted');
+
+      if (Platform.isAndroid) {
+        var androidInfo = await DeviceInfoPlugin().androidInfo;
+        var release = androidInfo.version.release;
+
+        if( int.parse(release) < 10 ) {
+          var storagePermission = await Permission.storage.request();
+
+          if( ! await storagePermission.isGranted ) {
+            throw Exception('Storage permission not granted');
+          }
+        }
+        else {
+          var storagePermission = await Permission.manageExternalStorage;
+
+          if( await storagePermission.isGranted ) {
+            storagePermission.request();
+
+            if( ! await storagePermission.isGranted ) {
+              throw Exception('Storage permission not granted');
+            }
+          }
+        }
       }
+
       directory = await getExternalStorageDirectory();
 
       String newPath = "";
