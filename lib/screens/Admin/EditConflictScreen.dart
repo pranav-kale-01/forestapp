@@ -5,8 +5,7 @@ import '../../common/models/DynamicListsModel.dart';
 import '../../common/models/conflict_model_hive.dart';
 import '../../common/themeHelper.dart';
 
-class EditConfli
-ct extends StatefulWidget {
+class EditConflict extends StatefulWidget {
   final Function(int) changeIndex;
   final int currentIndex;
   final Conflict conflictData;
