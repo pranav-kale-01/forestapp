@@ -1,5 +1,6 @@
 import 'package:android_intent_plus/android_intent.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 
 import 'package:forestapp/screens/splashScreen.dart';
 import 'package:forestapp/utils/hive_service.dart';
@@ -42,14 +43,18 @@ class _MyAppState extends State<MyApp> {
     checkGps();
   }
 
+  secured() async {
+    await FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
+  }
+
   Future<void> checkGps() async{
     // final location = Location();
     Geolocator.isLocationServiceEnabled().then((isGpsOn){
-        if(isGpsOn){
-          requestLocationPermission();
-        }else{
-          turnOnGps();
-        }
+      if(isGpsOn){
+        requestLocationPermission();
+      }else{
+        turnOnGps();
+      }
     });
   }
 
@@ -83,7 +88,7 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-
+    secured();
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -91,13 +96,14 @@ class _MyAppState extends State<MyApp> {
         scaffoldBackgroundColor: Colors.grey.shade100,
         colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.grey)
             .copyWith(
-            secondary: _accentColor,
-            background: _backgroundColor,
-            primaryContainer: _backgroundColor,
-            secondaryContainer: _onBackgroundColor,
+          secondary: _accentColor,
+          background: _backgroundColor,
+          primaryContainer: _backgroundColor,
+          secondaryContainer: _onBackgroundColor,
         ),
       ),
       home: const SplashScreen(title: 'Flutter Login UI'),
     );
   }
 }
+

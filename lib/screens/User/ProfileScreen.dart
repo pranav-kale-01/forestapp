@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:forestapp/utils/utils.dart';
 import '../loginScreen.dart';
 
 class ProfileData {
@@ -13,6 +14,9 @@ class ProfileData {
   final String imageUrl;
   final String aadharNumber;
   final String forestId;
+  final String longitude;
+  final String latitude;
+  final String radius;
   // final int numberOfForestsAdded;
 
   ProfileData({
@@ -22,6 +26,9 @@ class ProfileData {
     required this.imageUrl,
     required this.aadharNumber,
     required this.forestId,
+    required this.longitude,
+    required this.latitude,
+    required this.radius,
     // required this.numberOfForestsAdded,
   });
 }
@@ -66,6 +73,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         imageUrl: userData['imageUrl'],
         aadharNumber: userData['aadharNumber'],
         forestId: userData['forestID'],
+        longitude: userData['location'].longitude.toString(),
+        latitude: userData['location'].latitude.toString(),
+        radius: userData['radius'].toString(),
       );
     });
   }
@@ -117,6 +127,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         TextButton(
                           onPressed: () async {
+                            Util.hasUserLocation = false;
                             SharedPreferences prefs =
                             await SharedPreferences.getInstance();
                             prefs.remove('userEmail');
@@ -216,12 +227,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
               const SizedBox(height: 16.0),
-              // const Text(
-              //   'Number of Forests Added: 10',
-              //   style: TextStyle(
-              //     fontSize: 16.0,
-              //   ),
-              // ),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text("Longitude: "),
+                  Text(
+                    _profileData!.longitude,
+                    style: const TextStyle(
+                      fontSize: 16.0,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16.0),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text("Latitude: "),
+                  Text(
+                    _profileData!.latitude,
+                    style: const TextStyle(
+                      fontSize: 16.0,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16.0),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text("Radius Area: "),
+                  Text(
+                    _profileData!.radius,
+                    style: const TextStyle(
+                      fontSize: 16.0,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16.0),
+
               const Spacer(),
             ]),
       ),

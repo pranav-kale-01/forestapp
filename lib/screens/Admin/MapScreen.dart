@@ -154,32 +154,6 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Future<void> fetchUserProfileData() async {
-    // final userSnapshot = await FirebaseFirestore.instance.collection('forestdata').get();
-    // final profileDataList = userSnapshot.docs
-    //     .map((doc) => Conflict(
-    //         id: doc.id,
-    //         range: doc['range'],
-    //         round: doc['round'],
-    //         bt: doc['bt'],
-    //         cNoName: doc['c_no_name'],
-    //         conflict: doc['conflict'],
-    //         notes: doc['notes'],
-    //         person_age: doc['person_age'],
-    //         imageUrl: doc['imageUrl'],
-    //         userName: doc['user_name'],
-    //         userEmail: doc['user_email'],
-    //         person_gender: doc['person_gender'],
-    //         pincodeName: doc['pincode_name'],
-    //         sp_causing_death: doc['sp_causing_death'],
-    //         village_name: doc['village_name'],
-    //         person_name: doc['person_name'],
-    //         datetime: TimeStamp( seconds: doc['createdAt'].seconds, nanoseconds: doc['createdAt'].nanoseconds ),
-    //         location: G.GeoPoint( latitude: doc['location'].latitude, longitude:  doc['location'].longitude ),
-    //         userContact: doc['user_contact'],
-    //         userImage: doc['user_imageUrl'],
-    //       ))
-    //     .toList();
-
     final profileDataList = await ConflictService.getData();
     setState(() {
       _profileDataList = profileDataList;

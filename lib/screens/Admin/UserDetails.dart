@@ -2,8 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 
-import 'homeAdmin.dart';
-
 class UserDetails extends StatelessWidget {
   final Map<String, dynamic> user;
   const UserDetails({Key? key, required this.user}) : super(key: key);
@@ -100,6 +98,30 @@ class UserDetails extends StatelessWidget {
                   SizedBox(height: 8),
                   Text(
                     'Email: ${user['email']}',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Longitude:${user['location'].longitude}',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Latitude:${user['location'].latitude}',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Radius range:${user['radius']}',
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.grey[600],

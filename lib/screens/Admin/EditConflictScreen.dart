@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -36,12 +37,12 @@ class _EditConflictState extends State<EditConflict> {
   late TextEditingController _spCausingDeathController;
   late TextEditingController _notesController;
 
-  String? selectedRange;
-  String? selectedRound;
-  String? selectedBt;
+  Map<String, dynamic>? selectedRange;
+  Map<String, dynamic>? selectedRound;
+  Map<String, dynamic>? selectedBt;
   String? selectedConflict;
 
-  Map<String, List<dynamic>> dynamicLists = {};
+  Map<String, dynamic> dynamicLists = {};
 
   @override
   void initState() {
@@ -57,8 +58,6 @@ class _EditConflictState extends State<EditConflict> {
     _spCausingDeathController = TextEditingController(text: widget.conflictData.sp_causing_death);
     _notesController = TextEditingController(text: widget.conflictData.notes);
 
-    selectedRange = widget.conflictData.range;
-    selectedRound = widget.conflictData.round;
     selectedConflict = widget.conflictData.conflict;
   }
 
@@ -77,27 +76,12 @@ class _EditConflictState extends State<EditConflict> {
     dynamicLists['conflict']?.add('None');
 
     setState(() {
-      // adding the element in case it is not present, just to prevent the app from
-      // crashing
-      if(  !dynamicLists['range']!.contains( widget.conflictData.range.toString() ) ) {
-        dynamicLists['range']!.add(widget.conflictData.range.toString());
-      }
+      selectedRange = dynamicLists['range'].where( (range) => range['name'] == widget.conflictData.range ).first;
+      selectedRound = dynamicLists['round'].where( (round) => round['name'] == widget.conflictData.round ).first;
+      selectedBt = dynamicLists['beat'].where( (beat) => beat['name'] == widget.conflictData.bt ).first;
 
-      if(  !dynamicLists['round']!.contains( widget.conflictData.round.toString() ) ) {
-        dynamicLists['round']!.add(widget.conflictData.round.toString());
-      }
+      print( dynamicLists['range'] );
 
-      if(  !dynamicLists['beat']!.contains( widget.conflictData.bt.toString() ) ) {
-        dynamicLists['beat']!.add(widget.conflictData.bt.toString());
-      }
-
-      if(  !dynamicLists['conflict']!.contains( widget.conflictData.conflict.toString() ) ) {
-        dynamicLists['conflict']!.add(widget.conflictData.conflict.toString());
-      }
-
-      selectedRange = widget.conflictData.range.toString();
-      selectedRound = widget.conflictData.round.toString();
-      selectedBt = widget.conflictData.bt.toString();
       selectedConflict = widget.conflictData.conflict.toString();
     });
   }
@@ -188,16 +172,18 @@ class _EditConflictState extends State<EditConflict> {
                     height: 10,
                   ),
                   DropdownButtonFormField(
-                    decoration: ThemeHelper().textInputDecoration(
-                        'Range', 'Enter Range'
-                    ),
+                    decoration: ThemeHelper().textInputDecoration('Range', 'Enter Range'),
                     value: selectedRange,
-                    items: dynamicLists['range']!.map( (e) => DropdownMenuItem(
-                        child: Text(e.toString()),
-                      value: e.toString(),
-                    )).toList(),
-                    onChanged: (Object? value) {
-                      selectedRange = value.toString();
+                    items: dynamicLists['range'].map<DropdownMenuItem<Map<String, dynamic>>>( (range) => DropdownMenuItem<Map<String, dynamic>>(
+                      value: range,
+                      child: Text( range['name'] ),
+                    ) ).toList(),
+                    onChanged: (Map<String, dynamic>? value) {
+                      setState(() {
+                        selectedRange = value;
+                        selectedRound = dynamicLists['round'].where( (round) => round['range_id'] == selectedRange!['id'] ).toList().first;
+                        selectedBt = dynamicLists['beat'].where( (beat) => beat['round_id'] == selectedRound!['id'] ).toList().first;
+                      });
                     },
                   ),
                   const SizedBox(
@@ -215,16 +201,21 @@ class _EditConflictState extends State<EditConflict> {
                     height: 10,
                   ),
                   DropdownButtonFormField(
-                    decoration: ThemeHelper().textInputDecoration(
-                        'Round', 'Enter Round'
-                    ),
+                    decoration: ThemeHelper()
+                        .textInputDecoration('Round', 'Enter Round'),
                     value: selectedRound,
-                    items: dynamicLists['round']!.map( (e) => DropdownMenuItem(
-                      child: Text(e.toString()),
-                      value: e.toString(),
-                    )).toList(),
-                    onChanged: (Object? value) {
-                      selectedRound = value.toString();
+                    items: dynamicLists['round']!.where( (round) => round['range_id'] == selectedRange!['id'] ).map<DropdownMenuItem<Map<String, dynamic>>>(
+                          (round) => DropdownMenuItem<Map<String, dynamic>>(
+                        child: Text(round['name']),
+                        value: round,
+                      ),
+                    )
+                        .toList(),
+                    onChanged: (Map<String, dynamic>? value) {
+                      setState(() {
+                        selectedRound = value;
+                        selectedBt = dynamicLists['beat'].where( (beat) => beat['round_id'] == selectedRound!['id'] ).toList().first;
+                      });
                     },
                   ),
                   const SizedBox(
@@ -242,17 +233,15 @@ class _EditConflictState extends State<EditConflict> {
                     height: 10,
                   ),
                   DropdownButtonFormField(
-                    decoration: ThemeHelper().textInputDecoration(
-                        'Beats', 'Enter Beats'
-                    ),
+                    decoration: ThemeHelper()
+                        .textInputDecoration('Beats', 'Enter Beats'),
                     value: selectedBt,
-                    items: dynamicLists['beat']!.map( (e) => DropdownMenuItem(
-                      child: Text(e.toString()),
-                      value: e.toString(),
-                    ),
-                    ).toList(),
-                    onChanged: (Object? value) {
-                      selectedBt = value.toString();
+                    items: dynamicLists['beat']!.where( (beat) => beat['round_id'] == selectedRound!['id'] ).map<DropdownMenuItem<Map<String, dynamic>>>( (beat) => DropdownMenuItem<Map<String, dynamic>>(
+                      child: Text(beat['name'] ),
+                      value: beat,
+                    ) ).toList(),
+                    onChanged: (Map<String, dynamic>? value) {
+                      selectedBt = value;
                     },
                   ),
                   const SizedBox(
@@ -334,7 +323,7 @@ class _EditConflictState extends State<EditConflict> {
                         'Conflict', 'Select Conflict'
                     ),
                     value: selectedConflict,
-                    items: dynamicLists['conflict']!.map( (e) => DropdownMenuItem(
+                    items: dynamicLists['conflict']!.map<DropdownMenuItem<String>>( (e) => DropdownMenuItem<String>(
                       child: Text(e.toString()),
                       value: e.toString(),
                     )).toList(),
@@ -497,9 +486,9 @@ class _EditConflictState extends State<EditConflict> {
 
                           final Conflict newData = Conflict(
                               id: widget.conflictData.id,
-                              range: selectedRange!,
-                              round: selectedRound!,
-                              bt: selectedBt!,
+                              range: selectedRange!['name'],
+                              round: selectedRound!['name'],
+                              bt: selectedBt!['name'],
                               village_name: _villageNameController.text,
                               cNoName: _cNoController.text,
                               pincodeName: _pincodeNameController.text,

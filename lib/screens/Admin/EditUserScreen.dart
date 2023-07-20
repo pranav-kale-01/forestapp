@@ -2,6 +2,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:forestapp/common/models/geopoint.dart' as G;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
@@ -33,6 +34,9 @@ class _EditUserScreenState extends State<EditUserScreen> {
   File? _imageFile;
   NetworkImage? _networkImage;
   String? imageUrl;
+  String? longitude;
+  String? latitude;
+  String? radius;
 
   final CollectionReference _userRef = FirebaseFirestore.instance.collection('users');
 
@@ -371,6 +375,60 @@ class _EditUserScreenState extends State<EditUserScreen> {
                     },
                   ),
                   const SizedBox(height: 16.0),
+                  TextFormField(
+                    decoration: const InputDecoration(
+                      labelText: 'Latitude',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a Latitude';
+                      }
+                      return null;
+                    },
+                    initialValue: widget.user['location'].latitude.toString(),
+                    onSaved: (value) {
+                      latitude = value!;
+                    },
+                  ),
+                  const SizedBox(height: 16.0),
+                  TextFormField(
+                    decoration: const InputDecoration(
+                      labelText: 'Longitude',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a Longitude';
+                      }
+                      return null;
+                    },
+                    initialValue: widget.user['location'].longitude.toString() ,
+                    onSaved: (value) {
+                      longitude = value!;
+                    },
+                  ),
+                  const SizedBox(height: 16.0),
+                  TextFormField(
+                    decoration: const InputDecoration(
+                      labelText: 'Radius Range',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a Radius';
+                      }
+                      return null;
+                    },
+                    initialValue: widget.user['radius'].toString(),
+                    onSaved: (value) {
+                      radius = value!;
+                    },
+                  ),
+                  const SizedBox(height: 16.0),
                   ElevatedButton(
                     style: ButtonStyle(
                         backgroundColor: MaterialStateProperty.all<Color>(Colors.green.shade400),
@@ -398,6 +456,8 @@ class _EditUserScreenState extends State<EditUserScreen> {
                           'imageUrl': imageUrl,
                           'aadharNumber': _aadharNumber,
                           'forestID': _forestId,
+                          'location' : G.GeoPoint( latitude: double.parse(latitude!), longitude: double.parse(longitude!) ),
+                          'radius' : double.parse( radius! )
                         };
                         try {
                           await usersRef

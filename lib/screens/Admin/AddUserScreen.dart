@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:forestapp/common/models/geopoint.dart' as G;
 import 'package:firebase_storage/firebase_storage.dart';
 
 import '../../common/themeHelper.dart';
@@ -29,6 +30,9 @@ class _AddUserScreenState extends State<AddUserScreen> {
   String _aadharNumber = '';
   String _forestId = '';
   File? _imageFile;
+  String? longitude;
+  String? latitude;
+  String? radius;
   final CollectionReference _userRef = FirebaseFirestore.instance.collection('users');
 
   FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -284,6 +288,57 @@ class _AddUserScreenState extends State<AddUserScreen> {
                   ),
 
                   const SizedBox(height: 16.0),
+                  TextFormField(
+                    decoration: ThemeHelper().textInputDecoration(
+                        'Longitude', 'Enter Longitude'
+                    ),
+                    keyboardType: TextInputType.phone,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a longitude';
+                      }
+                      return null;
+                    },
+                    onChanged: (value) {
+                      longitude = value;
+                    },
+                  ),
+                  const SizedBox(height: 16.0),
+                  TextFormField(
+                    decoration: const InputDecoration(
+                      labelText: 'Latitude',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.phone,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a Latitude';
+                      }
+                      return null;
+                    },
+                    onChanged: (value) {
+                      latitude = value;
+                    },
+                  ),
+                  const SizedBox(height: 16.0),
+                  TextFormField(
+                    decoration: const InputDecoration(
+                      labelText: 'Radius in meters ( 1 KM = 1000 M )',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.phone,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a Radius';
+                      }
+                      return null;
+                    },
+                    onChanged: (value) {
+                      radius = value;
+                    },
+                  ),
+
+                  const SizedBox(height: 16.0),
                   if (_image != null)
                     Container(
                       height: 200,
@@ -535,6 +590,8 @@ class _AddUserScreenState extends State<AddUserScreen> {
                                 'aadharImageUrl' : aadharImageUrl,
                                 'forestIDImageUrl' : forestIdImageUrl,
                                 'privileged_user' : false,
+                                'location' : G.GeoPoint( latitude: double.parse(latitude!), longitude: double.parse(longitude!) ),
+                                'radius' : double.parse( radius! )
                               };
 
                               try {

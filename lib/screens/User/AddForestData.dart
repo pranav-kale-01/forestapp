@@ -383,6 +383,7 @@ class _AddForestDataState extends State<AddForestData> {
                         setState(() {
                           selectedRange = value;
                           selectedRound = dynamicLists['round'].where( (round) => round['range_id'] == selectedRange!['id'] ).toList().first;
+                          selectedBt = dynamicLists['beat'].where( (beat) => beat['round_id'] == selectedRound!['id'] ).toList().first;
                         });
                       },
                     ),

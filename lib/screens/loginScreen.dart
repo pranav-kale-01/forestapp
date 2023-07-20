@@ -28,13 +28,12 @@ class _LoginScreenState extends State<LoginScreen> {
       // Get the user document from Firestore based on the email entered
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
           .collection('users')
-          .where('email',
-          isEqualTo: _emailController
+          .where('email', isEqualTo: _emailController
               .text
               .trim())
           .get();
 
-      if (querySnapshot.docs.isNotEmpty) {
+      if (querySnapshot.docs.length != 0 ) {
         // Get the first document from the query snapshot
         DocumentSnapshot userDoc = querySnapshot.docs.first;
 
@@ -62,6 +61,9 @@ class _LoginScreenState extends State<LoginScreen> {
           );
           return;
         }
+      }
+      else {
+        return;
       }
     } on FirebaseAuthException catch (e) {
       // Handle any errors that occur during sign in
@@ -195,6 +197,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
           // Store the email in shared preferences
           prefs.setString('userEmail', _emailController.text.trim());
+
+          // Store the latitude and longitude in shared preferences
+          print( querySnapshot.docs.first.get('location').latitude.toString() );
+
+          prefs.setString('latitude', querySnapshot.docs.first.get('location').latitude.toString() );
+          prefs.setString('longitude', querySnapshot.docs.first.get('location').longitude.toString() );
+          prefs.setString('radius', querySnapshot.docs.first.get('radius').toString() );
         }
         else {
           // Show an alert dialog for wrong password

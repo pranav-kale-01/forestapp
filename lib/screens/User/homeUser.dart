@@ -9,10 +9,7 @@ import 'HomeScreen.dart';
 class HomeUser extends StatefulWidget {
   final String userEmail;
 
-  const HomeUser({
-    Key? key,
-    required this.userEmail
-  }) : super(key: key);
+  const HomeUser({Key? key, required this.userEmail}) : super(key: key);
 
   @override
   _HomeUserState createState() => _HomeUserState();
@@ -22,6 +19,7 @@ class _HomeUserState extends State<HomeUser> {
   int _selectedIndex = 0;
   late String _selectedConflict;
   late final List<Widget> _widgetOptions;
+  bool _showNavBar = false;
 
   @override
   void initState() {
@@ -31,11 +29,15 @@ class _HomeUserState extends State<HomeUser> {
 
     _widgetOptions = <Widget>[
       HomeScreen(
-        changeIndex: _changeIndex,
-        setConflict: (String conflict) {
-          _selectedConflict = conflict;
-        }
-      ),
+          changeIndex: _changeIndex,
+          setConflict: (String conflict) {
+            _selectedConflict = conflict;
+          },
+          showNavBar: (bool value) {
+            setState(() {
+              _showNavBar = value;
+            });
+          }),
       AddForestData(),
       ForestDataScreen(
         defaultFilterConflict: _selectedConflict,
@@ -46,16 +48,15 @@ class _HomeUserState extends State<HomeUser> {
     ];
   }
 
-  void _changeIndex( int index ) {
-    if( _selectedConflict.isNotEmpty ) {
+  void _changeIndex(int index) {
+    if (_selectedConflict.isNotEmpty) {
       print('iof');
       _widgetOptions[2] = ForestDataScreen(
         defaultFilterConflict: _selectedConflict,
         changeScreen: _changeIndex,
         userEmail: widget.userEmail,
       );
-    }
-    else {
+    } else {
       print('else');
       _widgetOptions[2] = ForestDataScreen(
         defaultFilterConflict: '',
@@ -71,16 +72,15 @@ class _HomeUserState extends State<HomeUser> {
   }
 
   void _onItemTapped(int index) {
-    if( index == 2 ) {
-      if( _selectedConflict.isNotEmpty ) {
+    if (index == 2) {
+      if (_selectedConflict.isNotEmpty) {
         print('iof');
         _widgetOptions[2] = ForestDataScreen(
           defaultFilterConflict: _selectedConflict,
           changeScreen: _changeIndex,
           userEmail: widget.userEmail,
         );
-      }
-      else {
+      } else {
         print('else');
         _widgetOptions[2] = ForestDataScreen(
           defaultFilterConflict: '',
@@ -100,7 +100,7 @@ class _HomeUserState extends State<HomeUser> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () {
-        if( _selectedIndex == 0 ) {
+        if (_selectedIndex == 0) {
           return showExitPopup(context);
         }
         _changeIndex(0);
@@ -110,7 +110,7 @@ class _HomeUserState extends State<HomeUser> {
         body: Center(
           child: _widgetOptions.elementAt(_selectedIndex),
         ),
-        bottomNavigationBar: BottomNavigationBar(
+        bottomNavigationBar: _showNavBar ? BottomNavigationBar(
           items: const <BottomNavigationBarItem>[
             BottomNavigationBarItem(
               icon: Icon(Icons.home),
@@ -136,7 +136,7 @@ class _HomeUserState extends State<HomeUser> {
           currentIndex: _selectedIndex,
           selectedItemColor: Colors.green,
           onTap: _onItemTapped,
-        ),
+        ) : SizedBox( height: 0,),
       ),
     );
   }
