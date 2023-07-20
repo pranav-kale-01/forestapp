@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:forestapp/common/models/ConflictModel.dart';
 import 'package:forestapp/common/models/conflict_model_hive.dart';
 import 'package:forestapp/screens/Admin/EditConflictScreen.dart';
 import 'package:intl/intl.dart';

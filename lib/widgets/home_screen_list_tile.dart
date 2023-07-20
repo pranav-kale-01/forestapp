@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:forestapp/common/models/ConflictModel.dart';
 import 'package:forestapp/common/models/conflict_model_hive.dart';
 import 'package:intl/intl.dart';
 import '../screens/Admin/ForestDetail.dart';

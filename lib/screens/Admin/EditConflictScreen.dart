@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:forestapp/common/models/ConflictModel.dart';
 
 import '../../common/models/DynamicListsModel.dart';
 import '../../common/models/conflict_model_hive.dart';
 import '../../common/themeHelper.dart';
 
-class EditConflict extends StatefulWidget {
+class EditConfli
+ct extends StatefulWidget {
   final Function(int) changeIndex;
   final int currentIndex;
   final Conflict conflictData;
