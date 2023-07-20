@@ -2,14 +2,19 @@
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+import 'package:forestapp/common/models/geopoint.dart' as G;
 import 'package:flutter/material.dart';
+import 'package:forestapp/common/models/conflict_model_hive.dart';
+import 'package:forestapp/utils/conflict_service.dart';
+import 'package:forestapp/utils/hive_service.dart';
+import 'package:forestapp/utils/utils.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../common/models/timestamp.dart';
 import '../../common/themeHelper.dart';
-import 'homeUser.dart';
 
 class ProfileData {
   final String name;
@@ -26,7 +31,6 @@ class ProfileData {
   });
 }
 
-//
 class AddForestData extends StatefulWidget {
   const AddForestData({super.key});
 
@@ -46,9 +50,9 @@ class _AddForestDataState extends State<AddForestData> {
   final _spCausingDeathController = TextEditingController();
   final _notesController = TextEditingController();
 
-  String? selectedRange;
-  String? selectedRound;
-  String? selectedBt;
+  Map<String, dynamic>? selectedRange;
+  Map<String, dynamic>? selectedRound;
+  Map<String, dynamic>? selectedBt;
   String? selectedConflict;
 
   // list of errors for validation
@@ -67,14 +71,16 @@ class _AddForestDataState extends State<AddForestData> {
   File? _image;
   late String _userEmail;
   late ProfileData _profileData;
-  
-  Map<String, List<dynamic>> dynamicLists = {};
+
+  Map<dynamic, dynamic> dynamicLists = {};
+
+  HiveService hiveService = HiveService();
 
   @override
   void initState() {
     super.initState();
-    fetchUserEmail();
     fetchDynamicLists();
+    fetchUserEmail();
   }
 
   Future<void> fetchUserEmail() async {
@@ -87,10 +93,21 @@ class _AddForestDataState extends State<AddForestData> {
   }
 
   Future<void> fetchUserProfileData() async {
+    // if the data is loaded from cache showing a bottom popup to user alerting
+    // that the app is running in offline mode
+    if (!(await hasConnection)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Loading the page in Offline mode'),
+        ),
+      );
+    }
+
     final userSnapshot = await FirebaseFirestore.instance
         .collection('users')
         .where('email', isEqualTo: _userEmail)
         .get();
+
     final userData = userSnapshot.docs.first.data();
     setState(() {
       _profileData = ProfileData(
@@ -111,18 +128,6 @@ class _AddForestDataState extends State<AddForestData> {
   }
 
   void _onSubmitPressed() async {
-    // Validate the form
-
-    // if selected conflict is None then asking the user to select any other conflict
-    // if( selectedConflict == "None" ) {
-    //   conflictError = true;
-    //
-    //   setState(() {
-    //     conflictFieldColor = Colors.red;
-    //   });
-    //   return;
-    // }
-
     // Show a loading spinner while the data is being uploaded
     showDialog(
       context: context,
@@ -140,47 +145,59 @@ class _AddForestDataState extends State<AddForestData> {
         );
       },
     );
+
     try {
-      // Upload the image to Cloud Storage
-      final storageRef = FirebaseStorage.instance
-          .ref()
-          .child('forest_images')
-          .child('${DateTime.now().millisecondsSinceEpoch}.jpg');
-
-      final uploadTask = storageRef.putFile(_image!);
-      final snapshot = await uploadTask.whenComplete(() => null);
-      final imageUrl = await snapshot.ref.getDownloadURL();
-
       // Get the current location
       final position = await Geolocator.getCurrentPosition();
-      final location = GeoPoint(position.latitude, position.longitude);
+      final location = G.GeoPoint(
+          latitude: position.latitude, longitude: position.longitude);
+      final currentDateTime = Timestamp.fromDate(DateTime.now());
 
-      // Create a new document in the 'forestdata' collection
-      final docRef = FirebaseFirestore.instance.collection('forestdata').doc();
-      final data = {
-        'id': docRef.id,
-        "range" : selectedRange,
-        "round" : selectedRound,
-        'bt' : selectedBt,
-        "village_name" : _villageNameController.text,
-        "c_no_name" : _cNoController.text,
-        "conflict" : selectedConflict,
-        "person_name" : _personNameController.text,
-        "pincode_name" : _pincodeNameController.text,
-        "person_age" : _personAgeController.text,
-        "person_gender" : _personGenderController.text,
-        "sp_causing_death" : _spCausingDeathController.text,
-        "notes" : _notesController.text,
-        'imageUrl': imageUrl,
-        'location': location,
-        'user_name': _profileData.name,
-        'user_email': _profileData.email,
-        'user_contact': _profileData.contactNumber,
-        'user_imageUrl': _profileData.imageUrl,
-        'createdAt': DateTime.now(),
-      };
+      Conflict data = Conflict(
+        id: "",
+        range: selectedRange!['name'],
+        round: selectedRound!['name'],
+        bt: selectedBt!['name'],
+        village_name: _villageNameController.text,
+        cNoName: _cNoController.text,
+        conflict: selectedConflict!,
+        person_name: _personNameController.text,
+        pincodeName: _pincodeNameController.text,
+        person_age: _personAgeController.text,
+        person_gender: _personGenderController.text,
+        sp_causing_death: _spCausingDeathController.text,
+        notes: _notesController.text,
+        imageUrl: "",
+        location: location,
+        userName: _profileData.name,
+        userEmail: _profileData.email,
+        userContact: _profileData.contactNumber,
+        userImage: _profileData.imageUrl,
+        datetime: TimeStamp(
+            seconds: currentDateTime.seconds,
+            nanoseconds: currentDateTime.nanoseconds),
+      );
 
-      await docRef.set(data);
+      // getting the image url
+      if (await hasConnection) {
+        // updating the data on firebase
+        // Create a new document in the 'forestdata' collection
+        await ConflictService.addConflict(data, image: _image);
+      } else {
+        // if the device does not have internet connection adding caching the
+        // object to upload later
+
+        // creating a folder for storing image and storing the image there
+        var baseDir = await getApplicationDocumentsDirectory();
+
+        final String fileName = _image!.path.split("/").last;
+        data.imageUrl = baseDir.path + "/" + fileName;
+
+        File image = File(data.imageUrl);
+        image.writeAsBytesSync(_image!.readAsBytesSync());
+
+        hiveService.addBoxes<Conflict>([data], "stored_conflicts");
+      }
 
       // Hide the loading spinner
       Navigator.pop(context);
@@ -209,9 +226,9 @@ class _AddForestDataState extends State<AddForestData> {
           ],
         ),
       );
-    } catch (error, stacktrace ) {
-      debugPrint( error.toString() );
-      debugPrint( stacktrace.toString() );
+    } catch (error, stacktrace) {
+      debugPrint(error.toString());
+      debugPrint(stacktrace.toString());
 
       // Hide the loading spinner
       Navigator.pop(context);
@@ -227,13 +244,6 @@ class _AddForestDataState extends State<AddForestData> {
               child: const Text('OK'),
               onPressed: () {
                 Navigator.of(context).pop();
-                // Navigator.of(context).pushAndRemoveUntil(
-                //     MaterialPageRoute(
-                //       builder: (context) => const HomeUser(
-                //         title: 'title',
-                //       ),
-                //     ),
-                //     (route) => false);
               },
             ),
           ],
@@ -261,462 +271,474 @@ class _AddForestDataState extends State<AddForestData> {
       }
     }
 
+
     return uniqueTitle;
   }
 
   Future<void> fetchDynamicLists() async {
-    final userSnapshot = await FirebaseFirestore.instance
-        .collection('dynamic_lists')
-        .get();
+    // if( await hasConnection ) {
+    if( true ) {
+      final userSnapshot = await FirebaseFirestore.instance.collection('dynamic_lists').get();
+      final userData = userSnapshot.docs;
 
-    final userData = userSnapshot.docs;
+      for (var item in userData) {
+        dynamicLists[item.id] = item['values'];
+      }
 
-    for( var item in userData ) {
-      dynamicLists[item.id] = item['values'];
+      // storing into hiveCache
+      hiveService.setBox( [dynamicLists], "dynamic_list");
+
+      // dynamicLists['range'] = dynamicLists['range'].toSet().toList();
     }
-    
-    // setting the dynamic list for conflict with value none 
+    else {
+      // loading from hive cache
+      bool exists = await hiveService.isExists(boxName: 'dynamic_list');
+      if( exists ) {
+        final userData = (await hiveService.getBoxes<Map<dynamic, dynamic>>('dynamic_list'));
+        dynamicLists = userData[0] ;
+      }
+    }
+    // setting the dynamic list for conflict with value none
     dynamicLists['conflict']?.add('None');
 
     setState(() {
-      selectedRange = dynamicLists['range']!.first.toString();
-      selectedRound = dynamicLists['round']!.first.toString();
-      selectedBt = dynamicLists['beat']!.first.toString();
+      selectedRange = dynamicLists['range']!.first;
+      selectedRound = dynamicLists['round']!.first;
+      selectedBt = dynamicLists['beat']!.first;
       selectedConflict = "None";
     });
   }
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       appBar: AppBar(
-      elevation: 0,
-      flexibleSpace: Container(
-        height: 120,
-        decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.green, Colors.greenAccent],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(15),
-              bottomRight: Radius.circular(15),
-            )
+        elevation: 0,
+        flexibleSpace: Container(
+          height: 120,
+          decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.green, Colors.greenAccent],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(15),
+                bottomRight: Radius.circular(15),
+              )),
         ),
-      ),
-      title: const Text(
-        'Pench MH',
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    ),
-    body: dynamicLists.isEmpty ? Center(
-      child: CircularProgressIndicator(),
-      ) : Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12 ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(
-                height: 15,
-              ),
-              Text(
-                "Add Forest Data",
-                style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold
-                ),
-              ),
-
-              SizedBox(
-                height: 30,
-              ),
-
-              // fields for all values
-              Text(
-                "Range",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-              DropdownButtonFormField(
-                decoration: ThemeHelper().textInputDecoration(
-                    'Range', 'Enter Range'
-                ),
-                value: selectedRange,
-                items: dynamicLists['range']!.map( (e) => DropdownMenuItem(
-                  child: Text(e.toString()),
-                  value: e.toString(),
-                ),
-                ).toList(),
-                onChanged: (Object? value) {
-                  selectedRange = value.toString();
-                },
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-
-              Text(
-                "Round",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-              DropdownButtonFormField(
-                decoration: ThemeHelper().textInputDecoration(
-                    'Round', 'Enter Round'
-                ),
-                value: selectedRound,
-                items: dynamicLists['round']!.map( (e) => DropdownMenuItem(
-                  child: Text(e.toString()),
-                  value: e.toString(),
-                ),
-                ).toList(),
-                onChanged: (Object? value) {
-                  selectedRound = value.toString();
-                },
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-
-              Text(
-                "Beats",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-              DropdownButtonFormField(
-                decoration: ThemeHelper().textInputDecoration(
-                    'Beats', 'Enter Beats'
-                ),
-                value: selectedBt,
-                items: dynamicLists['beat']!.map( (e) => DropdownMenuItem(
-                  child: Text(e.toString()),
-                  value: e.toString(),
-                ),
-                ).toList(),
-                onChanged: (Object? value) {
-                  selectedBt = value.toString();
-                },
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-
-              Text(
-                "Village Name",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-              TextFormField(
-                controller: _villageNameController,
-                decoration: ThemeHelper()
-                    .textInputDecoration(
-                    'Village name', 'Enter Village name'),
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-
-              Text(
-                "CN/S.NO name",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-              TextFormField(
-                controller: _cNoController,
-                decoration: ThemeHelper()
-                    .textInputDecoration(
-                    'cn/s.no_name', 'Enter CN/S.NO name'),
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-
-              Text(
-                "Pincode Name",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-              TextFormField(
-                controller: _pincodeNameController,
-                decoration: ThemeHelper()
-                    .textInputDecoration(
-                    'pincode_name', 'Enter pincode Name'),
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-
-              Text(
-                "Conflict",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-              DropdownButtonFormField(
-                decoration: ThemeHelper().textInputDecoration(
-                    'Conflict', 'Select Conflict'
-                ).copyWith(
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(
-                      color: conflictFieldColor,
-                      width: 1,
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-                value: selectedConflict,
-                items: dynamicLists['conflict']!.map( (e) => DropdownMenuItem(
-                  child: Text(e.toString()),
-                  value: e.toString(),
-                ),
-                ).toList(),
-                onChanged: (Object? value) {
-                  // if( value != "None" ) {
-                  //   setState(() {
-                  //     conflictError = false;
-                  //     conflictFieldColor = Colors.black.withOpacity(0.1);
-                  //   });
-                  // }
-
-                  selectedConflict = value.toString();
-                },
-              ),
-              if( conflictError )
-                Padding(
-                  padding: const EdgeInsets.symmetric( vertical: 5.0, horizontal: 10.0, ),
-                  child: Text(
-                    "Please Select a valid conflict",
-                    style: TextStyle(
-                      color: Colors.red,
-                    ),
-                  ),
-                ),
-              const SizedBox(
-                height: 10,
-              ),
-              Text(
-                "Name",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-              TextFormField(
-                controller: _personNameController,
-                decoration: ThemeHelper()
-                    .textInputDecoration(
-                    'person_name', 'Enter name'),
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-
-              Text(
-                "Age",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-              TextFormField(
-                controller: _personAgeController,
-                decoration: ThemeHelper()
-                    .textInputDecoration(
-                    'person_age', 'Enter Age'),
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-
-              Text(
-                "Gender",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-              TextFormField(
-                controller: _personGenderController,
-                decoration: ThemeHelper()
-                    .textInputDecoration(
-                    'person_gender', 'Enter Gender'),
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-
-
-              Text(
-                "sp causing death",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-              TextFormField(
-                controller: _spCausingDeathController,
-                decoration: ThemeHelper()
-                    .textInputDecoration(
-                    'sp_causing_death', 'sp causing death'),
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-
-              Text(
-                "notes",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-              TextFormField(
-                  controller: _notesController,
-                  decoration: ThemeHelper()
-                      .textInputDecoration(
-                      'notes', 'Notes'),
-                  maxLines: null,
-                  keyboardType: TextInputType.multiline
-              ),
-              const SizedBox(
-                height: 25,
-              ),
-
-              if (_image != null)
-                Container(
-                  height: 200,
-                  margin: const EdgeInsets.only(bottom: 20),
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                      image: FileImage(_image!),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-
-              ElevatedButton(
-                style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.all<Color>(Colors.green.shade400),
-                    shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                        RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25.0),
-                        )
-                    )
-                ),
-                onPressed: () {
-                  showModalBottomSheet(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return SafeArea(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            ListTile(
-                              leading: const Icon(Icons.camera_alt),
-                              title: const Text('Take a photo'),
-                              onTap: () {
-                                _pickImage(ImageSource.camera);
-                                Navigator.pop(context);
-                              },
-                            ),
-                            ListTile(
-                              leading: const Icon(Icons.photo_library),
-                              title: const Text('Choose from gallery'),
-                              onTap: () {
-                                _pickImage(ImageSource.gallery);
-                                Navigator.pop(context);
-                              },
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  );
-                },
-                child: Padding(
-                    padding: const EdgeInsets.symmetric( vertical: 20.0, ),
-                    child: Text(_image == null ? 'Add Photo' : 'Change Photo')
-                ),
-              ),
-
-              const SizedBox(
-                height: 20,
-              ),
-
-              ElevatedButton(
-                style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.all<Color>(Colors.green.shade400),
-                    shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                        RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25.0),
-                        )
-                    )
-                ),
-                onPressed: () => _onSubmitPressed(),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric( vertical: 18.0),
-                  child: Text("Submit"),
-                ),
-              ),
-            ],
+        title: const Text(
+          'Pench MH',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
           ),
         ),
       ),
+      body: dynamicLists.isEmpty
+          ? Center(
+              child: CircularProgressIndicator(),
+            )
+          : Form(
+              key: _formKey,
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(
+                      height: 15,
+                    ),
+                    Text(
+                      "Add Forest Data",
+                      style:
+                          TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    ),
+
+                    SizedBox(
+                      height: 30,
+                    ),
+
+                    // fields for all values
+                    Text(
+                      "Range",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    DropdownButtonFormField(
+                      decoration: ThemeHelper().textInputDecoration('Range', 'Enter Range'),
+                      value: selectedRange,
+                      items: dynamicLists['range'].map<DropdownMenuItem<Map<String, dynamic>>>( (range) => DropdownMenuItem<Map<String, dynamic>>(
+                        value: range,
+                        child: Text( range['name'] ),
+                      ) ).toList(),
+                      onChanged: (Map<String, dynamic>? value) {
+                        setState(() {
+                          selectedRange = value;
+                          selectedRound = dynamicLists['round'].where( (round) => round['range_id'] == selectedRange!['id'] ).toList().first;
+                        });
+                      },
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
+
+                    Text(
+                      "Round",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    DropdownButtonFormField(
+                      decoration: ThemeHelper()
+                          .textInputDecoration('Round', 'Enter Round'),
+                      value: selectedRound,
+                      items: dynamicLists['round']!.where( (round) => round['range_id'] == selectedRange!['id'] ).map<DropdownMenuItem<Map<String, dynamic>>>(
+                            (round) => DropdownMenuItem<Map<String, dynamic>>(
+                              child: Text(round['name']),
+                              value: round,
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (Map<String, dynamic>? value) {
+                        setState(() {
+                          selectedRound = value;
+                          selectedBt = dynamicLists['beat'].where( (beat) => beat['round_id'] == selectedRound!['id'] ).toList().first;
+                        });
+                      },
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
+
+                    Text(
+                      "Beats",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    DropdownButtonFormField(
+                      decoration: ThemeHelper()
+                          .textInputDecoration('Beats', 'Enter Beats'),
+                      value: selectedBt,
+                      items: dynamicLists['beat']!.where( (beat) => beat['round_id'] == selectedRound!['id'] ).map<DropdownMenuItem<Map<String, dynamic>>>( (beat) => DropdownMenuItem<Map<String, dynamic>>(
+                              child: Text(beat['name'] ),
+                              value: beat,
+                          ) ).toList(),
+                      onChanged: (Map<String, dynamic>? value) {
+                        selectedBt = value;
+                      },
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
+
+                    Text(
+                      "Village Name",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    TextFormField(
+                      controller: _villageNameController,
+                      decoration: ThemeHelper().textInputDecoration(
+                          'Village name', 'Enter Village name'),
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
+
+                    Text(
+                      "CN/S.NO name",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    TextFormField(
+                      controller: _cNoController,
+                      decoration: ThemeHelper().textInputDecoration(
+                          'cn/s.no_name', 'Enter CN/S.NO name'),
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
+
+                    Text(
+                      "Pincode Name",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    TextFormField(
+                      controller: _pincodeNameController,
+                      decoration: ThemeHelper().textInputDecoration(
+                          'pincode_name', 'Enter pincode Name'),
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
+
+                    Text(
+                      "Conflict",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    DropdownButtonFormField(
+                      decoration: ThemeHelper()
+                          .textInputDecoration('Conflict', 'Select Conflict')
+                          .copyWith(
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color: conflictFieldColor,
+                                width: 1,
+                              ),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+                      value: selectedConflict,
+                      items: dynamicLists['conflict']!.map<DropdownMenuItem<String>>(
+                            (conflict) => DropdownMenuItem<String>(
+                              child: Text(conflict),
+                              value: conflict,
+                            ),
+                          ).toList(),
+                      onChanged: (Object? value) {
+                        // if( value != "None" ) {
+                        //   setState(() {
+                        //     conflictError = false;
+                        //     conflictFieldColor = Colors.black.withOpacity(0.1);
+                        //   });
+                        // }
+
+                        selectedConflict = value.toString();
+                      },
+                    ),
+                    if (conflictError)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 5.0,
+                          horizontal: 10.0,
+                        ),
+                        child: Text(
+                          "Please Select a valid conflict",
+                          style: TextStyle(
+                            color: Colors.red,
+                          ),
+                        ),
+                      ),
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    Text(
+                      "Name",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    TextFormField(
+                      controller: _personNameController,
+                      decoration: ThemeHelper()
+                          .textInputDecoration('person_name', 'Enter name'),
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
+
+                    Text(
+                      "Age",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    TextFormField(
+                      controller: _personAgeController,
+                      decoration: ThemeHelper()
+                          .textInputDecoration('person_age', 'Enter Age'),
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
+
+                    Text(
+                      "Gender",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    TextFormField(
+                      controller: _personGenderController,
+                      decoration: ThemeHelper()
+                          .textInputDecoration('person_gender', 'Enter Gender'),
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
+
+                    Text(
+                      "sp causing death",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    TextFormField(
+                      controller: _spCausingDeathController,
+                      decoration: ThemeHelper().textInputDecoration(
+                          'sp_causing_death', 'sp causing death'),
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
+
+                    Text(
+                      "notes",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    TextFormField(
+                        controller: _notesController,
+                        decoration:
+                            ThemeHelper().textInputDecoration('notes', 'Notes'),
+                        maxLines: null,
+                        keyboardType: TextInputType.multiline),
+                    const SizedBox(
+                      height: 25,
+                    ),
+
+                    if (_image != null)
+                      Container(
+                        height: 200,
+                        margin: const EdgeInsets.only(bottom: 20),
+                        decoration: BoxDecoration(
+                          image: DecorationImage(
+                            image: FileImage(_image!),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+
+                    ElevatedButton(
+                      style: ButtonStyle(
+                          backgroundColor: MaterialStateProperty.all<Color>(
+                              Colors.green.shade400),
+                          shape:
+                              MaterialStateProperty.all<RoundedRectangleBorder>(
+                                  RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(25.0),
+                          ))),
+                      onPressed: () {
+                        showModalBottomSheet(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return SafeArea(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  ListTile(
+                                    leading: const Icon(Icons.camera_alt),
+                                    title: const Text('Take a photo'),
+                                    onTap: () {
+                                      _pickImage(ImageSource.camera);
+                                      Navigator.pop(context);
+                                    },
+                                  ),
+                                  ListTile(
+                                    leading: const Icon(Icons.photo_library),
+                                    title: const Text('Choose from gallery'),
+                                    onTap: () {
+                                      _pickImage(ImageSource.gallery);
+                                      Navigator.pop(context);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        );
+                      },
+                      child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 20.0,
+                          ),
+                          child: Text(
+                              _image == null ? 'Add Photo' : 'Change Photo')),
+                    ),
+
+                    const SizedBox(
+                      height: 20,
+                    ),
+
+                    ElevatedButton(
+                      style: ButtonStyle(
+                          backgroundColor: MaterialStateProperty.all<Color>(
+                              Colors.green.shade400),
+                          shape:
+                              MaterialStateProperty.all<RoundedRectangleBorder>(
+                                  RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(25.0),
+                          ))),
+                      onPressed: () => _onSubmitPressed(),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 18.0),
+                        child: Text("Submit"),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
     );
   }
 }

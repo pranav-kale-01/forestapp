@@ -1,17 +1,18 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:forestapp/common/models/ConflictModel.dart';
+import 'package:forestapp/common/models/conflict_model_hive.dart';
 import 'package:forestapp/screens/Admin/EditConflictScreen.dart';
 import 'package:intl/intl.dart';
 
 import '../User/ForestMapScreen.dart';
 
 class ForestDetail extends StatefulWidget {
-  ConflictModel forestData;
+  Conflict forestData;
   final int currentIndex;
   final Function(int) changeIndex;
-  final Function( ConflictModel ) deleteData;
-  final Function( ConflictModel ) changeData;
+  final Function( Conflict ) deleteData;
+  final Function( Conflict ) changeData;
 
 
   ForestDetail({
@@ -64,7 +65,7 @@ class _ForestDetailState extends State<ForestDetail> {
     );
   }
 
-  void _changeData( ConflictModel newData ) {
+  void _changeData( Conflict newData ) {
     setState(() {
       widget.forestData = newData;
     });

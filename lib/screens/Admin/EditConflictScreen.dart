@@ -3,13 +3,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:forestapp/common/models/ConflictModel.dart';
 
 import '../../common/models/DynamicListsModel.dart';
+import '../../common/models/conflict_model_hive.dart';
 import '../../common/themeHelper.dart';
 
 class EditConflict extends StatefulWidget {
   final Function(int) changeIndex;
   final int currentIndex;
-  final ConflictModel conflictData;
-  final Function( ConflictModel ) changeData;
+  final Conflict conflictData;
+  final Function( Conflict ) changeData;
 
   const EditConflict({
     super.key,
@@ -495,7 +496,7 @@ class _EditConflictState extends State<EditConflict> {
                             ),
                           );
 
-                          final ConflictModel newData = ConflictModel(
+                          final Conflict newData = Conflict(
                               id: widget.conflictData.id,
                               range: selectedRange!,
                               round: selectedRound!,

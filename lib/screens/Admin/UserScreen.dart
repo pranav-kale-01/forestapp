@@ -1,12 +1,11 @@
+import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/cupertino.dart';
-
-import 'package:flutter/material.dart';
 import 'package:forestapp/screens/Admin/AddUserScreen.dart';
 import 'package:forestapp/screens/Admin/EditUserScreen.dart';
 import 'package:forestapp/screens/Admin/UserDetails.dart';
 import '../../common/models/UserModel.dart';
+import '../../utils/utils.dart';
 
 class UserScreen extends StatefulWidget {
   final Function(int) changeIndex;
@@ -30,6 +29,16 @@ class _UserScreenState extends State<UserScreen> {
   }
 
   Future<void> fetchUserProfileData() async {
+    // if the data is loaded from cache showing a bottom popup to user alerting
+    // that the app is running in offline mode
+    if( !(await hasConnection) ) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Loading the page in Offline mode'),
+        ),
+      );
+    }
+
     final userSnapshot = await FirebaseFirestore.instance
         .collection('users')
         .where( 'privileged_user', isEqualTo: false )
@@ -52,13 +61,6 @@ class _UserScreenState extends State<UserScreen> {
     setState(() {
       _searchResult = profileDataList;
     });
-  }
-
-
-  Future<int> getTotalDocumentsCount() async {
-    final snapshot =
-        await FirebaseFirestore.instance.collection('forestdata').get();
-    return snapshot.size;
   }
 
   Future<int> getTotalDocumentsCountUser() async {

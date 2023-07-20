@@ -4,14 +4,15 @@ import 'package:forestapp/common/models/ConflictModel.dart';
 import 'package:forestapp/screens/Admin/EditConflictScreen.dart';
 import 'package:intl/intl.dart';
 
+import '../../common/models/conflict_model_hive.dart';
 import '../User/ForestMapScreen.dart';
 
 class ForestDetail extends StatefulWidget {
-  ConflictModel forestData;
+  Conflict forestData;
   final int currentIndex;
   final Function(int) changeIndex;
-  final Function( ConflictModel ) deleteData;
-  final Function( ConflictModel ) changeData;
+  final Function( Conflict ) deleteData;
+  final Function( Conflict ) changeData;
 
   ForestDetail({
     Key? key,
@@ -62,7 +63,7 @@ class _ForestDetailState extends State<ForestDetail> {
     );
   }
 
-  void _changeData( ConflictModel newData ) {
+  void _changeData( Conflict newData ) {
     setState(() {
       widget.forestData = newData;
     });

@@ -1,15 +1,19 @@
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
+// import 'package:forestapp/common/models/timestamp.dart';
+// import 'package:forestapp/common/models/geopoint.dart' as G;
+import 'package:forestapp/utils/conflict_service.dart';
+import 'package:forestapp/utils/utils.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/material.dart' as material;
-import 'package:forestapp/common/models/ConflictModel.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:intl/intl.dart';
 import 'package:excel/excel.dart';
 
+import '../../common/models/conflict_model_hive.dart';
 import 'ForestDetail.dart';
 
 class ForestDataScreen extends StatefulWidget {
@@ -29,9 +33,9 @@ class ForestDataScreen extends StatefulWidget {
 class _ForestDataScreenState extends State<ForestDataScreen> {
   final TextEditingController _searchController = TextEditingController();
 
-  late List<ConflictModel> _profileDataList = [];
-  late List<ConflictModel> _searchResult = [];
-  late List<ConflictModel> _baseSearchData = [];
+  late List<Conflict> _profileDataList = [];
+  late List<Conflict> _searchResult = [];
+  late List<Conflict> _baseSearchData = [];
 
   final Map<String, List<DropdownMenuItem<String>>> _dynamicLists = {};
   Map<String, dynamic> filterList = {};
@@ -60,33 +64,45 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
   }
 
   Future<void> fetchUserProfileData() async {
-    final userSnapshot = await FirebaseFirestore.instance.collection('forestdata').get();
+    // final userSnapshot = await FirebaseFirestore.instance.collection('forestdata').get();
+    //
+    // final profileDataList = userSnapshot.docs
+    //     .map(
+    //       (doc) => Conflict(
+    //         id: doc.id,
+    //         range: doc['range'],
+    //         round: doc['round'],
+    //         bt: doc['bt'],
+    //         cNoName: doc['c_no_name'],
+    //         conflict: doc['conflict'],
+    //         notes: doc['notes'],
+    //         person_age: doc['person_age'],
+    //         imageUrl: doc['imageUrl'],
+    //         userName: doc['user_name'],
+    //         userEmail: doc['user_email'],
+    //         person_gender: doc['person_gender'],
+    //         pincodeName: doc['pincode_name'],
+    //         sp_causing_death: doc['sp_causing_death'],
+    //         village_name: doc['village_name'],
+    //         person_name: doc['person_name'],
+    //         datetime: TimeStamp( seconds: doc['createdAt'].seconds, nanoseconds: doc['createdAt'].nanoseconds ),
+    //         location: G.GeoPoint( latitude: doc['location'].latitude, longitude: doc['location'].longitude ),
+    //         userContact: doc['user_contact'],
+    //         userImage: doc['user_imageUrl'],
+    //   ),
+    // ).toList();
 
-    final profileDataList = userSnapshot.docs
-        .map(
-          (doc) => ConflictModel(
-            id: doc.id,
-            range: doc['range'],
-            round: doc['round'],
-            bt: doc['bt'],
-            cNoName: doc['c_no_name'],
-            conflict: doc['conflict'],
-            notes: doc['notes'],
-            person_age: doc['person_age'],
-            imageUrl: doc['imageUrl'],
-            userName: doc['user_name'],
-            userEmail: doc['user_email'],
-            person_gender: doc['person_gender'],
-            pincodeName: doc['pincode_name'],
-            sp_causing_death: doc['sp_causing_death'],
-            village_name: doc['village_name'],
-            person_name: doc['person_name'],
-            datetime: doc['createdAt'] as Timestamp?,
-            location: doc['location'] as GeoPoint,
-            userContact: doc['user_contact'],
-            userImage: doc['user_imageUrl'],
-      ),
-    ).toList();
+    final profileDataList = await ConflictService.getData();
+
+    // if the data is loaded from cache showing a bottom popup to user alerting
+    // that the app is running in offline mode
+    if( !(await hasConnection) ) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Loading the page in Offline mode'),
+        ),
+      );
+    }
 
     // fetching the list of attributes from firebase
     final docSnapshot = await FirebaseFirestore.instance.collection('dynamic_lists').get();
@@ -279,7 +295,7 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
   }
 
   void _searchList(String searchQuery) {
-    List<ConflictModel> tempList = [];
+    List<Conflict> tempList = [];
     _profileDataList.forEach((profileData) {
       if (profileData.village_name.toLowerCase().contains(searchQuery.toLowerCase()) || profileData.userName.toLowerCase().contains(searchQuery.toLowerCase()) || profileData.userEmail.toLowerCase().contains(searchQuery.toLowerCase())) {
         tempList.add(profileData);
@@ -349,7 +365,7 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
             return;
         }
 
-        List<ConflictModel> tempList = [];
+        List<Conflict> tempList = [];
         _searchResult.forEach((profileData) {
           if (profileData.datetime != null &&
               profileData.datetime!.toDate().isAfter(start)) {
@@ -803,12 +819,12 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                                                         forestData: profileData,
                                                         currentIndex: 2,
                                                         changeIndex: widget.changeScreen,
-                                                        changeData: (ConflictModel newData) {
+                                                        changeData: (Conflict newData) {
                                                           setState(() {
                                                             _searchResult[index] = newData;
                                                           });
                                                         },
-                                                        deleteData: (ConflictModel data) {
+                                                        deleteData: (Conflict data) {
                                                           setState(() {
                                                             _searchResult.removeWhere((element) => element.id == data.id );
                                                           });

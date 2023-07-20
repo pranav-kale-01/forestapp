@@ -1,12 +1,13 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:forestapp/common/models/ConflictModel.dart';
+import 'package:forestapp/common/models/conflict_model_hive.dart';
 import 'package:forestapp/screens/Admin/EditListsScreen.dart';
+import 'package:forestapp/utils/conflict_service.dart';
+import 'package:forestapp/utils/hive_service.dart';
+import 'package:forestapp/utils/utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../widgets/home_screen_list_tile.dart';
 import '../loginScreen.dart';
-
 
 class HomeScreen extends StatefulWidget {
   final Function(int) changeIndex;
@@ -23,14 +24,18 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late List<ConflictModel> _profileDataList = [];
+  late List<Conflict> _profileDataList = [];
+  HiveService hiveService = HiveService();
 
   int _TotalConflictsCount = 0;
-  int _humansInjuredCount = 0;
-  int _cattleInjuredCount = 0;
-  int _cropDamagedCount = 0;
-  int _humansKilledCount = 0;
-  int _cattleKilledCount = 0;
+
+  Map<String, int> conflictsCounter = {
+    'cattle injured' : 0,
+    'cattle killed' : 0,
+    'humans injured' : 0,
+    'humans killed' : 0,
+    'crop damaged' : 0,
+  };
 
   @override
   void initState() {
@@ -43,79 +48,31 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> fetchUserProfileData() async {
-    _TotalConflictsCount = 0;
-    _humansInjuredCount = 0;
-    _cattleInjuredCount = 0;
-    _cropDamagedCount = 0;
-    _humansKilledCount = 0;
-    _cattleKilledCount = 0;
+    List<Conflict> conflictList = await ConflictService.getData();
 
-    var userSnapshot = await FirebaseFirestore.instance
-        .collection('forestdata')
-        .orderBy('createdAt', descending: true)
-        .get();
-
-    for( var item in userSnapshot.docs ) {
-      if( item['conflict'] == 'cattle injured' ) {
-        _cattleInjuredCount += 1;
-      }
-      else if( item['conflict'] == 'cattle killed' ) {
-        _cattleKilledCount += 1;
-      }
-      else if( item['conflict'] == 'humans injured'  ) {
-        _humansInjuredCount += 1;
-      }
-      else if( item['conflict'] == 'humans killed'  ) {
-        _humansKilledCount += 1;
-      }
-      else if( item['conflict'] == 'crop damaged' ) {
-        _cropDamagedCount += 1 ;
-      }
+    // if the data is loaded from cache showing a bottom popup to user alerting
+    // that the app is running in offline mode
+    if( !(await hasConnection) ) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Loading the page in Offline mode'),
+        ),
+      );
     }
 
-    List<ConflictModel> profileDataList = [];
-
-    int count = 0;
-    for( var item in userSnapshot.docs ) {
-      if( count >= 5 ) {
-        break;
+    for( var item in conflictList ) {
+      if( !conflictsCounter.containsKey(item.conflict) ) {
+        conflictsCounter[item.conflict] = 0;
       }
 
-      profileDataList.add(
-          ConflictModel(
-            id: item.id,
-            range: item['range'],
-            round: item['round'],
-            bt: item['bt'],
-            cNoName: item['c_no_name'],
-            conflict: item['conflict'],
-            notes: item['notes'],
-            person_age: item['person_age'],
-            imageUrl: item['imageUrl'],
-            userName: item['user_name'],
-            userEmail: item['user_email'],
-            person_gender: item['person_gender'],
-            pincodeName: item['pincode_name'],
-            sp_causing_death: item['sp_causing_death'],
-            village_name: item['village_name'],
-            person_name: item['person_name'],
-            datetime: item['createdAt'] as Timestamp?,
-            location: item['location'] as GeoPoint,
-            userContact: item['user_contact'],
-            userImage: item['user_imageUrl'],
-          )
-      );
-
-      count+=1;
+      conflictsCounter[item.conflict] = conflictsCounter[item.conflict]! + 1;
     }
 
     setState(() {
-      _profileDataList = profileDataList;
-      _TotalConflictsCount = userSnapshot.size;
+      _profileDataList = conflictList;
+      _TotalConflictsCount = conflictList.length;
     });
   }
-
-  final CollectionReference users = FirebaseFirestore.instance.collection('users');
 
   @override
   Widget build(BuildContext context) {
@@ -306,7 +263,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ),
                                 Text(
-                                  _humansInjuredCount.toString(),
+                                  conflictsCounter['humans injured'].toString(),
                                   style: TextStyle(
                                     fontSize: 18,
                                   ),
@@ -347,7 +304,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ),
                                 Text(
-                                  _humansKilledCount.toString(),
+                                  conflictsCounter['humans killed'].toString(),
                                   style: TextStyle(
                                     fontSize: 18,
                                   ),
@@ -392,7 +349,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ),
                                 Text(
-                                  _cattleInjuredCount.toString(),
+                                  conflictsCounter['cattle injured'].toString(),
                                   style: TextStyle(
                                     fontSize: 18,
                                   ),
@@ -433,7 +390,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ),
                                 Text(
-                                  _cattleKilledCount.toString(),
+                                  conflictsCounter['cattle killed'].toString(),
                                   style: TextStyle(
                                     fontSize: 18,
                                   ),
@@ -474,7 +431,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ),
                                 Text(
-                                  _cropDamagedCount.toString(),
+                                  conflictsCounter['crop damaged'].toString(),
                                   style: TextStyle(
                                     fontSize: 18,
                                   ),
@@ -531,10 +488,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: SingleChildScrollView(
                       physics: const BouncingScrollPhysics(),
                       child: Column(
-                        children: _profileDataList.map((forestData) =>  HomeScreenListTile(
+                        children: (_profileDataList.length >= 5 ? _profileDataList.sublist(0,5) : _profileDataList).map((forestData) =>  HomeScreenListTile(
                           forestData: forestData,
                           changeIndex: widget.changeIndex,
-                          deleteData: (ConflictModel data) {
+                          deleteData: (Conflict data) {
                             setState(() {
                               _profileDataList.removeWhere((element) => element.id == data.id );
                             });

@@ -1,11 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart' as material;
 import 'package:flutter/material.dart';
-
-import '../common/models/ConflictModel.dart';
+import 'package:forestapp/common/models/conflict_model_hive.dart';
+import 'package:forestapp/common/models/timestamp.dart';
+import 'package:forestapp/common/models/geopoint.dart' as G;
+import 'package:forestapp/utils/conflict_service.dart';
 
 class FilterDialog extends StatefulWidget {
-  late List<ConflictModel> profileDataList = [];
+  late List<Conflict> profileDataList = [];
   final material.VoidCallback updateState;
 
   FilterDialog({
@@ -19,8 +21,8 @@ class FilterDialog extends StatefulWidget {
 }
 
 class _FilterDialogState extends State<FilterDialog> {
-  late List<ConflictModel> _searchResult = [];
-  late List<ConflictModel> _baseSearchData = [];
+  late List<Conflict> _searchResult = [];
+  late List<Conflict> _baseSearchData = [];
 
 
   Map<String, List<DropdownMenuItem<String>>> dynamicLists = {};
@@ -93,33 +95,35 @@ class _FilterDialogState extends State<FilterDialog> {
   }
 
   Future<void> fetchUserProfileData() async {
-    final userSnapshot = await FirebaseFirestore.instance.collection('forestdata').get();
+    // final userSnapshot = await FirebaseFirestore.instance.collection('forestdata').get();
+    //
+    // final profileDataList = userSnapshot.docs
+    //     .map(
+    //       (doc) => Conflict(
+    //     id: doc.id,
+    //     range: doc['range'],
+    //     round: doc['round'],
+    //     bt: doc['bt'],
+    //     cNoName: doc['c_no_name'],
+    //     conflict: doc['conflict'],
+    //     notes: doc['notes'],
+    //     person_age: doc['person_age'],
+    //     imageUrl: doc['imageUrl'],
+    //     userName: doc['user_name'],
+    //     userEmail: doc['user_email'],
+    //     person_gender: doc['person_gender'],
+    //     pincodeName: doc['pincode_name'],
+    //     sp_causing_death: doc['sp_causing_death'],
+    //     village_name: doc['village_name'],
+    //     person_name: doc['person_name'],
+    //     datetime: TimeStamp( seconds: doc['createdAt'].seconds, nanoseconds: doc['createdAt'].nanoseconds ),
+    //     location: G.GeoPoint( latitude: doc['location'].latitude, longitude:  doc['location'].longitude ),
+    //     userContact: doc['user_contact'],
+    //     userImage: doc['user_imageUrl'],
+    //   ),
+    // ).toList();
 
-    final profileDataList = userSnapshot.docs
-        .map(
-          (doc) => ConflictModel(
-        id: doc.id,
-        range: doc['range'],
-        round: doc['round'],
-        bt: doc['bt'],
-        cNoName: doc['c_no_name'],
-        conflict: doc['conflict'],
-        notes: doc['notes'],
-        person_age: doc['person_age'],
-        imageUrl: doc['imageUrl'],
-        userName: doc['user_name'],
-        userEmail: doc['user_email'],
-        person_gender: doc['person_gender'],
-        pincodeName: doc['pincode_name'],
-        sp_causing_death: doc['sp_causing_death'],
-        village_name: doc['village_name'],
-        person_name: doc['person_name'],
-        datetime: doc['createdAt'] as Timestamp?,
-        location: doc['location'] as GeoPoint,
-        userContact: doc['user_contact'],
-        userImage: doc['user_imageUrl'],
-      ),
-    ).toList();
+    final profileDataList = await ConflictService.getData();
 
     widget.profileDataList = profileDataList;
     _searchResult = profileDataList;
@@ -208,7 +212,7 @@ class _FilterDialogState extends State<FilterDialog> {
             return;
         }
 
-        List<ConflictModel> tempList = [];
+        List<Conflict> tempList = [];
         _searchResult.forEach((profileData) {
           if (profileData.datetime != null &&
               profileData.datetime!.toDate().isAfter(start)) {

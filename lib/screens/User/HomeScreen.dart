@@ -1,6 +1,11 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
+
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
-import 'package:forestapp/common/models/ConflictModel.dart';
+import 'package:forestapp/common/models/conflict_model_hive.dart';
+import 'package:forestapp/utils/conflict_service.dart';
+import 'package:forestapp/utils/hive_service.dart';
+import 'package:forestapp/utils/utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../widgets/home_screen_list_tile.dart';
@@ -21,25 +26,27 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late String _userEmail;
-  late List<ConflictModel> _profileDataList = [];
+  late List<Conflict> _profileDataList = [];
+  HiveService hiveService = HiveService();
 
   int _TotalConflictsCount = 0;
-  int _humansInjuredCount = 0;
-  int _cattleInjuredCount = 0;
-  int _cropDamagedCount = 0;
-  int _humansKilledCount = 0;
-  int _cattleKilledCount = 0;
+
+  Map<String, int> conflictsCounter = {
+    'cattle injured' : 0,
+    'cattle killed' : 0,
+    'humans injured' : 0,
+    'humans killed' : 0,
+    'crop damaged' : 0,
+  };
+
+  StreamSubscription? connection;
+  bool isOffline = false;
 
   @override
   void initState() {
     super.initState();
+
     fetchUserEmail();
-    getTotalDocumentsCount().then((value) {
-      setState(() {
-        // _count = value;
-      });
-    });
-    getTotalDocumentsCountUser().then((value) {});
   }
 
   Future<void> fetchUserEmail() async {
@@ -51,96 +58,72 @@ class _HomeScreenState extends State<HomeScreen> {
     fetchUserProfileData();
   }
 
+
   Future<void> fetchUserProfileData() async {
     _TotalConflictsCount = 0;
-    _humansInjuredCount = 0;
-    _cattleInjuredCount = 0;
-    _cropDamagedCount = 0;
-    _humansKilledCount = 0;
-    _cattleKilledCount = 0;
+    final List<Conflict> conflictList  = await ConflictService.getData( userEmail: _userEmail );
 
-    final userSnapshot = await FirebaseFirestore.instance
-        .collection('forestdata')
-        .where('user_email', isEqualTo: _userEmail)
-        .orderBy('createdAt', descending: true)
-        .get();
-
-    final List<ConflictModel> profileDataList = [];
-
-    for( var item in userSnapshot.docs ) {
-      if (item['conflict'] == 'cattle injured') {
-        _cattleInjuredCount += 1;
-      }
-      else if (item['conflict'] == 'cattle killed') {
-        _cattleKilledCount += 1;
-      }
-      else if (item['conflict'] == 'humans injured') {
-        _humansInjuredCount += 1;
-      }
-      else if (item['conflict'] == 'humans killed') {
-        _humansKilledCount += 1;
-      }
-      else if (item['conflict'] == 'crop damaged') {
-        _cropDamagedCount += 1;
-      }
-    }
-
-    int count = 0;
-    for( var item in userSnapshot.docs ) {
-      if( count >= 5 ) {
-        break;
-      }
-
-      profileDataList.add(
-          ConflictModel(
-              id: item.id,
-              range: item['range'],
-              round: item['round'],
-              bt: item['bt'],
-              cNoName: item['c_no_name'],
-              conflict: item['conflict'],
-              notes: item['notes'],
-              person_age: item['person_age'],
-              imageUrl: item['imageUrl'],
-              userName: item['user_name'],
-              userEmail: item['user_email'],
-              person_gender: item['person_gender'],
-              pincodeName: item['pincode_name'],
-              sp_causing_death: item['sp_causing_death'],
-              village_name: item['village_name'],
-              person_name: item['person_name'],
-              datetime: item['createdAt'] as Timestamp?,
-              location: item['location'] as GeoPoint,
-              userContact: item['user_contact'],
-              userImage: item['user_imageUrl'],
-          )
+    // if the data is loaded from cache showing a bottom popup to user alerting
+    // that the app is running in offline mode
+    if( !(await hasConnection) ) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Loading the page in Offline mode'),
+        ),
       );
 
-      count += 1;
+      // also setting up a listener to trigger when the device is back online
+      connection = Connectivity().onConnectivityChanged.listen((ConnectivityResult result ) {
+        // trigger only when user comes back online
+        if( result != ConnectivityResult.none ) {
+          fetchUserProfileData().then((value) => {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                backgroundColor: Colors.green,
+                content: Text(
+                  "Back Online! Uploading stored Conflicts",
+                  style: TextStyle(
+                    color: Colors.black
+                  ),
+                ),
+              ),
+            )
+          });
+
+          // uploading the data to server
+          uploadStoredConflicts();
+
+          // unsubscribing the subscription once executed
+          connection?.cancel();
+        }
+      });
+    }
+
+    for( var item in conflictList ) {
+      if( !conflictsCounter.containsKey(item.conflict) ) {
+        conflictsCounter[item.conflict] = 0;
+      }
+
+      conflictsCounter[item.conflict] = conflictsCounter[item.conflict]! + 1;
     }
 
     setState(() {
-      _profileDataList = profileDataList;
-      _TotalConflictsCount = userSnapshot.size;
+      _profileDataList = conflictList;
+      _TotalConflictsCount = conflictList.length;
     });
   }
 
-  Future<int> getTotalDocumentsCount() async {
-    final snapshot = await FirebaseFirestore.instance
-        .collection('forestdata')
-        // .where('user_email', isEqualTo: _userEmail)
-        // .orderBy('createdAt', descending: true)
-        .get();
-    return snapshot.size;
+  Future<void> uploadStoredConflicts() async {
+    // getting all the conflicts in stored_conflicts
+    var storedConflicts = await hiveService.getBoxes('stored_conflicts');
+
+    for( Conflict conflict in storedConflicts ) {
+      await ConflictService.addConflict( conflict );
+    }
+
+    // clearing the stored conflicts once they are uploaded
+    hiveService.setBox([], 'store_conflicts');
   }
-
-  Future<int> getTotalDocumentsCountUser() async {
-    final snapshot = await FirebaseFirestore.instance.collection('users').get();
-    return snapshot.size;
-  }
-
-
-  final CollectionReference users = FirebaseFirestore.instance.collection('users');
 
   @override
   Widget build(BuildContext context) {
@@ -267,7 +250,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ),
                                 Text(
-                                  _humansInjuredCount.toString(),
+                                  conflictsCounter['humans injured'].toString(),
                                   style: TextStyle(
                                     fontSize: 18,
                                   ),
@@ -308,7 +291,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ),
                                 Text(
-                                  _humansKilledCount.toString(),
+                                  conflictsCounter['humans killed'].toString(),
                                   style: TextStyle(
                                     fontSize: 18,
                                   ),
@@ -353,7 +336,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ),
                                 Text(
-                                  _cattleInjuredCount.toString(),
+                                  conflictsCounter['cattle injured'].toString(),
                                   style: TextStyle(
                                     fontSize: 18,
                                   ),
@@ -394,7 +377,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ),
                                 Text(
-                                  _cattleKilledCount.toString(),
+                                  conflictsCounter['cattle killed'].toString(),
                                   style: TextStyle(
                                     fontSize: 18,
                                   ),
@@ -435,7 +418,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ),
                                 Text(
-                                  _cropDamagedCount.toString(),
+                                  conflictsCounter['crop damaged'].toString(),
                                   style: TextStyle(
                                     fontSize: 18,
                                   ),
@@ -485,10 +468,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: SingleChildScrollView(
                       physics: const BouncingScrollPhysics(),
                       child: Column(
-                        children: _profileDataList.map((forestData) =>  HomeScreenListTile(
+                        children: (_profileDataList.length >= 5 ? _profileDataList.sublist(0,5) : _profileDataList).map((forestData) =>  HomeScreenListTile(
                             forestData: forestData,
                             changeIndex: widget.changeIndex,
-                            deleteData: (ConflictModel data) {
+                            deleteData: (Conflict data) {
                               setState(() {
                                 _profileDataList.removeWhere((element) => element.id == data.id );
                               });

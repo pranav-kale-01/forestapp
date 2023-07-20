@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'dart:math' as math;
 
+import 'package:forestapp/common/models/conflict_model_hive.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -11,11 +12,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:syncfusion_flutter_maps/maps.dart';
 
-
-import '../../common/models/ConflictModel.dart';
-
 class ForestMapScreen extends StatefulWidget {
-  final ConflictModel conflictData;
+  final Conflict conflictData;
   final BottomNavigationBar bottomNavigator;
 
   ForestMapScreen({

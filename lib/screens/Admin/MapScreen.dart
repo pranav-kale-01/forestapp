@@ -1,7 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:forestapp/common/models/ConflictModel.dart';
+import 'package:forestapp/common/models/conflict_model_hive.dart';
+import 'package:forestapp/common/models/timestamp.dart';
+import 'package:forestapp/common/models/geopoint.dart' as G;
+import 'package:forestapp/utils/conflict_service.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:syncfusion_flutter_maps/maps.dart';
@@ -22,7 +25,7 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
-  late List<ConflictModel> _profileDataList = [];
+  late List<Conflict> _profileDataList = [];
   late MapZoomPanBehavior _zoomPanBehavior;
   late List<MapLatLng> _markers;
   static GlobalKey previewContainer = new GlobalKey();
@@ -151,31 +154,33 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Future<void> fetchUserProfileData() async {
-    final userSnapshot = await FirebaseFirestore.instance.collection('forestdata').get();
-    final profileDataList = userSnapshot.docs
-        .map((doc) => ConflictModel(
-            id: doc.id,
-            range: doc['range'],
-            round: doc['round'],
-            bt: doc['bt'],
-            cNoName: doc['c_no_name'],
-            conflict: doc['conflict'],
-            notes: doc['notes'],
-            person_age: doc['person_age'],
-            imageUrl: doc['imageUrl'],
-            userName: doc['user_name'],
-            userEmail: doc['user_email'],
-            person_gender: doc['person_gender'],
-            pincodeName: doc['pincode_name'],
-            sp_causing_death: doc['sp_causing_death'],
-            village_name: doc['village_name'],
-            person_name: doc['person_name'],
-            datetime: doc['createdAt'] as Timestamp?,
-            location: doc['location'] as GeoPoint,
-            userContact: doc['user_contact'],
-            userImage: doc['user_imageUrl'],
-          ))
-        .toList();
+    // final userSnapshot = await FirebaseFirestore.instance.collection('forestdata').get();
+    // final profileDataList = userSnapshot.docs
+    //     .map((doc) => Conflict(
+    //         id: doc.id,
+    //         range: doc['range'],
+    //         round: doc['round'],
+    //         bt: doc['bt'],
+    //         cNoName: doc['c_no_name'],
+    //         conflict: doc['conflict'],
+    //         notes: doc['notes'],
+    //         person_age: doc['person_age'],
+    //         imageUrl: doc['imageUrl'],
+    //         userName: doc['user_name'],
+    //         userEmail: doc['user_email'],
+    //         person_gender: doc['person_gender'],
+    //         pincodeName: doc['pincode_name'],
+    //         sp_causing_death: doc['sp_causing_death'],
+    //         village_name: doc['village_name'],
+    //         person_name: doc['person_name'],
+    //         datetime: TimeStamp( seconds: doc['createdAt'].seconds, nanoseconds: doc['createdAt'].nanoseconds ),
+    //         location: G.GeoPoint( latitude: doc['location'].latitude, longitude:  doc['location'].longitude ),
+    //         userContact: doc['user_contact'],
+    //         userImage: doc['user_imageUrl'],
+    //       ))
+    //     .toList();
+
+    final profileDataList = await ConflictService.getData();
     setState(() {
       _profileDataList = profileDataList;
 

@@ -2,6 +2,7 @@ import 'package:android_intent_plus/android_intent.dart';
 import 'package:flutter/material.dart';
 
 import 'package:forestapp/screens/splashScreen.dart';
+import 'package:forestapp/utils/hive_service.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:hexcolor/hexcolor.dart';
 
@@ -12,6 +13,7 @@ import 'package:firebase_core/firebase_core.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  await HiveService().init( );
   runApp(const MyApp());
 }
 

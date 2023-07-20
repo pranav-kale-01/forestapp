@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:forestapp/common/models/ConflictModel.dart';
+import 'package:forestapp/common/models/conflict_model_hive.dart';
 import 'package:intl/intl.dart';
 import '../screens/Admin/ForestDetail.dart';
 
 class HomeScreenListTile extends StatefulWidget {
   final Function(int) changeIndex;
-  final Function(ConflictModel) deleteData;
-  ConflictModel forestData;
+  final Function(Conflict) deleteData;
+  Conflict forestData;
 
   HomeScreenListTile({
     Key? key,
@@ -40,7 +41,7 @@ class _HomeScreenListTileState extends State<HomeScreenListTile> {
                         forestData: widget.forestData,
                         currentIndex: 0,
                         changeIndex: widget.changeIndex,
-                        changeData: (ConflictModel newData) {
+                        changeData: (Conflict newData) {
                           setState(() {
                             widget.forestData = newData;
                           });
