@@ -4,7 +4,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:forestapp/screens/Admin/AddUserScreen.dart';
 import 'package:forestapp/screens/Admin/EditUserScreen.dart';
 import 'package:forestapp/screens/Admin/UserDetails.dart';
-import '../../common/models/UserModel.dart';
+import '../../common/models/user.dart';
 import '../../utils/utils.dart';
 
 class UserScreen extends StatefulWidget {
@@ -20,7 +20,7 @@ class UserScreen extends StatefulWidget {
 }
 
 class _UserScreenState extends State<UserScreen> {
-  late List<UserModel> _searchResult = [];
+  late List<User> _searchResult = [];
 
   @override
   void initState() {
@@ -45,16 +45,19 @@ class _UserScreenState extends State<UserScreen> {
         .get();
 
     final profileDataList = userSnapshot.docs
-        .map((doc) => UserModel(
-              imageUrl: doc['imageUrl'],
-              password: doc['password'],
-              email: doc['email'],
-              name: doc['name'],
-              aadharImageUrl: doc['aadharImageUrl'],
-              forestID: doc['forestID'],
-              contactNumber: doc['contactNumber'],
-              forestIDImageUrl: doc['forestIDImageUrl'],
-              aadharNumber: doc['aadharNumber'],
+        .map((userData) => User(
+              name: userData['name'],
+              email: userData['email'],
+              contactNumber: userData['contactNumber'],
+              imageUrl: userData['imageUrl'],
+              aadharNumber: userData['aadharNumber'],
+              forestId: userData['forestID'],
+              longitude: userData['longitude'],
+              latitude: userData['latitude'],
+              radius: userData['radius'],
+              aadharImageUrl: '',
+              forestID: '',
+              forestIDImageUrl: '',
             ))
         .toList();
 
