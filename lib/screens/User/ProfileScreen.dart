@@ -2,36 +2,12 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:forestapp/common/models/user.dart';
+import 'package:forestapp/utils/user_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:forestapp/utils/utils.dart';
 import '../loginScreen.dart';
-
-class ProfileData {
-  final String name;
-  final String email;
-  final String contactNumber;
-  final String imageUrl;
-  final String aadharNumber;
-  final String forestId;
-  final String longitude;
-  final String latitude;
-  final String radius;
-  // final int numberOfForestsAdded;
-
-  ProfileData({
-    required this.name,
-    required this.email,
-    required this.contactNumber,
-    required this.imageUrl,
-    required this.aadharNumber,
-    required this.forestId,
-    required this.longitude,
-    required this.latitude,
-    required this.radius,
-    // required this.numberOfForestsAdded,
-  });
-}
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -42,7 +18,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   late String _userEmail;
-  ProfileData? _profileData;
+  User? _profileData;
 
   @override
   void initState() {
@@ -56,29 +32,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() {
       _userEmail = userEmail ?? '';
     });
-    fetchUserProfileData();
-  }
+    Map<String,dynamic> userData = await UserService.fetchUserProfileData( _userEmail );
 
-  Future<void> fetchUserProfileData() async {
-    final userSnapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .where('email', isEqualTo: _userEmail)
-        .get();
-    final userData = userSnapshot.docs.first.data();
     setState(() {
-      _profileData = ProfileData(
+      _profileData = User(
         name: userData['name'],
         email: userData['email'],
-        contactNumber: userData['contactNumber'],
-        imageUrl: userData['imageUrl'],
-        aadharNumber: userData['aadharNumber'],
-        forestId: userData['forestID'],
-        longitude: userData['location'].longitude.toString(),
-        latitude: userData['location'].latitude.toString(),
-        radius: userData['radius'].toString(),
+        contactNumber: userData['contact'],
+        imageUrl: userData['profile_photo'],
+        aadharNumber: userData['aadhar_number'],
+        forestId: int.parse( userData['forest_id'] ),
+        longitude: double.parse(userData['longitude']),
+        latitude: double.parse(userData['latitude']),
+        radius: int.parse(userData['radius']),
+        aadharImageUrl: '',
+        forestID: '',
+        forestIDImageUrl: '',
       );
     });
+
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -219,7 +193,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   Text("Forest ID: "),
                   Text(
-                    _profileData!.forestId,
+                    _profileData!.forestId.toString(),
                     style: const TextStyle(
                       fontSize: 16.0,
                     ),
@@ -233,7 +207,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   Text("Longitude: "),
                   Text(
-                    _profileData!.longitude,
+                    _profileData!.longitude.toString(),
                     style: const TextStyle(
                       fontSize: 16.0,
                     ),
@@ -246,7 +220,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   Text("Latitude: "),
                   Text(
-                    _profileData!.latitude,
+                    _profileData!.latitude.toString(),
                     style: const TextStyle(
                       fontSize: 16.0,
                     ),
@@ -260,7 +234,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   Text("Radius Area: "),
                   Text(
-                    _profileData!.radius,
+                    _profileData!.radius.toString(),
                     style: const TextStyle(
                       fontSize: 16.0,
                     ),
