@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:forestapp/contstant/constant.dart';
 import 'package:forestapp/screens/Admin/homeAdmin.dart';
 import 'package:forestapp/screens/User/homeUser.dart';
 import 'package:forestapp/screens/loginScreen.dart';
@@ -23,55 +24,40 @@ class _SplashScreenState extends State<SplashScreen> {
   bool _isVisible = false;
   bool _isAdmin = false;
 
-  @override
-  void initState() {
-    fetchUserEmail();
-    super.initState();
-  }
 
-  Future<void> fetchUserEmail() async {
+  Future<Widget> check_user() async{
     final prefs = await SharedPreferences.getInstance();
-    final userEmail = prefs.getString('userEmail');
-    if( prefs.getBool('isAdmin') != null ) {
-      _isAdmin = prefs.getBool('isAdmin')!;
+
+    final user_type = prefs.getInt(SHARED_USER_TYPE) ?? noOne;
+
+    if(user_type == admin){
+      return HomeAdmin();
+    }else if(user_type == user){
+      var userEmail = prefs.getString(SHARED_USER_EMAIL);
+      return HomeUser(userEmail: userEmail!);
+    }else{
+      return LoginScreen();
     }
 
-    setState(() {
-      _userEmail = userEmail;
-    });
   }
 
   _SplashScreenState() {
     Timer(const Duration(milliseconds: 3000), () {
-      setState(() {
-        if (_isAdmin) {
-          Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(
-                builder: (context) => const HomeAdmin(),
-              ),
-              (route) => false);
-        } else if (_userEmail != null) {
-          Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(
-                builder: (context) => HomeUser(
-                  userEmail: _userEmail!,
-                ),
-              ),
-              (route) => false);
-        } else {
-          Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(builder: (context) => const LoginScreen()),
-              (route) => false);
-        }
-      });
-    });
 
-    Timer(const Duration(milliseconds: 30), () {
       setState(() {
-        _isVisible =
-            true; // Now it is showing fade effect and navigating to Login page
+
+         check_user().then((screen) {
+          Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(
+                builder: (context) => screen,
+              ),
+              (route) => false);
+        });
       });
-    });
+
+        
+      });
+    
   }
 
   @override
