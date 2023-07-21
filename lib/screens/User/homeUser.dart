@@ -50,14 +50,12 @@ class _HomeUserState extends State<HomeUser> {
 
   void _changeIndex(int index) {
     if (_selectedConflict.isNotEmpty) {
-      print('iof');
       _widgetOptions[2] = ForestDataScreen(
         defaultFilterConflict: _selectedConflict,
         changeScreen: _changeIndex,
         userEmail: widget.userEmail,
       );
     } else {
-      print('else');
       _widgetOptions[2] = ForestDataScreen(
         defaultFilterConflict: '',
         changeScreen: _changeIndex,
@@ -74,14 +72,12 @@ class _HomeUserState extends State<HomeUser> {
   void _onItemTapped(int index) {
     if (index == 2) {
       if (_selectedConflict.isNotEmpty) {
-        print('iof');
         _widgetOptions[2] = ForestDataScreen(
           defaultFilterConflict: _selectedConflict,
           changeScreen: _changeIndex,
           userEmail: widget.userEmail,
         );
       } else {
-        print('else');
         _widgetOptions[2] = ForestDataScreen(
           defaultFilterConflict: '',
           changeScreen: _changeIndex,
@@ -137,22 +133,6 @@ class _HomeUserState extends State<HomeUser> {
           selectedItemColor: Colors.green,
           onTap: _onItemTapped,
         ) : SizedBox( height: 0,),
-      ),
-    );
-  }
-}
-
-class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      child: const Center(
-        child: Text(
-          'Settings Screen',
-          style: TextStyle(fontSize: 30),
-        ),
       ),
     );
   }

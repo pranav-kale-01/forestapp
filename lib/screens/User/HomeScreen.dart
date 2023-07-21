@@ -148,6 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _getCurrentLocation() async {
     bool serviceEnabled;
     LocationPermission permission;
+
     // Check if location services are enabled
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
@@ -166,6 +167,7 @@ class _HomeScreenState extends State<HomeScreen> {
       );
       return;
     }
+
     // Request location permissions
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
@@ -187,6 +189,7 @@ class _HomeScreenState extends State<HomeScreen> {
         return;
       }
     }
+
     if (permission == LocationPermission.deniedForever) {
       showDialog(
         context: context,
@@ -251,8 +254,6 @@ class _HomeScreenState extends State<HomeScreen> {
       return false;
     }
 
-    print( point.latitude.toString() + "|" + point.longitude.toString() );
-    print( _latitude.toString() + "|" + _longitude.toString() );
     double distance = Geolocator.distanceBetween(
       point.latitude,
       point.longitude,
@@ -261,6 +262,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     // showDialog(context: context, builder: (context) => AlertDialog( title: Text( distance.toString() ), ));
+    // for debugging
+    print( point.latitude.toString() + "|" + point.longitude.toString() );
+    print( _latitude.toString() + "|" + _longitude.toString() );
+    print("distance is : " + distance.toString() );
+
     return (distance <= _circleRadius);
   }
 
