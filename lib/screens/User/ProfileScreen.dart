@@ -1,6 +1,4 @@
 // ignore_for_file: library_private_types_in_public_api, unnecessary_null_comparison
-
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:forestapp/common/models/user.dart';
 import 'package:forestapp/utils/user_service.dart';
@@ -32,25 +30,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() {
       _userEmail = userEmail ?? '';
     });
-    Map<String,dynamic> userData = await UserService.fetchUserProfileData( _userEmail );
 
-    setState(() {
-      _profileData = User(
-        name: userData['name'],
-        email: userData['email'],
-        contactNumber: userData['contact'],
-        imageUrl: userData['profile_photo'],
-        aadharNumber: userData['aadhar_number'],
-        forestId: int.parse( userData['forest_id'] ),
-        longitude: double.parse(userData['longitude']),
-        latitude: double.parse(userData['latitude']),
-        radius: int.parse(userData['radius']),
-        aadharImageUrl: '',
-        forestID: '',
-        forestIDImageUrl: '',
-      );
-    });
+    _profileData = await UserService.fetchUserProfileData( _userEmail );
 
+    setState(() {});
   }
 
 

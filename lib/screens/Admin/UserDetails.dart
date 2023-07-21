@@ -1,9 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:forestapp/common/models/user.dart';
 
 class UserDetails extends StatelessWidget {
-  final Map<String, dynamic> user;
+  final User user;
   const UserDetails({Key? key, required this.user}) : super(key: key);
 
   @override
@@ -42,7 +43,7 @@ class UserDetails extends StatelessWidget {
             height: 200,
             decoration: BoxDecoration(
               image: DecorationImage(
-                image: NetworkImage(user['imageUrl'] as String),
+                image: NetworkImage(user.imageUrl),
                 fit: BoxFit.cover,
               ),
               shape: BoxShape.circle,
@@ -57,7 +58,7 @@ class UserDetails extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    user['name'] as String,
+                    user.name,
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -65,7 +66,7 @@ class UserDetails extends StatelessWidget {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    user['email'] as String,
+                    user.email,
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.grey[600],
@@ -73,7 +74,7 @@ class UserDetails extends StatelessWidget {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'Adhar Number: ${user['aadharNumber']}',
+                    'Adhar Number: ${user.aadharNumber}',
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.grey[600],
@@ -81,7 +82,7 @@ class UserDetails extends StatelessWidget {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'Forest ID: ${user['forestID']}',
+                    'Forest ID: ${user.forestID.toString()}',
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.grey[600],
@@ -89,7 +90,7 @@ class UserDetails extends StatelessWidget {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'Contact Number: ${user['contactNumber']}',
+                    'Contact Number: ${user.contactNumber}',
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.grey[600],
@@ -97,7 +98,7 @@ class UserDetails extends StatelessWidget {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'Email: ${user['email']}',
+                    'Email: ${user.email}',
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.grey[600],
@@ -105,7 +106,7 @@ class UserDetails extends StatelessWidget {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'Longitude:${user['location'].longitude}',
+                    'Longitude:${user.longitude}',
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.grey[600],
@@ -113,7 +114,7 @@ class UserDetails extends StatelessWidget {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'Latitude:${user['location'].latitude}',
+                    'Latitude:${user.latitude}',
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.grey[600],
@@ -121,7 +122,7 @@ class UserDetails extends StatelessWidget {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'Radius range:${user['radius']}',
+                    'Radius range:${user.radius}',
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.grey[600],
@@ -160,7 +161,7 @@ class UserDetails extends StatelessWidget {
                             try {
                               final snapshot = await FirebaseFirestore.instance
                                   .collection('users')
-                                  .where('email', isEqualTo: user['email'])
+                                  .where('email', isEqualTo: user.email)
                                   .get();
                               if (snapshot.docs.isNotEmpty) {
                                 // first deleting the image
@@ -168,26 +169,26 @@ class UserDetails extends StatelessWidget {
                                 Reference storageRef = FirebaseStorage.instance
                                     .ref()
                                     .child('user-images')
-                                    .child("${user['forestID']}/${user['forestID']}.jpg");
+                                    .child("${user.forestID.toString()}/${user.forestID.toString()}.jpg");
 
                                 await storageRef.delete();
 
                                 storageRef = FirebaseStorage.instance
                                     .ref()
                                     .child('user-images')
-                                    .child("${user['forestID']}/${user['forestID']}_aadhar.jpg");
+                                    .child("${user.forestID.toString()}/${user.forestID.toString()}_aadhar.jpg");
 
                                 await storageRef.delete();
 
                                 storageRef = FirebaseStorage.instance
                                     .ref()
                                     .child('user-images')
-                                    .child("${user['forestID']}/${user['forestID']}_forestID.jpg");
+                                    .child("${user.forestID.toString()}/${user.forestID.toString()}_forestID.jpg");
 
                                 await storageRef.delete();
 
 
-                                // now deleting the record from firestore database
+                                // now deleting the record from Firestore database
                                 await snapshot.docs.first.reference.delete();
 
                                 ScaffoldMessenger.of(context).showSnackBar(

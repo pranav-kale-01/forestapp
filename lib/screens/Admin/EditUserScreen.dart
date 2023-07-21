@@ -1,6 +1,8 @@
 // ignore_for_file: unused_field, library_private_types_in_public_api, use_build_context_synchronously
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:forestapp/common/models/user.dart';
+import 'package:forestapp/utils/user_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:forestapp/common/models/geopoint.dart' as G;
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -9,7 +11,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import '../../common/themeHelper.dart';
 
 class EditUserScreen extends StatefulWidget {
-  final Map<String, dynamic> user;
+  final User user;
   final Function(int) changeIndex;
 
   const EditUserScreen({
@@ -27,7 +29,6 @@ class _EditUserScreenState extends State<EditUserScreen> {
   String _name = '';
   String _email = '';
   String _password = '';
-
   String _contactNumber = '';
   String _aadharNumber = '';
   String _forestId = '';
@@ -38,10 +39,6 @@ class _EditUserScreenState extends State<EditUserScreen> {
   String? latitude;
   String? radius;
 
-  final CollectionReference _userRef = FirebaseFirestore.instance.collection('users');
-
-  FirebaseFirestore firestore = FirebaseFirestore.instance;
-
   @override
   void initState( ) {
     super.initState();
@@ -51,7 +48,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
 
   Future<void> _setImage() async {
     setState(() {
-      _networkImage = NetworkImage( widget.user['imageUrl'] );
+      _networkImage = NetworkImage( widget.user.imageUrl );
     });
   }
 
@@ -64,7 +61,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
     final Reference storageRef = FirebaseStorage.instance
         .ref()
         .child('user-images')
-        .child("${widget.user['forestID']}/${widget.user['forestID']}.jpg");
+        .child("${widget.user.forestId.toString}/${widget.user.forestId.toString}.jpg");
 
     final UploadTask uploadTask = storageRef.putFile(file);
     final TaskSnapshot downloadUrl = await uploadTask.whenComplete(() => null);
@@ -79,6 +76,41 @@ class _EditUserScreenState extends State<EditUserScreen> {
   void _onItemTapped(int index) {
     widget.changeIndex( index );
     Navigator.of(context).pop();
+  }
+
+  Future<void> editUser() async {
+    if (_formKey.currentState!.validate()) {
+      _formKey.currentState!.save();
+
+      if( imageUrl == null ) {
+        imageUrl = widget.user.imageUrl;
+      }
+
+      final User updatedUser = User(
+          name: _name,
+          email: _email,
+          password: _password,
+          contactNumber: _password,
+          imageUrl: imageUrl!,
+          aadharNumber: _aadharNumber,
+          forestId: int.parse( _forestId ),
+          longitude: double.parse(longitude!),
+          latitude: double.parse(latitude!),
+          radius: int.parse( radius! ),
+          aadharImageUrl: '',
+          forestID: '',
+          forestIDImageUrl: '',
+      );
+
+      bool userUpdated  = await UserService.updateUser( updatedUser );
+      if( userUpdated ) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('User updated successfully'),
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -237,7 +269,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
                       }
                       return null;
                     },
-                    initialValue: widget.user['name'] as String,
+                    initialValue: widget.user.name,
                     onSaved: (value) {
                       _name = value!;
                     },
@@ -259,12 +291,13 @@ class _EditUserScreenState extends State<EditUserScreen> {
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter an email';
-                      } else if (!value.contains('@') || !value.contains('.')) {
-                        return 'Please enter a valid email';
                       }
+                      // } else if (!value.contains('@') || !value.contains('.')) {
+                      //   return 'Please enter a valid email';
+                      // }
                       return null;
                     },
-                    initialValue: widget.user['email'] as String,
+                    initialValue: widget.user.email,
                     onSaved: (value) {
                       _email = value!;
                     },
@@ -290,7 +323,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
                       }
                       return null;
                     },
-                    initialValue: widget.user['password'] as String,
+                    initialValue: widget.user.password,
                     onSaved: (value) {
                       _password = value!;
                     },
@@ -316,7 +349,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
                       }
                       return null;
                     },
-                    initialValue: widget.user['contactNumber'] as String,
+                    initialValue: widget.user.contactNumber,
                     onSaved: (value) {
                       _contactNumber = value!;
                     },
@@ -343,7 +376,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
                       }
                       return null;
                     },
-                    initialValue: widget.user['aadharNumber'] as String,
+                    initialValue: widget.user.aadharNumber,
                     onSaved: (value) {
                       _aadharNumber = value!;
                     },
@@ -369,16 +402,23 @@ class _EditUserScreenState extends State<EditUserScreen> {
                       }
                       return null;
                     },
-                    initialValue: widget.user['forestID'] as String,
+                    initialValue: widget.user.forestID.toString(),
                     onSaved: (value) {
                       _forestId = value!;
                     },
                   ),
                   const SizedBox(height: 16.0),
+                  Text(
+                    "Latitude",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16.0),
                   TextFormField(
-                    decoration: const InputDecoration(
-                      labelText: 'Latitude',
-                      border: OutlineInputBorder(),
+                    decoration:ThemeHelper().textInputDecoration(
+                        'Latitude', 'Enter Latitude'
                     ),
                     keyboardType: TextInputType.number,
                     validator: (value) {
@@ -387,16 +427,23 @@ class _EditUserScreenState extends State<EditUserScreen> {
                       }
                       return null;
                     },
-                    initialValue: widget.user['location'].latitude.toString(),
+                    initialValue: widget.user.latitude.toString(),
                     onSaved: (value) {
                       latitude = value!;
                     },
                   ),
                   const SizedBox(height: 16.0),
+                  Text(
+                    "Longitude",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16.0),
                   TextFormField(
-                    decoration: const InputDecoration(
-                      labelText: 'Longitude',
-                      border: OutlineInputBorder(),
+                    decoration:ThemeHelper().textInputDecoration(
+                        'Longitude', 'Enter Longitude'
                     ),
                     keyboardType: TextInputType.number,
                     validator: (value) {
@@ -405,16 +452,24 @@ class _EditUserScreenState extends State<EditUserScreen> {
                       }
                       return null;
                     },
-                    initialValue: widget.user['location'].longitude.toString() ,
+                    initialValue: widget.user.longitude.toString(),
                     onSaved: (value) {
                       longitude = value!;
                     },
                   ),
+
+                  const SizedBox(height: 16.0),
+                  Text(
+                    "Radius",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const SizedBox(height: 16.0),
                   TextFormField(
-                    decoration: const InputDecoration(
-                      labelText: 'Radius Range',
-                      border: OutlineInputBorder(),
+                    decoration:ThemeHelper().textInputDecoration(
+                        'Radius', 'Enter Radius'
                     ),
                     keyboardType: TextInputType.number,
                     validator: (value) {
@@ -423,7 +478,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
                       }
                       return null;
                     },
-                    initialValue: widget.user['radius'].toString(),
+                    initialValue: widget.user.radius.toString(),
                     onSaved: (value) {
                       radius = value!;
                     },
@@ -438,54 +493,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
                             )
                         )
                     ),
-                    onPressed: () async {
-                      if (_formKey.currentState!.validate()) {
-                        _formKey.currentState!.save();
-
-                        if( imageUrl == null ) {
-                          imageUrl = widget.user['imageUrl'];
-                        }
-
-                        // Update the user data in the Firebase Firestore
-                        final CollectionReference usersRef = FirebaseFirestore.instance.collection('users');
-                        final Map<String, dynamic> userData = {
-                          'name': _name,
-                          'email': _email,
-                          'password': _password,
-                          'contactNumber': _contactNumber,
-                          'imageUrl': imageUrl,
-                          'aadharNumber': _aadharNumber,
-                          'forestID': _forestId,
-                          'location' : G.GeoPoint( latitude: double.parse(latitude!), longitude: double.parse(longitude!) ),
-                          'radius' : double.parse( radius! )
-                        };
-                        try {
-                          await usersRef
-                              .where('email', isEqualTo: _email)
-                              .get()
-                              .then((querySnapshot) {
-                            querySnapshot.docs.forEach((doc) {
-                              usersRef.doc(doc.id).update(userData);
-                            });
-                          });
-
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('User updated successfully'),
-                            ),
-                          );
-
-                          Navigator.of(context).pop();
-
-                        } catch (error) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Error: $error'),
-                            ),
-                          );
-                        }
-                      }
-                    },
+                    onPressed: editUser,
                     child: Padding(
                       padding: const EdgeInsets.symmetric( vertical: 18.0),
                       child: const Text('Save'),

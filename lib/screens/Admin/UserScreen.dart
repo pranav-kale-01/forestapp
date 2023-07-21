@@ -4,6 +4,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:forestapp/screens/Admin/AddUserScreen.dart';
 import 'package:forestapp/screens/Admin/EditUserScreen.dart';
 import 'package:forestapp/screens/Admin/UserDetails.dart';
+import 'package:forestapp/utils/user_service.dart';
 import '../../common/models/user.dart';
 import '../../utils/utils.dart';
 
@@ -20,12 +21,13 @@ class UserScreen extends StatefulWidget {
 }
 
 class _UserScreenState extends State<UserScreen> {
-  late List<User> _searchResult = [];
+  late List<User> guardsList = [];
+  late Future<void> _future;
 
   @override
   void initState() {
     super.initState();
-    fetchUserProfileData();
+    _future = fetchUserProfileData();
   }
 
   Future<void> fetchUserProfileData() async {
@@ -39,39 +41,14 @@ class _UserScreenState extends State<UserScreen> {
       );
     }
 
-    final userSnapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .where( 'privileged_user', isEqualTo: false )
-        .get();
-
-    final profileDataList = userSnapshot.docs
-        .map((userData) => User(
-              name: userData['name'],
-              email: userData['email'],
-              contactNumber: userData['contactNumber'],
-              imageUrl: userData['imageUrl'],
-              aadharNumber: userData['aadharNumber'],
-              forestId: userData['forestID'],
-              longitude: userData['longitude'],
-              latitude: userData['latitude'],
-              radius: userData['radius'],
-              aadharImageUrl: '',
-              forestID: '',
-              forestIDImageUrl: '',
-            ))
-        .toList();
+    List<User> profileDataList = await UserService.getAllGuards();
 
     setState(() {
-      _searchResult = profileDataList;
+      guardsList = profileDataList;
     });
-  }
 
-  Future<int> getTotalDocumentsCountUser() async {
-    final snapshot = await FirebaseFirestore.instance.collection('users').get();
-    return snapshot.size;
+    return;
   }
-
-  final CollectionReference users = FirebaseFirestore.instance.collection('users');
 
   @override
   Widget build(BuildContext context) {
@@ -125,34 +102,36 @@ class _UserScreenState extends State<UserScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: StreamBuilder<QuerySnapshot>(
-                stream: users.snapshots(),
-                builder: (streamContext,snapshot) {
-                  if( snapshot.hasData ) {
-                    if ( _searchResult.isEmpty) {
+              child: FutureBuilder(
+                future: _future,
+                builder: ((context, snapshot) {
+                    if ( guardsList.isEmpty) {
                       return Center(
                         child: Text(
                           "No result found....",
                         ),
                       );
                     }
+                    else if( snapshot.connectionState == ConnectionState.waiting ) {
+                      return const Center(
+                          child: CircularProgressIndicator()
+                      );
+                    }
                     else {
-                      final List<DocumentSnapshot> documents = snapshot.data!.docs;
-
                       return ListView.builder(
                         physics: const BouncingScrollPhysics(),
-                        itemCount: documents.length,
+                        itemCount: guardsList.length,
                         itemBuilder: (innerContext, index) {
-                          final data = documents[index].data() as Map<String, dynamic>;
+                          final User guard = guardsList[index];
 
                           return InkWell(
                             onTap: () {
                               Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                      builder: (context) => UserDetails(
-                                        user: data,
-                                      )
-                                  ),
+                                MaterialPageRoute(
+                                    builder: (context) => UserDetails(
+                                      user: guard,
+                                    )
+                                ),
                               );
                             },
                             child: Card(
@@ -163,8 +142,7 @@ class _UserScreenState extends State<UserScreen> {
                                   CrossAxisAlignment.center,
                                   children: [
                                     CircleAvatar(
-                                      backgroundImage: NetworkImage(
-                                          data['imageUrl'] as String),
+                                      backgroundImage: NetworkImage(guard.imageUrl),
                                     ),
                                     const SizedBox(width: 16.0),
                                     Expanded(
@@ -173,14 +151,14 @@ class _UserScreenState extends State<UserScreen> {
                                         CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            data['name'] as String,
+                                            guard.name,
                                             style: const TextStyle(
                                               fontWeight: FontWeight.bold,
                                               fontSize: 20.0,
                                             ),
                                           ),
                                           const SizedBox(height: 8.0),
-                                          Text(data['email'] as String),
+                                          Text(guard.email),
                                         ],
                                       ),
                                     ),
@@ -190,11 +168,11 @@ class _UserScreenState extends State<UserScreen> {
                                       onPressed: () {
                                         Navigator.of(innerContext).push(
                                           MaterialPageRoute(
-                                            builder: (innerContext) =>
-                                                EditUserScreen(
-                                                  user: data,
-                                                  changeIndex: widget.changeIndex,
-                                                )
+                                              builder: (innerContext) =>
+                                                  EditUserScreen(
+                                                    user: guard,
+                                                    changeIndex: widget.changeIndex,
+                                                  )
                                           ),
                                         );
                                       },
@@ -229,7 +207,7 @@ class _UserScreenState extends State<UserScreen> {
                                           try {
                                             final snapshot = await FirebaseFirestore.instance
                                                 .collection('users')
-                                                .where('email', isEqualTo: data['email'])
+                                                .where('email', isEqualTo: guard.email)
                                                 .get();
 
                                             if (snapshot.docs.isNotEmpty) {
@@ -237,25 +215,25 @@ class _UserScreenState extends State<UserScreen> {
                                               Reference storageRef = FirebaseStorage.instance
                                                   .ref()
                                                   .child('user-images')
-                                                  .child("${data['forestID']}/${data['forestID']}.jpg");
+                                                  .child("${guard.forestId.toString()}/${guard.forestId.toString()}.jpg");
 
                                               await storageRef.delete();
 
                                               storageRef = FirebaseStorage.instance
                                                   .ref()
                                                   .child('user-images')
-                                                  .child("${data['forestID']}/${data['forestID']}_aadhar.jpg");
+                                                  .child("${guard.forestId.toString()}/${guard.forestId.toString()}_aadhar.jpg");
 
                                               await storageRef.delete();
 
                                               storageRef = FirebaseStorage.instance
                                                   .ref()
                                                   .child('user-images')
-                                                  .child("${data['forestID']}/${data['forestID']}_forestID.jpg");
+                                                  .child("${guard.forestId.toString()}/${guard.forestId.toString()}_forestID.jpg");
 
                                               await storageRef.delete();
 
-                                              // now deleting the record from firestore database
+                                              // now deleting the record from Firestore database
                                               await snapshot.docs.first.reference.delete();
 
                                               ScaffoldMessenger.of(context).showSnackBar(
@@ -288,15 +266,8 @@ class _UserScreenState extends State<UserScreen> {
                         },
                       );
                     }
-                  }
-                  else {
-                    return const Center(
-                        child: CircularProgressIndicator()
-                    );
-                  }
-                },
+                })),
               ),
-            ),
           ],
         ),
       ),
