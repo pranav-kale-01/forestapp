@@ -4,8 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:forestapp/common/models/user.dart';
 import 'package:forestapp/utils/user_service.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:forestapp/common/models/geopoint.dart' as G;
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
 import '../../common/themeHelper.dart';
@@ -98,7 +96,6 @@ class _EditUserScreenState extends State<EditUserScreen> {
           latitude: double.parse(latitude!),
           radius: int.parse( radius! ),
           aadharImageUrl: '',
-          forestID: '',
           forestIDImageUrl: '',
       );
 
@@ -402,9 +399,9 @@ class _EditUserScreenState extends State<EditUserScreen> {
                       }
                       return null;
                     },
-                    initialValue: widget.user.forestID.toString(),
-                    onSaved: (value) {
-                      _forestId = value!;
+                    initialValue: widget.user.forestId.toString(),
+                    onChanged: ( value ) {
+                      _forestId = value;
                     },
                   ),
                   const SizedBox(height: 16.0),

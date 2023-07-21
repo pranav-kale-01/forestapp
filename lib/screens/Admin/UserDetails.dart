@@ -82,7 +82,7 @@ class UserDetails extends StatelessWidget {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'Forest ID: ${user.forestID.toString()}',
+                    'Forest ID: ${user.forestId.toString()}',
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.grey[600],
@@ -169,21 +169,21 @@ class UserDetails extends StatelessWidget {
                                 Reference storageRef = FirebaseStorage.instance
                                     .ref()
                                     .child('user-images')
-                                    .child("${user.forestID.toString()}/${user.forestID.toString()}.jpg");
+                                    .child("${user.forestId.toString()}/${user.forestId.toString()}.jpg");
 
                                 await storageRef.delete();
 
                                 storageRef = FirebaseStorage.instance
                                     .ref()
                                     .child('user-images')
-                                    .child("${user.forestID.toString()}/${user.forestID.toString()}_aadhar.jpg");
+                                    .child("${user.forestId.toString()}/${user.forestId.toString()}_aadhar.jpg");
 
                                 await storageRef.delete();
 
                                 storageRef = FirebaseStorage.instance
                                     .ref()
                                     .child('user-images')
-                                    .child("${user.forestID.toString()}/${user.forestID.toString()}_forestID.jpg");
+                                    .child("${user.forestId.toString()}/${user.forestId.toString()}_forestID.jpg");
 
                                 await storageRef.delete();
 

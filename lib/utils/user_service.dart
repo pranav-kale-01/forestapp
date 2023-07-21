@@ -292,7 +292,6 @@ class UserService {
           longitude: double.parse(userData['longitude']),
           latitude: double.parse(userData['latitude']),
           radius: int.parse(userData['radius']),
-          forestID: userData['forest_id'],
           password: userData['password'],
           aadharImageUrl: '',
           forestIDImageUrl: ''
@@ -334,7 +333,6 @@ class UserService {
                 longitude: double.parse(userData['longitude']),
                 latitude: double.parse(userData['latitude']),
                 radius: int.parse(userData['radius']),
-                forestID: userData['forest_id'],
                 password: userData['password'],
                 aadharImageUrl: '',
                 forestIDImageUrl: ''
@@ -366,12 +364,13 @@ class UserService {
         'password': updatedUser.password!,
         'contact': updatedUser.contactNumber,
         'aadhar_number': updatedUser.aadharNumber,
-        'forest_id': updatedUser.forestID,
+        'forest_id': updatedUser.forestId.toString(),
         'latitude': updatedUser.latitude.toString(),
         'longitude': updatedUser.longitude.toString(),
         'radius': updatedUser.radius.toString()
       });
 
+      print( request.fields.toString() );
       http.StreamedResponse response = await request.send();
 
       if (response.statusCode == 200) {

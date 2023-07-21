@@ -5,7 +5,6 @@ class User {
   final String aadharNumber;
   final String contactNumber;
   final String email;
-  final String forestID;
   final String forestIDImageUrl;
   final String imageUrl;
   final String name;
@@ -22,7 +21,6 @@ class User {
     required this.name,
     required this.email,
     required this.forestIDImageUrl,
-    required this.forestID,
     required this.imageUrl,
     required this.contactNumber,
     required this.forestId,
