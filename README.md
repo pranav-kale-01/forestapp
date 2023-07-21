@@ -13,7 +13,7 @@ Conflict Tracker is a Flutter application designed for tracking conflicts in the
 
 Tracking and monitoring conflicts in their natural habitat is crucial for conservation efforts. Conflict Tracker aims to streamline this process by leveraging the power of mobile technology and cloud-based backend solutions. The project provides an intuitive and efficient solution for both administrators and field guards to track and manage tiger sightings.
 
-## 🌟 Features
+## 🌟 Features 
 
 Conflict Tracker offers a range of features for administrators and field guards:
 
