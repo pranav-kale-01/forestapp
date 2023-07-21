@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:forestapp/common/models/user.dart';
+import 'package:forestapp/contstant/constant.dart';
 import 'package:forestapp/screens/Admin/homeAdmin.dart';
 import 'package:forestapp/screens/User/homeUser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -25,8 +26,9 @@ class UserService {
         SharedPreferences prefs = await SharedPreferences.getInstance();
 
         // Store the email in shared preferences
-        prefs.setBool('isAdmin', true);
-        // prefs.setString('userEmail', email);
+        prefs.setInt(SHARED_USER_TYPE, admin);
+        
+        
 
         // Navigate to the HomeAdmin screen on successful login
         Navigator.pushReplacement(
@@ -153,9 +155,6 @@ class UserService {
 
       if (response.statusCode == 200) {
         // Navigate to the HomeAdmin screen on successful login
-        Map<String, dynamic> user =
-            jsonDecode(await response.stream.bytesToString());
-
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -169,14 +168,10 @@ class UserService {
         SharedPreferences prefs = await SharedPreferences.getInstance();
 
         // Store the email in shared preferences
-        prefs.setString('userEmail', email);
-
-        // Store the latitude and longitude in shared preferences
-        prefs.setString('latitude', user['latitude']);
-        prefs.setString('longitude', user['longitude']);
-        prefs.setString(
-            'radius', (double.parse(user['radius']) * 1000).toString());
-      } else {
+        prefs.setInt(SHARED_USER_TYPE, user);
+        prefs.setString(SHARED_USER_EMAIL, email );
+      }
+      else {
         print(response.reasonPhrase);
         Map<String, dynamic> jsonResponse =
             jsonDecode(await response.stream.bytesToString());

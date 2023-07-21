@@ -79,23 +79,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                     },
                                   ),
                                 ),
-                                const SizedBox(height: 20.0),
-                                Container(
-                                  margin:
-                                      const EdgeInsets.fromLTRB(10, 0, 10, 20),
-                                  alignment: Alignment.center,
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      // Navigator.push( context, MaterialPageRoute( builder: (context) => ForgotPasswordPage()), );
-                                    },
-                                    child: const Text(
-                                      "Forgot password",
-                                      style: TextStyle(
-                                        color: Colors.black,
-                                      ),
-                                    ),
-                                  ),
-                                ),
+                                const SizedBox(height: 40.0),
+                                
                                 Container(
                                   padding: const EdgeInsets.fromLTRB(
                                       0, 5, 0, 5
