@@ -50,6 +50,40 @@ class _UserScreenState extends State<UserScreen> {
     return;
   }
 
+  Future<void> deleteUser( String email ) async {
+    final confirm = await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+            'Confirm Deletion'),
+        content: const Text(
+            'Are you sure you want to delete this user?'),
+        actions: [
+          TextButton(
+            onPressed: () =>
+                Navigator.pop(
+                    context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () =>
+                Navigator.pop(
+                    context, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      UserService.deleteUser( context, email );
+
+      // removing the user from list of users
+      setState(() {
+        guardsList = guardsList.where((guard) => guard.email != email ).toList();
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -172,6 +206,11 @@ class _UserScreenState extends State<UserScreen> {
                                                   EditUserScreen(
                                                     user: guard,
                                                     changeIndex: widget.changeIndex,
+                                                    updateList: ( User guard ) {
+                                                      setState(() {
+                                                        guardsList = guardsList.map( (g) => g.email == guard.email ? guard : g ).toList();
+                                                      });
+                                                    },
                                                   )
                                           ),
                                         );
@@ -179,84 +218,7 @@ class _UserScreenState extends State<UserScreen> {
                                     ),
                                     IconButton(
                                       icon: const Icon(Icons.delete),
-                                      onPressed: () async {
-                                        final confirm = await showDialog(
-                                          context: context,
-                                          builder: (context) => AlertDialog(
-                                            title: const Text(
-                                                'Confirm Deletion'),
-                                            content: const Text(
-                                                'Are you sure you want to delete this user?'),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () =>
-                                                    Navigator.pop(
-                                                        context, false),
-                                                child: const Text('Cancel'),
-                                              ),
-                                              TextButton(
-                                                onPressed: () =>
-                                                    Navigator.pop(
-                                                        context, true),
-                                                child: const Text('Delete'),
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                        if (confirm == true) {
-                                          try {
-                                            final snapshot = await FirebaseFirestore.instance
-                                                .collection('users')
-                                                .where('email', isEqualTo: guard.email)
-                                                .get();
-
-                                            if (snapshot.docs.isNotEmpty) {
-                                              // first deleting the images
-                                              Reference storageRef = FirebaseStorage.instance
-                                                  .ref()
-                                                  .child('user-images')
-                                                  .child("${guard.forestId.toString()}/${guard.forestId.toString()}.jpg");
-
-                                              await storageRef.delete();
-
-                                              storageRef = FirebaseStorage.instance
-                                                  .ref()
-                                                  .child('user-images')
-                                                  .child("${guard.forestId.toString()}/${guard.forestId.toString()}_aadhar.jpg");
-
-                                              await storageRef.delete();
-
-                                              storageRef = FirebaseStorage.instance
-                                                  .ref()
-                                                  .child('user-images')
-                                                  .child("${guard.forestId.toString()}/${guard.forestId.toString()}_forestID.jpg");
-
-                                              await storageRef.delete();
-
-                                              // now deleting the record from Firestore database
-                                              await snapshot.docs.first.reference.delete();
-
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(
-                                                  content: Text('User deleted successfully.'),
-                                                ),
-                                              );
-                                            } else {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(
-                                                  content: Text('User not found.'),
-                                                ),
-                                              );
-                                            }
-                                          } catch (e) {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              SnackBar(
-                                                content: Text('Error deleting user: $e'),
-                                              ),
-                                            );
-                                          }
-                                        }
-                                      },
+                                      onPressed: () => deleteUser( guard.email ),
                                     ),
                                   ],
                                 ),

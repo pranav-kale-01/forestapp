@@ -272,15 +272,13 @@ class UserService {
     }
   }
 
-  static Future<User> fetchUserProfileData(String userEmail) async {
+  static Future<User?> fetchUserProfileData(String userEmail) async {
     // calling the api to get data
-    var request = http.MultipartRequest(
-        'GET', Uri.parse('${baseUrl}/admin/get_guard/$userEmail'));
+    var request = http.MultipartRequest('GET', Uri.parse('${baseUrl}/admin/get_guard/$userEmail'));
     http.StreamedResponse response = await request.send();
 
     if (response.statusCode == 200) {
-      Map<String, dynamic> userData =
-          jsonDecode(await response.stream.bytesToString());
+      Map<String, dynamic> userData = jsonDecode(await response.stream.bytesToString());
 
       return User(
           name: userData['name'],
@@ -297,8 +295,11 @@ class UserService {
           forestIDImageUrl: ''
       );
     } else {
-      return jsonDecode(await response.stream.bytesToString());
+      print( await response.stream.bytesToString( ) );
+      print( response.reasonPhrase );
     }
+
+    return null;
 
     // final userSnapshot = await FirebaseFirestore.instance
     //     .collection('users')
@@ -384,6 +385,106 @@ class UserService {
       debugPrint(e.toString());
       debugPrint(s.toString());
       return false;
+    }
+  }
+
+  static Future<void> deleteUser( BuildContext context, String email ) async {
+    try {
+      // sending a request to API
+      var request = http.MultipartRequest('POST', Uri.parse('${baseUrl}/admin/delete_guard'));
+      request.fields.addAll({
+        'email': email
+      });
+      http.StreamedResponse response = await request.send();
+
+      if (response.statusCode == 200) {
+        print(await response.stream.bytesToString());
+
+        // first deleting the images
+        // Reference storageRef = FirebaseStorage.instance
+        //     .ref()
+        //     .child('user-images')
+        //     .child("${guard.forestId.toString()}/${guard.forestId.toString()}.jpg");
+        //
+        // await storageRef.delete();
+        //
+        // storageRef = FirebaseStorage.instance
+        //     .ref()
+        //     .child('user-images')
+        //     .child("${guard.forestId.toString()}/${guard.forestId.toString()}_aadhar.jpg");
+        //
+        // await storageRef.delete();
+        //
+        // storageRef = FirebaseStorage.instance
+        //     .ref()
+        //     .child('user-images')
+        //     .child("${guard.forestId.toString()}/${guard.forestId.toString()}_forestID.jpg");
+        //
+        // await storageRef.delete();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('User deleted successfully.'),
+          ),
+        );
+      }
+      else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('User not found.'),
+          ),
+        );
+      }
+
+      // final snapshot = await FirebaseFirestore.instance
+      //     .collection('users')
+      //     .where('email', isEqualTo: guard.email)
+      //     .get();
+
+      // if (snapshot.docs.isNotEmpty) {
+      //   // first deleting the images
+      //   Reference storageRef = FirebaseStorage.instance
+      //       .ref()
+      //       .child('user-images')
+      //       .child("${guard.forestId.toString()}/${guard.forestId.toString()}.jpg");
+      //
+      //   await storageRef.delete();
+      //
+      //   storageRef = FirebaseStorage.instance
+      //       .ref()
+      //       .child('user-images')
+      //       .child("${guard.forestId.toString()}/${guard.forestId.toString()}_aadhar.jpg");
+      //
+      //   await storageRef.delete();
+      //
+      //   storageRef = FirebaseStorage.instance
+      //       .ref()
+      //       .child('user-images')
+      //       .child("${guard.forestId.toString()}/${guard.forestId.toString()}_forestID.jpg");
+      //
+      //   await storageRef.delete();
+      //
+      //   // now deleting the record from Firestore database
+      //   await snapshot.docs.first.reference.delete();
+      //
+      //   ScaffoldMessenger.of(context).showSnackBar(
+      //     const SnackBar(
+      //       content: Text('User deleted successfully.'),
+      //     ),
+      //   );
+      // } else {
+      //   ScaffoldMessenger.of(context).showSnackBar(
+      //     const SnackBar(
+      //       content: Text('User not found.'),
+      //     ),
+      //   );
+      // }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error deleting user: $e'),
+        ),
+      );
     }
   }
 }

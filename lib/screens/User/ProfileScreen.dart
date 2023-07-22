@@ -1,6 +1,7 @@
 // ignore_for_file: library_private_types_in_public_api, unnecessary_null_comparison
 import 'package:flutter/material.dart';
 import 'package:forestapp/common/models/user.dart';
+import 'package:forestapp/contstant/constant.dart';
 import 'package:forestapp/utils/user_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -26,7 +27,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> fetchUserEmail() async {
     final prefs = await SharedPreferences.getInstance();
-    final userEmail = prefs.getString('userEmail');
+    final userEmail = prefs.getString(SHARED_USER_EMAIL);
     setState(() {
       _userEmail = userEmail ?? '';
     });
@@ -111,7 +112,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ],
       ),
       body: Center(
-        child: Column(
+        child: _profileData == null ? CircularProgressIndicator( ) : Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[

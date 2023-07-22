@@ -291,7 +291,6 @@ class _ForestDetailState extends State<ForestDetail> {
                               changeIndex: widget.changeIndex,
                             ))
                     );
-
                   },
                   child: const Text("Edit"),
                 ),

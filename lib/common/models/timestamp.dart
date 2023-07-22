@@ -22,9 +22,36 @@ class TimeStamp extends firestore.Timestamp {
   int get microsecondsSinceEpoch =>
       this.seconds * _kMillion + nanoseconds ~/ _kThousand;
 
-  /// Converts [Timestamp] to [DateTime]
+  /// Converts [TimeStamp] to [DateTime]
   DateTime toDate() {
     return DateTime.fromMicrosecondsSinceEpoch(microsecondsSinceEpoch);
   }
+
+  /// Create a [TimeStamp] fromMillisecondsSinceEpoch
+  factory TimeStamp.fromMillisecondsSinceEpoch(int milliseconds) {
+    int seconds = (milliseconds / _kThousand).floor();
+    final int nanoseconds = (milliseconds - seconds * _kThousand) * _kMillion;
+    return TimeStamp( seconds: seconds, nanoseconds: nanoseconds);
+  }
+
+  /// Create a [TimeStamp] fromMicrosecondsSinceEpoch
+  factory TimeStamp.fromMicrosecondsSinceEpoch(int microseconds) {
+    final int seconds = microseconds ~/ _kMillion;
+    final int nanoseconds = (microseconds - seconds * _kMillion) * _kThousand;
+    return TimeStamp( seconds: seconds, nanoseconds: nanoseconds);
+  }
+
+  /// Create a [TimeStamp] from [DateTime] instance
+  factory TimeStamp.fromDate(DateTime date) {
+    return TimeStamp.fromMicrosecondsSinceEpoch(date.microsecondsSinceEpoch);
+  }
+
+  /// Create a [TimeStamp] from [DateTime].now()
+  factory TimeStamp.now() {
+    return TimeStamp.fromMicrosecondsSinceEpoch(
+      DateTime.now().microsecondsSinceEpoch,
+    );
+  }
+
 }
 

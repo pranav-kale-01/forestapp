@@ -10,12 +10,14 @@ import '../../common/themeHelper.dart';
 
 class EditUserScreen extends StatefulWidget {
   final User user;
+  final Function(User) updateList;
   final Function(int) changeIndex;
 
   const EditUserScreen({
     super.key,
     required this.user,
     required this.changeIndex,
+    required this.updateList
   });
 
   @override
@@ -24,12 +26,12 @@ class EditUserScreen extends StatefulWidget {
 
 class _EditUserScreenState extends State<EditUserScreen> {
   final _formKey = GlobalKey<FormState>();
-  String _name = '';
-  String _email = '';
-  String _password = '';
-  String _contactNumber = '';
-  String _aadharNumber = '';
-  String _forestId = '';
+  late String _name;
+  late String _email;
+  late String _password;
+  late String _contactNumber;
+  late String _aadharNumber;
+  late String _forestId;
   File? _imageFile;
   NetworkImage? _networkImage;
   String? imageUrl;
@@ -40,6 +42,14 @@ class _EditUserScreenState extends State<EditUserScreen> {
   @override
   void initState( ) {
     super.initState();
+
+    // setting text fields
+    _name = widget.user.name;
+    _email = widget.user.email;
+    _password = widget.user.password!;
+    _contactNumber = widget.user.contactNumber;
+    _aadharNumber = widget.user.aadharNumber;
+    _forestId = widget.user.forestId.toString();
 
     _setImage();
   }
@@ -100,7 +110,11 @@ class _EditUserScreenState extends State<EditUserScreen> {
       );
 
       bool userUpdated  = await UserService.updateUser( updatedUser );
+
       if( userUpdated ) {
+        // updating the parent list
+        widget.updateList( updatedUser );
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('User updated successfully'),

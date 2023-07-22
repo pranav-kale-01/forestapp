@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:forestapp/common/models/conflict_model_hive.dart';
+import 'package:forestapp/contstant/constant.dart';
 import 'package:forestapp/screens/loginScreen.dart';
 import 'package:forestapp/utils/conflict_service.dart';
 import 'package:forestapp/utils/hive_service.dart';
@@ -11,6 +12,7 @@ import 'package:forestapp/utils/utils.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlng/latlng.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 
 import '../../widgets/home_screen_list_tile.dart';
 
@@ -34,9 +36,6 @@ class _HomeScreenState extends State<HomeScreen> {
   late String _userEmail;
   late List<Conflict> _profileDataList = [];
   HiveService hiveService = HiveService();
-  double? _longitude;
-  double? _latitude;
-  late double _circleRadius ; // radius in meters, 50000=km
   ValueNotifier<int> dialogTrigger = ValueNotifier(0);
   Future<void>? _future;
   LatLng? _currentLocation;
@@ -53,6 +52,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   StreamSubscription? connection;
   bool isOffline = false;
+  bool userInRange = false;
 
   @override
   void initState() {
@@ -65,7 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> init() async {
     if( Util.hasUserLocation == false ) {
       await _getCurrentLocation();
-      isPointInsideCircle( _currentLocation! );
+      userInRange = await isPointInsideCircle( _currentLocation! );
       Util.hasUserLocation = true;
       dialogTrigger.value = 1;
     }
@@ -76,17 +76,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> fetchUserEmail() async {
     final prefs = await SharedPreferences.getInstance();
-    final userEmail = prefs.getString('userEmail');
-    final double longitude = double.parse( prefs.getString('longitude')! );
-    final double latitude = double.parse( prefs.getString('latitude')! );
-    final double radius = double.parse( prefs.getString('radius')! );
-    print(prefs);
+    final userEmail = prefs.getString(SHARED_USER_EMAIL);
 
     setState(() {
       _userEmail = userEmail ?? '';
-      _latitude = latitude;
-      _longitude = longitude;
-      _circleRadius = radius;
     });
     fetchUserProfileData();
   }
@@ -207,13 +200,16 @@ class _HomeScreenState extends State<HomeScreen> {
       );
       return;
     }
+
     // Get the current location
     Position position = await Geolocator.getCurrentPosition(
       desiredAccuracy: LocationAccuracy.bestForNavigation,
     );
+
     setState(() {
       _currentLocation = LatLng(position.latitude, position.longitude);
     });
+
     return;
   }
 
@@ -249,25 +245,36 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  bool isPointInsideCircle(LatLng point) {
-    if ( _longitude==null || _latitude==null ) {
-      return false;
-    }
+  Future<bool> isPointInsideCircle(LatLng point) async {
+    // sending an API request to check
+    var request = http.MultipartRequest('POST', Uri.parse('${baseUrl}/guard/is_guard_in_range'));
+    request.fields.addAll({
+      'email': _userEmail,
+      'latitude': point.latitude.toString(),
+      'longitude': point.longitude.toString()
+    });
 
-    double distance = Geolocator.distanceBetween(
-      point.latitude,
-      point.longitude,
-      _latitude!,
-      _longitude!,
-    );
+    http.StreamedResponse response = await request.send();
+    return response.statusCode == 200;
 
-    // showDialog(context: context, builder: (context) => AlertDialog( title: Text( distance.toString() ), ));
-    // for debugging
-    print( point.latitude.toString() + "|" + point.longitude.toString() );
-    print( _latitude.toString() + "|" + _longitude.toString() );
-    print("distance is : " + distance.toString() );
-
-    return (distance <= _circleRadius);
+    // if ( _longitude==null || _latitude==null ) {
+    //   return false;
+    // }
+    //
+    // double distance = Geolocator.distanceBetween(
+    //   point.latitude,
+    //   point.longitude,
+    //   _latitude!,
+    //   _longitude!,
+    // );
+    //
+    // // showDialog(context: context, builder: (context) => AlertDialog( title: Text( distance.toString() ), ));
+    // // for debugging
+    // print( point.latitude.toString() + "|" + point.longitude.toString() );
+    // print( _latitude.toString() + "|" + _longitude.toString() );
+    // print("distance is : " + distance.toString() );
+    //
+    // return (distance <= _circleRadius);
   }
 
   Future<void> uploadStoredConflicts() async {
@@ -307,8 +314,7 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           }
           else {
-            if (_currentLocation != null &&
-                isPointInsideCircle(_currentLocation!) == false) {
+            if ( _currentLocation != null && !userInRange ) {
               return Container(
                 child: ValueListenableBuilder(
                     valueListenable: dialogTrigger,
@@ -328,6 +334,7 @@ class _HomeScreenState extends State<HomeScreen> {
             else if (snapshot.hasError) {
               debugPrint(snapshot.error.toString());
               debugPrint(snapshot.stackTrace.toString());
+
               return Center(
                 child: Text("Some error occured!"),
               );

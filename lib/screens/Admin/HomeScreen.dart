@@ -48,6 +48,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> fetchUserProfileData() async {
+    // getting the count of conflicts
+    List<dynamic> conflictCounts = await ConflictService.getCounts();
+
+    for( Map<String, dynamic> conflict in conflictCounts.reversed ) {
+      _TotalConflictsCount += int.parse( conflict['count'] );
+      conflictsCounter[conflict['conflict_name'].toLowerCase()] = int.parse( conflict['count'] );
+    }
+
+    // getting the recent entries
     List<Conflict> conflictList = await ConflictService.getData();
 
     // if the data is loaded from cache showing a bottom popup to user alerting
@@ -60,17 +69,8 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
 
-    for( var item in conflictList ) {
-      if( !conflictsCounter.containsKey(item.conflict) ) {
-        conflictsCounter[item.conflict] = 0;
-      }
-
-      conflictsCounter[item.conflict] = conflictsCounter[item.conflict]! + 1;
-    }
-
     setState(() {
       _profileDataList = conflictList;
-      _TotalConflictsCount = conflictList.length;
     });
   }
 
@@ -343,7 +343,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
                               children: [
                                 Text(
-                                  "Cattles Injured",
+                                  "Cattle Injured",
                                   style: TextStyle(
                                     fontSize: 18,
                                   ),
@@ -384,7 +384,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
                               children: [
                                 Text(
-                                  "Cattles Killed",
+                                  "Cattle Killed",
                                   style: TextStyle(
                                     fontSize: 18,
                                   ),

@@ -1,15 +1,32 @@
+import 'dart:convert';
 import 'dart:io';
-
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:forestapp/common/models/conflict_model_hive.dart';
-import 'package:forestapp/common/models/timestamp.dart';
 import 'package:forestapp/common/models/geopoint.dart' as G;
 import 'package:forestapp/utils/hive_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:forestapp/utils/utils.dart';
+import 'package:http/http.dart' as http;
+
+import '../common/models/timestamp.dart';
 
 class ConflictService {
   static HiveService hiveService = HiveService();
+
+
+  static Future<List<dynamic>> getCounts() async  {
+    var request = http.Request('GET', Uri.parse('${baseUrl}/admin/get_counts'));
+    http.StreamedResponse response = await request.send();
+
+    if (response.statusCode == 200) {
+      List<dynamic> jsonResponse = jsonDecode( await response.stream.bytesToString());
+      return jsonResponse;
+    }
+    else {
+      print(response.reasonPhrase);
+      return [];
+    }
+  }
 
   static Future<List<Conflict>> getData({ getLocalData = false, userEmail = "" }) async {
     List<Conflict> _conflictList = [];
@@ -25,49 +42,66 @@ class ConflictService {
     } else {
       print("getting list from API");
 
-      var result;
+      List<dynamic> jsonResult;
 
       if( userEmail.isEmpty ) {
-        result = await FirebaseFirestore.instance
-            .collection('forestdata')
-            .orderBy('createdAt', descending: true)
-            .get();
+        // calling the Api to get counts
+        var request = http.MultipartRequest('POST', Uri.parse('${baseUrl}admin/get_recent_entries'));
+        request.fields.addAll({
+          'email': userEmail
+        });
+
+        http.StreamedResponse response = await request.send();
+
+        if (response.statusCode == 200) {
+          jsonResult = jsonDecode( await response.stream.bytesToString() );
+        }
+        else {
+          print(response.reasonPhrase);
+          return [];
+        }
+
+        // result = await FirebaseFirestore.instance
+        //     .collection('forestdata')
+        //     .orderBy('createdAt', descending: true)
+        //     .get();
       }
       else{
-        result = await FirebaseFirestore.instance
+        await FirebaseFirestore.instance
             .collection('forestdata')
             .where('user_email', isEqualTo: userEmail)
             .orderBy('createdAt', descending: true)
             .get();
+
+        jsonResult = [];
       }
 
-      (result.docs).map((doc) {
+      jsonResult.map((doc) {
         Conflict conflict = Conflict(
-            id: doc.id,
-            range: doc['range'],
-            round: doc['round'],
-            bt: doc['bt'],
-            cNoName: doc['c_no_name'],
-            conflict: doc['conflict'],
+            id: doc['id'],
+            range: doc['range_name'],
+            round: doc['round_name'],
+            bt: doc['beat_name'],
+            cNoName: doc['cn_sr_name'],
+            conflict: doc['conflict_name'],
             notes: doc['notes'],
-            person_age: doc['person_age'],
-            imageUrl: doc['imageUrl'],
-            userName: doc['user_name'],
-            userEmail: doc['user_email'],
-            person_gender: doc['person_gender'],
-            pincodeName: doc['pincode_name'],
+            person_age: doc['age'],
+            imageUrl: doc['photo'],
+            userName: doc['guard_name'],
+            userEmail: "guard email",
+            person_name: doc['name'],
+            person_gender: doc['gender'],
+            pincodeName: doc['pincode'],
             sp_causing_death: doc['sp_causing_death'],
             village_name: doc['village_name'],
-            person_name: doc['person_name'],
-            datetime: TimeStamp(
-                seconds: doc['createdAt'].seconds,
-                nanoseconds: doc['createdAt'].nanoseconds),
+            datetime: TimeStamp.fromDate( DateTime.parse(doc['created_at']) ),
             location: G.GeoPoint(
-                latitude: doc['location'].latitude,
-                longitude: doc['location'].longitude),
-            userContact: doc['user_contact'],
-            userImage: doc['user_imageUrl']);
-
+                latitude: double.parse( doc['latitude'] ),
+                longitude: double.parse( doc['longitude'] )
+            ),
+            userContact: "contact",
+            userImage: "user photo"
+        );
         _conflictList.add(conflict);
       }).toList();
 
