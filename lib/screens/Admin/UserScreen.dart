@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:forestapp/screens/Admin/AddUserScreen.dart';
 import 'package:forestapp/screens/Admin/EditUserScreen.dart';
 import 'package:forestapp/screens/Admin/UserDetails.dart';
@@ -41,7 +39,7 @@ class _UserScreenState extends State<UserScreen> {
       );
     }
 
-    List<User> profileDataList = await UserService.getAllGuards();
+    List<User> profileDataList = await UserService.getAllUsers();
 
     setState(() {
       guardsList = profileDataList;

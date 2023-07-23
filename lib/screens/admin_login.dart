@@ -1,21 +1,21 @@
-// ignore_for_file: library_private_types_in_public_api, use_build_context_synchronously
 import 'package:flutter/material.dart';
-import 'package:forestapp/screens/admin_login.dart';
+import 'package:forestapp/screens/loginScreen.dart';
 import 'package:forestapp/utils/user_service.dart';
 import '../common/themeHelper.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+class AdminLogin extends StatefulWidget {
+  const AdminLogin({Key? key}) : super(key: key);
 
   @override
-  _LoginScreenState createState() => _LoginScreenState();
+  _AdminLoginState createState() => _AdminLoginState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _AdminLoginState extends State<AdminLogin> {
   final Key _formKey = GlobalKey<FormState>();
-  // final FirebaseAuth _auth = FirebaseAuth.instance;
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _OTPController = TextEditingController();
+  bool otpSent = false;
+
 
   @override
   Widget build(BuildContext context) {
@@ -48,60 +48,81 @@ class _LoginScreenState extends State<LoginScreen> {
                               children: [
                                 Container(
                                   decoration:
-                                      ThemeHelper().inputBoxDecorationShaddow(),
+                                  ThemeHelper().inputBoxDecorationShaddow(),
                                   child: TextFormField(
-                                    controller: _emailController,
+                                    controller: _phoneController,
                                     decoration: ThemeHelper()
                                         .textInputDecoration(
-                                        'Email', 'Email'),
+                                        'Phone Number', 'Enter Your Phone Number'),
                                     validator: (value) {
                                       if (value!.isEmpty) {
-                                        return 'Please enter your email address';
+                                        return 'Please enter your phone number';
                                       }
                                       return null;
                                     },
                                   ),
                                 ),
-                                const SizedBox(height: 20.0),
+                                if( otpSent )
+                                  Container(
+                                      alignment: Alignment.topLeft,
+                                      padding: const EdgeInsets.symmetric( vertical: 6.0, horizontal: 6.0, ),
+                                      child: Text("OTP sent..!")
+                                  ),
+
+                                if( !otpSent )
+                                  const SizedBox(height: 10.0),
+
                                 Container(
                                   decoration:
-                                      ThemeHelper().inputBoxDecorationShaddow(),
+                                  ThemeHelper().inputBoxDecorationShaddow(),
                                   child: TextFormField(
-                                    controller: _passwordController,
+                                    controller: _OTPController,
                                     obscureText: true,
                                     decoration: ThemeHelper()
                                         .textInputDecoration(
-                                            'Password', 'Password'),
+                                        'OTP', 'Enter OTP'),
                                     validator: (value) {
                                       if (value!.isEmpty) {
                                         return 'Please enter your password';
                                       }
                                       return null;
                                     },
+                                    keyboardType: TextInputType.number,
                                   ),
                                 ),
-                                const SizedBox(height: 40.0),
-                                
+                                const SizedBox(
+                                  height: 20,
+                                ),
                                 Container(
                                   padding: const EdgeInsets.fromLTRB(
                                       0, 5, 0, 5
                                   ),
+                                  decoration: ThemeHelper().buttonBoxDecoration(context),
                                   width: mediaQuery.size.width,
                                   constraints: BoxConstraints(
                                     maxWidth: 350,
                                   ),
-                                  decoration: ThemeHelper().buttonBoxDecoration(context),
                                   child: ElevatedButton(
                                     style: ThemeHelper().buttonStyle(),
-                                    child: const Text(
-                                      'Login',
+                                    child: Text(
+                                      !otpSent ? 'Get OTP' : 'Verify OTP',
                                       style: TextStyle(
                                           fontSize: 18,
                                           fontWeight: FontWeight.bold,
                                           color: Colors.white),
                                     ),
                                     onPressed: () async {
-                                      UserService.loginAsUser( context, _emailController.text.trim(), _passwordController.text.trim() );
+                                      // checking if otp is sent
+                                      if( otpSent ) {
+                                        // verifying otp and logging in
+                                        UserService.loginAsAdmin(  context, _phoneController.text.trim(), _OTPController.text.trim()  );
+                                      }
+                                      else {
+                                        setState(() {
+                                          // sending Otp
+                                          UserService.sendOTP( _phoneController.text ).then((value) => otpSent = value);
+                                        });
+                                      }
                                     },
                                   ),
                                 ),
@@ -109,25 +130,22 @@ class _LoginScreenState extends State<LoginScreen> {
                                     onTap: () {
                                       // Navigating to Sign in as admin
                                       Navigator.of(context).push(
-                                        MaterialPageRoute(builder: (context) => AdminLogin() )
+                                          MaterialPageRoute(builder: (context) => LoginScreen() )
                                       );
                                     },
                                     child: Padding(
                                       padding: const EdgeInsets.only( top: 16.0, ),
                                       child: Text(
-                                          "Sign in as Admin",
-                                          style: TextStyle(
-                                            decoration: TextDecoration.underline,
-                                          ),
+                                        "Sign in as User",
+                                        style: TextStyle(
+                                          decoration: TextDecoration.underline,
+                                        ),
                                       ),
                                     )
                                 ),
-                                const SizedBox(
-                                  height: 20,
-                                ),
                                 Container(
                                   margin:
-                                      const EdgeInsets.fromLTRB(10, 20, 10, 20),
+                                  const EdgeInsets.fromLTRB(10, 20, 10, 20),
                                   //child: Text('Don\'t have an account? Create'),
                                 ),
                               ],

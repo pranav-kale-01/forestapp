@@ -2,6 +2,7 @@
 
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:forestapp/utils/user_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:forestapp/common/models/geopoint.dart' as G;
@@ -62,6 +63,58 @@ class _AddUserScreenState extends State<AddUserScreen> {
     setState(() {
       _forestIDImage = File(pickedFile!.path);
     });
+  }
+
+  Future<void> addUser() async {
+    print("here");
+    if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isProcessing = true;
+      });
+
+      try {
+        final Map<String, dynamic> userData = {
+          'name': _name,
+          'email': _email,
+          'password': _password,
+          'contactNumber': _contactNumber,
+          'aadharNumber': _aadharNumber,
+          'forestID': _forestId,
+          'image': _image,
+          'aadharImage' : _aadharImage,
+          'forestIDImage' : _forestIDImage,
+          'privileged_user' : false,
+          'latitude' :  latitude!,
+          'longitude' : longitude!,
+          'radius' : radius!
+        };
+
+        await UserService.addUser( userData );
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('User added successfully'),
+          ),
+        );
+
+        _formKey.currentState!.reset();
+        setState(() {
+          _imageFile = null;
+        });
+        Navigator.of(context).pop();
+
+      } catch (error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $error'),
+          ),
+        );
+      } finally {
+        setState(() {
+          _isProcessing = false;
+        });
+      }
+    }
   }
 
   void _onItemTapped(int index) {
@@ -288,6 +341,43 @@ class _AddUserScreenState extends State<AddUserScreen> {
                   ),
 
                   const SizedBox(height: 16.0),
+                  Text(
+                    "Latitude",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  TextFormField(
+                    decoration: ThemeHelper().textInputDecoration(
+                        'Latitude', 'Enter Latitude'
+                    ),
+                    keyboardType: TextInputType.phone,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a Latitude';
+                      }
+                      return null;
+                    },
+                    onChanged: (value) {
+                      latitude = value;
+                    },
+                  ),
+
+                  const SizedBox(height: 16.0),
+                  Text(
+                    "Longitude",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 10,
+                  ),
                   TextFormField(
                     decoration: ThemeHelper().textInputDecoration(
                         'Longitude', 'Enter Longitude'
@@ -303,28 +393,21 @@ class _AddUserScreenState extends State<AddUserScreen> {
                       longitude = value;
                     },
                   ),
+
                   const SizedBox(height: 16.0),
-                  TextFormField(
-                    decoration: const InputDecoration(
-                      labelText: 'Latitude',
-                      border: OutlineInputBorder(),
+                  Text(
+                    "Radius",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
-                    keyboardType: TextInputType.phone,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter a Latitude';
-                      }
-                      return null;
-                    },
-                    onChanged: (value) {
-                      latitude = value;
-                    },
                   ),
-                  const SizedBox(height: 16.0),
+                  const SizedBox(
+                    height: 10,
+                  ),
                   TextFormField(
-                    decoration: const InputDecoration(
-                      labelText: 'Radius in meters ( 1 KM = 1000 M )',
-                      border: OutlineInputBorder(),
+                    decoration: ThemeHelper().textInputDecoration(
+                        'Radius', 'Enter Radius'
                     ),
                     keyboardType: TextInputType.phone,
                     validator: (value) {
@@ -522,106 +605,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                             )
                         )
                     ),
-                    onPressed: _isProcessing
-                        ? null
-                        : () async {
-                            if (_formKey.currentState!.validate()) {
-                              setState(() {
-                                _isProcessing = true;
-                              });
-
-                              // Check if email already exists in database
-                              final CollectionReference usersRef = FirebaseFirestore.instance .collection('users');
-                              final QuerySnapshot emailSnapshot = await usersRef.where('email', isEqualTo: _email).get();
-
-                              if (emailSnapshot.docs.isNotEmpty) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Email already exists'),
-                                    duration: const Duration(seconds: 3),
-                                    backgroundColor: Colors.green,
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
-                                );
-                                setState(() {
-                                  _isProcessing = false;
-                                });
-                                return;
-                              }
-
-                              // Upload the image to Firebase Storage and get the URL
-                              Reference storageRef = FirebaseStorage.instance
-                                  .ref()
-                                  .child('user-images')
-                                  .child("$_forestId/$_forestId.jpg");
-
-                              UploadTask uploadTask = storageRef.putFile(_image!);
-                              TaskSnapshot downloadUrl = await uploadTask.whenComplete(() => null);
-                              final String imageUrl = await downloadUrl.ref.getDownloadURL();
-
-                              // Upload the aadhar image to Firebase Storage and get the URL
-                              storageRef = FirebaseStorage.instance
-                                  .ref()
-                                  .child('user-images')
-                                  .child("$_forestId/${_forestId}_aadhar.jpg");
-                              uploadTask = storageRef.putFile(_aadharImage!);
-                              downloadUrl = await uploadTask.whenComplete(() => null);
-                              final String aadharImageUrl = await downloadUrl.ref.getDownloadURL();
-
-                              // Upload the forestId image to Firebase Storage and get the URL
-                              storageRef = FirebaseStorage.instance
-                                  .ref()
-                                  .child('user-images')
-                                  .child("$_forestId/${_forestId}_forestID.jpg");
-
-                              uploadTask = storageRef.putFile(_forestIDImage!);
-                              downloadUrl = await uploadTask.whenComplete(() => null);
-                              final String forestIdImageUrl = await downloadUrl.ref.getDownloadURL();
-
-                              // Add the user data to the Firebase Firestore
-                              final Map<String, dynamic> userData = {
-                                'name': _name,
-                                'email': _email,
-                                'password': _password,
-                                'contactNumber': _contactNumber,
-                                'aadharNumber': _aadharNumber,
-                                'forestID': _forestId,
-                                'imageUrl': imageUrl,
-                                'aadharImageUrl' : aadharImageUrl,
-                                'forestIDImageUrl' : forestIdImageUrl,
-                                'privileged_user' : false,
-                                'location' : G.GeoPoint( latitude: double.parse(latitude!), longitude: double.parse(longitude!) ),
-                                'radius' : double.parse( radius! )
-                              };
-
-                              try {
-                                await usersRef.add(userData);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('User added successfully'),
-                                  ),
-                                );
-
-                                _formKey.currentState!.reset();
-                                setState(() {
-                                  _imageFile = null;
-                                });
-
-                                Navigator.of(context).pop();
-
-                              } catch (error) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Error: $error'),
-                                  ),
-                                );
-                              } finally {
-                                setState(() {
-                                  _isProcessing = false;
-                                });
-                              }
-                            }
-                          },
+                    onPressed: _isProcessing ? null : addUser,
                     child: _isProcessing
                         ? const Padding(
                           padding: const EdgeInsets.symmetric( vertical: 20.0, ),

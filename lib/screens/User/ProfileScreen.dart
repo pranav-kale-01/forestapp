@@ -32,7 +32,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _userEmail = userEmail ?? '';
     });
 
-    _profileData = await UserService.fetchUserProfileData( _userEmail );
+    _profileData = await UserService.getUser( _userEmail );
 
     setState(() {});
   }
@@ -86,9 +86,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         TextButton(
                           onPressed: () async {
                             Util.hasUserLocation = false;
-                            SharedPreferences prefs =
-                            await SharedPreferences.getInstance();
-                            prefs.remove('userEmail');
+                            SharedPreferences prefs = await SharedPreferences.getInstance();
+                            prefs.remove(SHARED_USER_EMAIL);
+                            prefs.setInt(SHARED_USER_TYPE, noOne );
                             Navigator.pushAndRemoveUntil(
                               context,
                               MaterialPageRoute(

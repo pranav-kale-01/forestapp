@@ -1,6 +1,6 @@
-
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:forestapp/utils/conflict_service.dart';
+import 'package:forestapp/utils/dynamic_list_service.dart';
 
 import '../../common/models/DynamicListsModel.dart';
 import '../../common/models/conflict_model_hive.dart';
@@ -40,9 +40,61 @@ class _EditConflictState extends State<EditConflict> {
   Map<String, dynamic>? selectedRange;
   Map<String, dynamic>? selectedRound;
   Map<String, dynamic>? selectedBt;
-  String? selectedConflict;
+  Map<String, dynamic>? selectedConflict;
 
   Map<String, dynamic> dynamicLists = {};
+
+  Future<void> editConflict() async {
+    if (_formKey.currentState!.validate()) {
+      _formKey.currentState!.save();
+
+      final Map<String, dynamic> userData = {
+        "id" : widget.conflictData.id,
+        "email": widget.conflictData.userEmail,
+        "range" : selectedRange,
+        "round" : selectedRound,
+        'beat' : selectedBt,
+        "village_name" : _villageNameController.text,
+        "cn_sr_name" : _cNoController.text,
+        "pincode" : _pincodeNameController.text,
+        "conflict" :  selectedConflict,
+        "name" : _personNameController.text,
+        "age" : _personAgeController.text,
+        "gender" : _personGenderController.text,
+        "sp_causing_death" : _spCausingDeathController.text,
+        "notes" : _notesController.text,
+        "latitude": widget.conflictData.location.latitude,
+        "longitude": widget.conflictData.location.longitude,
+        "contact" : widget.conflictData.userContact,
+        "photo" : "",
+        "user_name" : widget.conflictData.userName,
+        "user_image" : widget.conflictData.imageUrl
+      };
+
+      try {
+        Conflict updatedConflict = await ConflictService.editConflict(userData);
+        Navigator.of(context).pop();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Conflict updated successfully'),
+          ),
+        );
+
+        // passing the data to previous screen for updating
+        widget.changeData( updatedConflict );
+
+      } catch (error, stacktrace ) {
+        debugPrint( error.toString() );
+        debugPrint( stacktrace.toString() );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $error'),
+          ),
+        );
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -57,32 +109,16 @@ class _EditConflictState extends State<EditConflict> {
     _personGenderController = TextEditingController(text: widget.conflictData.person_gender);
     _spCausingDeathController = TextEditingController(text: widget.conflictData.sp_causing_death);
     _notesController = TextEditingController(text: widget.conflictData.notes);
-
-    selectedConflict = widget.conflictData.conflict;
   }
 
   Future<void> fetchDynamicLists() async {
-    final userSnapshot = await FirebaseFirestore.instance
-        .collection('dynamic_lists')
-        .get();
-
-    final userData = userSnapshot.docs;
-
-    for( var item in userData ) {
-      dynamicLists[item.id] = item['values'];
-    }
-
-    // setting the dynamic list for conflict with value none
-    dynamicLists['conflict']?.add('None');
+    dynamicLists = await DynamicListService.fetchDynamicLists();
 
     setState(() {
       selectedRange = dynamicLists['range'].where( (range) => range['name'] == widget.conflictData.range ).first;
       selectedRound = dynamicLists['round'].where( (round) => round['name'] == widget.conflictData.round ).first;
       selectedBt = dynamicLists['beat'].where( (beat) => beat['name'] == widget.conflictData.bt ).first;
-
-      print( dynamicLists['range'] );
-
-      selectedConflict = widget.conflictData.conflict.toString();
+      selectedConflict = dynamicLists['conflict'].where( (conflict) => conflict['name'] == widget.conflictData.conflict ).first;
     });
   }
 
@@ -181,8 +217,10 @@ class _EditConflictState extends State<EditConflict> {
                     onChanged: (Map<String, dynamic>? value) {
                       setState(() {
                         selectedRange = value;
-                        selectedRound = dynamicLists['round'].where( (round) => round['range_id'] == selectedRange!['id'] ).toList().first;
-                        selectedBt = dynamicLists['beat'].where( (beat) => beat['round_id'] == selectedRound!['id'] ).toList().first;
+                        // selectedRound = dynamicLists['round'].where( (round) => round['range_id'] == selectedRange!['id'] ).toList().first;
+                        selectedRound = dynamicLists['round'].first;
+                        // selectedBt = dynamicLists['beat'].where( (beat) => beat['round_id'] == selectedRound!['id'] ).toList().first;
+                        selectedBt = dynamicLists['beat'].first;
                       });
                     },
                   ),
@@ -204,8 +242,9 @@ class _EditConflictState extends State<EditConflict> {
                     decoration: ThemeHelper()
                         .textInputDecoration('Round', 'Enter Round'),
                     value: selectedRound,
-                    items: dynamicLists['round']!.where( (round) => round['range_id'] == selectedRange!['id'] ).map<DropdownMenuItem<Map<String, dynamic>>>(
-                          (round) => DropdownMenuItem<Map<String, dynamic>>(
+                    // items: dynamicLists['round']!.where( (round) => round['range_id'] == selectedRange!['id'] ).map<DropdownMenuItem<Map<String, dynamic>>>(
+                    items: dynamicLists['round']!.map<DropdownMenuItem<Map<String, dynamic>>>(
+                    (round) => DropdownMenuItem<Map<String, dynamic>>(
                         child: Text(round['name']),
                         value: round,
                       ),
@@ -214,7 +253,8 @@ class _EditConflictState extends State<EditConflict> {
                     onChanged: (Map<String, dynamic>? value) {
                       setState(() {
                         selectedRound = value;
-                        selectedBt = dynamicLists['beat'].where( (beat) => beat['round_id'] == selectedRound!['id'] ).toList().first;
+                        // selectedBt = dynamicLists['beat'].where( (beat) => beat['round_id'] == selectedRound!['id'] ).toList().first;
+                        selectedBt = dynamicLists['beat'].first;
                       });
                     },
                   ),
@@ -236,7 +276,8 @@ class _EditConflictState extends State<EditConflict> {
                     decoration: ThemeHelper()
                         .textInputDecoration('Beats', 'Enter Beats'),
                     value: selectedBt,
-                    items: dynamicLists['beat']!.where( (beat) => beat['round_id'] == selectedRound!['id'] ).map<DropdownMenuItem<Map<String, dynamic>>>( (beat) => DropdownMenuItem<Map<String, dynamic>>(
+                    // items: dynamicLists['beat']!.where( (beat) => beat['round_id'] == selectedRound!['id'] ).map<DropdownMenuItem<Map<String, dynamic>>>( (beat) => DropdownMenuItem<Map<String, dynamic>>(
+                    items: dynamicLists['beat']!.map<DropdownMenuItem<Map<String, dynamic>>>( (beat) => DropdownMenuItem<Map<String, dynamic>>(
                       child: Text(beat['name'] ),
                       value: beat,
                     ) ).toList(),
@@ -323,12 +364,12 @@ class _EditConflictState extends State<EditConflict> {
                         'Conflict', 'Select Conflict'
                     ),
                     value: selectedConflict,
-                    items: dynamicLists['conflict']!.map<DropdownMenuItem<String>>( (e) => DropdownMenuItem<String>(
-                      child: Text(e.toString()),
-                      value: e.toString(),
+                    items: dynamicLists['conflict']!.map<DropdownMenuItem<Map<String,dynamic>>>( (e) => DropdownMenuItem<Map<String, dynamic>>(
+                      child: Text(e['name']),
+                      value: e,
                     )).toList(),
-                    onChanged: (Object? value) {
-                      selectedConflict = value.toString();
+                    onChanged: (Map<String, dynamic>? value) {
+                      selectedConflict = value;
                     },
                   ),
                   const SizedBox(
@@ -447,79 +488,7 @@ class _EditConflictState extends State<EditConflict> {
                             )
                         )
                     ),
-                    onPressed: () async {
-                      if (_formKey.currentState!.validate()) {
-                        _formKey.currentState!.save();
-
-                        // Update the tiger data in the Firebase Firestore
-                        final CollectionReference docRef = FirebaseFirestore.instance.collection('forestdata');
-                        final Map<String, dynamic> userData = {
-                          "range" : selectedRange,
-                          "round" : selectedRound,
-                          'bt' : selectedBt,
-                          "village_name" : _villageNameController.text,
-                          "c_no_name" : _cNoController.text,
-                          "conflict" : selectedConflict,
-                          "person_name" : _personNameController.text,
-                          "pincode_name" : _pincodeNameController.text,
-                          "person_age" : _personAgeController.text,
-                          "person_gender" : _personGenderController.text,
-                          "sp_causing_death" : _spCausingDeathController.text,
-                          "notes" : _notesController.text,
-                          'createdAt': DateTime.now(),
-                        };
-
-                        try {
-                          await docRef.doc( widget.conflictData.id )
-                            .get()
-                            .then((docSnapshot) {
-                              docSnapshot.reference.update(userData);
-                            });
-
-                          Navigator.of(context).pop();
-
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Conflict updated successfully'),
-                            ),
-                          );
-
-                          final Conflict newData = Conflict(
-                              id: widget.conflictData.id,
-                              range: selectedRange!['name'],
-                              round: selectedRound!['name'],
-                              bt: selectedBt!['name'],
-                              village_name: _villageNameController.text,
-                              cNoName: _cNoController.text,
-                              pincodeName: _pincodeNameController.text,
-                              conflict: selectedConflict!,
-                              person_name: _personNameController.text,
-                              person_age: _personAgeController.text,
-                              person_gender: _personGenderController.text,
-                              sp_causing_death: _spCausingDeathController.text,
-                              notes: _notesController.text,
-                              imageUrl: widget.conflictData.imageUrl,
-                              userName: widget.conflictData.userName,
-                              userEmail: widget.conflictData.userEmail,
-                              location: widget.conflictData.location,
-                              userContact: widget.conflictData.userContact,
-                              userImage: widget.conflictData.userImage,
-                              datetime: widget.conflictData.datetime
-                          );
-
-
-                          // passing the data to previous screen for updating
-                          widget.changeData( newData );
-
-                        } catch (error) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Error: $error'),
-                            ),
-                          );
-                        }
-                      }
-                    },
+                    onPressed: editConflict,
                     child: Padding(
                       padding: const EdgeInsets.symmetric( vertical: 18.0),
                       child: const Text('Save'),

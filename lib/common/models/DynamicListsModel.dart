@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 class DynamicListsModel {
   final String id;
   List<dynamic> values;

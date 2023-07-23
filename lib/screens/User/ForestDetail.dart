@@ -4,6 +4,7 @@ import 'package:forestapp/screens/Admin/EditConflictScreen.dart';
 import 'package:intl/intl.dart';
 
 import '../../common/models/conflict_model_hive.dart';
+import '../../utils/conflict_service.dart';
 import '../User/ForestMapScreen.dart';
 
 class ForestDetail extends StatefulWidget {
@@ -234,11 +235,13 @@ class _ForestDetailState extends State<ForestDetail> {
                     );
                     if (confirm == true) {
                       try {
-                        final snapshot = await FirebaseFirestore.instance.collection('forestdata').doc(widget.forestData.id).get();
+                        // final snapshot = await FirebaseFirestore.instance.collection('forestdata').doc(widget.forestData.id).get();
+                        //
+                        // if (snapshot.exists) {
+                        //   await snapshot.reference.delete();
+                        bool success = await ConflictService.deleteConflict( widget.forestData.id );
 
-                        if (snapshot.exists) {
-                          await snapshot.reference.delete();
-
+                        if( success ) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text('User deleted successfully.'),
@@ -249,11 +252,10 @@ class _ForestDetailState extends State<ForestDetail> {
 
                           // updating on the parent screen
                           widget.deleteData( widget.forestData );
-
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('User not found.'),
+                              content: Text('conflict not found.'),
                             ),
                           );
                         }

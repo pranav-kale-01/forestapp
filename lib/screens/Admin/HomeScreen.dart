@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:forestapp/common/models/conflict_model_hive.dart';
+import 'package:forestapp/contstant/constant.dart';
 import 'package:forestapp/screens/Admin/EditListsScreen.dart';
 import 'package:forestapp/utils/conflict_service.dart';
 import 'package:forestapp/utils/hive_service.dart';
@@ -57,7 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     // getting the recent entries
-    List<Conflict> conflictList = await ConflictService.getData();
+    List<Conflict> conflictList = await ConflictService.getRecentEntries();
 
     // if the data is loaded from cache showing a bottom popup to user alerting
     // that the app is running in offline mode
@@ -120,8 +121,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         TextButton(
                           onPressed: () async {
                             SharedPreferences prefs =  await SharedPreferences.getInstance();
-                            prefs.remove('userEmail');
-                            prefs.remove('isAdmin');
+                            prefs.remove(SHARED_USER_EMAIL);
+                            prefs.remove(SHARED_USER_TYPE);
                             Navigator.pushAndRemoveUntil(
                               context,
                               MaterialPageRoute(

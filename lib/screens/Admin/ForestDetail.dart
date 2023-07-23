@@ -1,7 +1,8 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:flutter/material.dart';
 import 'package:forestapp/common/models/conflict_model_hive.dart';
 import 'package:forestapp/screens/Admin/EditConflictScreen.dart';
+import 'package:forestapp/utils/conflict_service.dart';
 import 'package:intl/intl.dart';
 
 import '../User/ForestMapScreen.dart';
@@ -237,11 +238,13 @@ class _ForestDetailState extends State<ForestDetail> {
                     );
                     if (confirm == true) {
                       try {
-                        final snapshot = await FirebaseFirestore.instance.collection('forestdata').doc(widget.forestData.id).get();
+                        // final snapshot = await FirebaseFirestore.instance.collection('forestdata').doc(widget.forestData.id).get();
+                        //
+                        // if (snapshot.exists) {
+                        //   await snapshot.reference.delete();
+                        bool success = await ConflictService.deleteConflict( widget.forestData.id );
 
-                        if (snapshot.exists) {
-                          await snapshot.reference.delete();
-
+                        if( success ) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text('User deleted successfully.'),
@@ -252,11 +255,10 @@ class _ForestDetailState extends State<ForestDetail> {
 
                           // updating on the parent screen
                           widget.deleteData( widget.forestData );
-
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('User not found.'),
+                              content: Text('conflict not found.'),
                             ),
                           );
                         }

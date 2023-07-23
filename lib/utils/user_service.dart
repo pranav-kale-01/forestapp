@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:forestapp/common/models/user.dart';
 import 'package:forestapp/contstant/constant.dart';
@@ -10,15 +11,14 @@ import 'package:http/http.dart' as http;
 import 'package:forestapp/utils/utils.dart' show baseUrl;
 
 class UserService {
-  static void loginAsAdmin(
-      BuildContext context, String email, String password) async {
+  static void loginAsAdmin(BuildContext context, String phone, String otp) async {
     try {
-      // sending a request to API
-      var request = http.MultipartRequest(
-          'POST', Uri.parse('${baseUrl}admin/admin_login'));
-      request.fields.addAll({'email': email, 'password': password});
+      var request = http.MultipartRequest('POST', Uri.parse('${baseUrl}admin//verify_otp'));
+      request.fields.addAll({
+        'phone': phone,
+        'otp': otp
+      });
 
-      // getting the response
       http.StreamedResponse response = await request.send();
 
       if (response.statusCode == 200) {
@@ -27,8 +27,6 @@ class UserService {
 
         // Store the email in shared preferences
         prefs.setInt(SHARED_USER_TYPE, admin);
-        
-        
 
         // Navigate to the HomeAdmin screen on successful login
         Navigator.pushReplacement(
@@ -43,28 +41,6 @@ class UserService {
             jsonDecode(await response.stream.bytesToString());
         String message = jsonResponse['message'];
 
-        // if ( message == 'user-not-found') {
-        //   showDialog(
-        //     context: context,
-        //     builder: (BuildContext context) {
-        //       return AlertDialog(
-        //         title: const Text(
-        //             'User not found'),
-        //         content: const Text(
-        //             'No user found for that email.'),
-        //         actions: <Widget>[
-        //           ElevatedButton(
-        //             onPressed: () {
-        //               Navigator.of(context)
-        //                   .pop();
-        //             },
-        //             child: const Text('OK'),
-        //           ),
-        //         ],
-        //       );
-        //     },
-        //   );
-        // }
         if (message == 'Wrong Email or password') {
           showDialog(
             context: context,
@@ -86,65 +62,14 @@ class UserService {
           );
         }
       }
-
-      // Get the user document from Firestore based on the email entered
-      // QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-      //     .collection('users')
-      //     .where('email', isEqualTo: email )
-      //     .get();
-
-      // if (querySnapshot.docs.length != 0 ) {
-      //   // Get the first document from the query snapshot
-      //   DocumentSnapshot userDoc = querySnapshot.docs.first;
-      //
-      //   // checking if user has proper privileges or not
-      //   if (!userDoc.get('privileged_user')) {
-      //     showDialog(
-      //       context: context,
-      //       builder: (BuildContext context) {
-      //         return AlertDialog(
-      //           title: const Text(
-      //               'User is an Admin'),
-      //           content: const Text(
-      //               'This User does not have the privilege to login as an Admin.'),
-      //           actions: <Widget>[
-      //             ElevatedButton(
-      //               onPressed: () {
-      //                 Navigator.of(context)
-      //                     .pop();
-      //               },
-      //               child: const Text('OK'),
-      //             ),
-      //           ],
-      //         );
-      //       },
-      //     );
-      //     return;
-      //   }
-      // }
-      // else {
-      //   return;
-      // }
     } catch (e, s) {
       // Handle any errors that occur during sign in
       debugPrint(e.toString());
       debugPrint(s.toString());
     }
-
-    // // Authenticate the user with Firebase
-    // FirebaseAuth.instance.signInWithEmailAndPassword(
-    //   email: email,
-    //   password: password,
-    // ).then((value) async {
-    //   await FirebaseAuth.instance.setPersistence(
-    //       Persistence.LOCAL);
-    // }).catchError((error) {
-    //   // handle error
-    // });
   }
 
-  static void loginAsUser(
-      BuildContext context, String email, String password) async {
+  static void loginAsUser(BuildContext context, String email, String password) async {
     try {
       // sending a request to API
       var request = http.MultipartRequest(
@@ -219,52 +144,6 @@ class UserService {
       }
 
       return;
-
-      // Get the user document from Firestore based on the email entered
-      // QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-      //     .collection('users')
-      //     .where('email', isEqualTo: email )
-      //     .get();
-      //
-      // if (querySnapshot.docs.isNotEmpty) {
-      //   // Get the first document from the query snapshot
-      //   DocumentSnapshot userDoc = querySnapshot.docs.first;
-      //
-      //   // checking if user has proper privileges or not
-      //   if( userDoc.get('privileged_user') ) {
-      //     showDialog(
-      //       context: context,
-      //       builder: (BuildContext context) {
-      //         return AlertDialog(
-      //           title: const Text(
-      //               'User is an Admin'),
-      //           content: const Text(
-      //               'The User you are trying to log in with is an Admin. Please Login using Admin to continue'),
-      //           actions: <Widget>[
-      //             ElevatedButton(
-      //               onPressed: () {
-      //                 Navigator.of(context)
-      //                     .pop();
-      //               },
-      //               child: const Text('OK'),
-      //             ),
-      //           ],
-      //         );
-      //       },
-      //     );
-      //     return;
-      //   }
-      //
-      //   // Compare the entered password with the password in Firestore
-      //   if (userDoc.get('password') == password ) {
-      //
-      //   }
-      //   else {
-      //
-      //   }
-      // } else {
-      //
-      // }
     } catch (e, s) {
       // Handle any errors that occur during sign in
       debugPrint(e.toString());
@@ -272,9 +151,28 @@ class UserService {
     }
   }
 
-  static Future<User?> fetchUserProfileData(String userEmail) async {
+  static Future<bool> sendOTP( String phoneNumber ) async {
+    var request = http.MultipartRequest('POST', Uri.parse('${baseUrl}admin/admin_login'));
+    request.fields.addAll({
+      'phone': phoneNumber,
+    });
+
+    http.StreamedResponse response = await request.send();
+
+    if( response.statusCode != 200 ) {
+      print( await response.stream.bytesToString( ) );
+      print( response.reasonPhrase.toString() );
+    }
+
+    return response.statusCode == 200;
+  }
+
+  static Future<User?> getUser(String userEmail) async {
     // calling the api to get data
-    var request = http.MultipartRequest('GET', Uri.parse('${baseUrl}/admin/get_guard/$userEmail'));
+    var request = http.MultipartRequest('POST', Uri.parse('${baseUrl}/admin/get_guard'));
+    request.fields.addAll({
+      'email': userEmail
+    });
     http.StreamedResponse response = await request.send();
 
     if (response.statusCode == 200) {
@@ -300,22 +198,12 @@ class UserService {
     }
 
     return null;
-
-    // final userSnapshot = await FirebaseFirestore.instance
-    //     .collection('users')
-    //     .where('email', isEqualTo: userEmail )
-    //     .get();
-    //
-    // final userData = userSnapshot.docs.first.data();
-
-    // return userData;
   }
 
-  static Future<List<User>> getAllGuards() async {
+  static Future<List<User>> getAllUsers() async {
     try {
       // getting the list of guards from the api
-      var request =
-          http.Request('GET', Uri.parse('${baseUrl}/admin/get_all_guards'));
+      var request = http.Request('GET', Uri.parse('${baseUrl}/admin/get_all_guards'));
 
       http.StreamedResponse response = await request.send();
 
@@ -324,7 +212,7 @@ class UserService {
             jsonDecode(await response.stream.bytesToString());
 
         final List<User> profileDataList = guardsList
-            .map((userData) => User(
+            .where( (user) => user['id'] != "-1" ).map((userData) => User(
                 name: userData['name'],
                 email: userData['email'],
                 contactNumber: userData['contact'],
@@ -350,6 +238,63 @@ class UserService {
       debugPrint(s.toString());
       return [];
     }
+  }
+
+  static Future<void> addUser( Map<String, dynamic> userData ) async {
+    // Upload the image to Firebase Storage and get the URL
+    Reference storageRef = FirebaseStorage.instance
+        .ref()
+        .child('user-images')
+        .child("${userData['forestID']}/${userData['forestID']}.jpg");
+
+    UploadTask uploadTask = storageRef.putFile(userData['image']);
+    TaskSnapshot downloadUrl = await uploadTask.whenComplete(() => null);
+    final String imageUrl = await downloadUrl.ref.getDownloadURL();
+
+    // Upload the aadhar image to Firebase Storage and get the URL
+    storageRef = FirebaseStorage.instance
+        .ref()
+        .child('user-images')
+        .child("${userData['forestID']}/${userData['forestID']}.jpg");
+
+    uploadTask = storageRef.putFile( userData['aadharImage']);
+    downloadUrl = await uploadTask.whenComplete(() => null);
+    final String aadharImageUrl = await downloadUrl.ref.getDownloadURL();
+
+    // Upload the forestId image to Firebase Storage and get the URL
+    storageRef = FirebaseStorage.instance
+        .ref()
+        .child('user-images')
+        .child("${userData['forestID']}/${userData['forestID']}.jpg");
+
+    uploadTask = storageRef.putFile( userData['forestIDImage']);
+    downloadUrl = await uploadTask.whenComplete(() => null);
+    final String forestIdImageUrl = await downloadUrl.ref.getDownloadURL();
+
+    var request = http.MultipartRequest('POST', Uri.parse('https://aishwaryasoftware.xyz/conflict/admin//add_guard'));
+    request.fields.addAll({
+      'name': userData['name'],
+      'email': userData['email'],
+      'password': userData['password'],
+      'contact': userData['contactNumber'],
+      'aadhar_number': userData['contactNumber'],
+      'forest_id': userData['forestID'],
+      'latitude': userData['latitude'],
+      'longitude': userData['longitude'],
+      'radius': userData['radius'],
+      'forest_id_image': forestIdImageUrl,
+      'aadhar_image' : aadharImageUrl,
+      'image': imageUrl
+    });
+    http.StreamedResponse response = await request.send();
+
+    if (response.statusCode == 200) {
+      print(await response.stream.bytesToString());
+    }
+    else {
+      print(response.reasonPhrase);
+    }
+
   }
 
   static Future<bool> updateUser(User updatedUser) async {

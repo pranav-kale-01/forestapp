@@ -5,8 +5,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:forestapp/common/models/geopoint.dart' as G;
 import 'package:flutter/material.dart';
 import 'package:forestapp/common/models/conflict_model_hive.dart';
+import 'package:forestapp/common/models/user.dart';
+import 'package:forestapp/contstant/constant.dart';
 import 'package:forestapp/utils/conflict_service.dart';
+import 'package:forestapp/utils/dynamic_list_service.dart';
 import 'package:forestapp/utils/hive_service.dart';
+import 'package:forestapp/utils/user_service.dart';
 import 'package:forestapp/utils/utils.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
@@ -15,21 +19,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../common/models/timestamp.dart';
 import '../../common/themeHelper.dart';
-
-class ProfileData {
-  final String name;
-  final String email;
-  final String contactNumber;
-  final String imageUrl;
-
-  ProfileData({
-    required this.name,
-    required this.email,
-    required this.contactNumber,
-    required this.imageUrl,
-    // required this.numberOfForestsAdded,
-  });
-}
 
 class AddForestData extends StatefulWidget {
   const AddForestData({super.key});
@@ -53,7 +42,7 @@ class _AddForestDataState extends State<AddForestData> {
   Map<String, dynamic>? selectedRange;
   Map<String, dynamic>? selectedRound;
   Map<String, dynamic>? selectedBt;
-  String? selectedConflict;
+  Map<String, dynamic>? selectedConflict;
 
   // list of errors for validation
   bool conflictError = false;
@@ -70,7 +59,6 @@ class _AddForestDataState extends State<AddForestData> {
 
   File? _image;
   late String _userEmail;
-  late ProfileData _profileData;
 
   Map<dynamic, dynamic> dynamicLists = {};
 
@@ -85,40 +73,12 @@ class _AddForestDataState extends State<AddForestData> {
 
   Future<void> fetchUserEmail() async {
     final prefs = await SharedPreferences.getInstance();
-    final userEmail = prefs.getString('userEmail');
+    final userEmail = prefs.getString(SHARED_USER_EMAIL);
     setState(() {
       _userEmail = userEmail ?? '';
     });
-    fetchUserProfileData();
   }
 
-  Future<void> fetchUserProfileData() async {
-    // if the data is loaded from cache showing a bottom popup to user alerting
-    // that the app is running in offline mode
-    if (!(await hasConnection)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Loading the page in Offline mode'),
-        ),
-      );
-    }
-
-    final userSnapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .where('email', isEqualTo: _userEmail)
-        .get();
-
-    final userData = userSnapshot.docs.first.data();
-    setState(() {
-      _profileData = ProfileData(
-        name: userData['name'],
-        email: userData['email'],
-        contactNumber: userData['contactNumber'],
-        imageUrl: userData['imageUrl'],
-        // numberOfForestsAdded: userData['numberOfForestsAdded']
-      );
-    });
-  }
 
   Future<void> _pickImage(ImageSource source) async {
     final pickedFile = await ImagePicker().pickImage(source: source);
@@ -147,20 +107,21 @@ class _AddForestDataState extends State<AddForestData> {
     );
 
     try {
+      // getting user
+      // final User? user = await UserService.getUser( _userEmail );
+
       // Get the current location
       final position = await Geolocator.getCurrentPosition();
-      final location = G.GeoPoint(
-          latitude: position.latitude, longitude: position.longitude);
-      final currentDateTime = Timestamp.fromDate(DateTime.now());
+      final location = G.GeoPoint(latitude: position.latitude, longitude: position.longitude);
 
-      Conflict data = Conflict(
+      Conflict conflictData = Conflict(
         id: "",
-        range: selectedRange!['name'],
-        round: selectedRound!['name'],
-        bt: selectedBt!['name'],
+        range: selectedRange!['id'],
+        round: selectedRound!['id'],
+        bt: selectedBt!['id'],
         village_name: _villageNameController.text,
         cNoName: _cNoController.text,
-        conflict: selectedConflict!,
+        conflict: selectedConflict!['id'],
         person_name: _personNameController.text,
         pincodeName: _pincodeNameController.text,
         person_age: _personAgeController.text,
@@ -169,20 +130,18 @@ class _AddForestDataState extends State<AddForestData> {
         notes: _notesController.text,
         imageUrl: "",
         location: location,
-        userName: _profileData.name,
-        userEmail: _profileData.email,
-        userContact: _profileData.contactNumber,
-        userImage: _profileData.imageUrl,
-        datetime: TimeStamp(
-            seconds: currentDateTime.seconds,
-            nanoseconds: currentDateTime.nanoseconds),
+        userName: "user.name",
+        userEmail: _userEmail,
+        userContact: "user.contactNumber",
+        userImage: "user.imageUrl",
       );
+
 
       // getting the image url
       if (await hasConnection) {
         // updating the data on firebase
         // Create a new document in the 'forestdata' collection
-        await ConflictService.addConflict(data, image: _image);
+        await ConflictService.addConflict( conflictData );
       } else {
         // if the device does not have internet connection adding caching the
         // object to upload later
@@ -191,12 +150,34 @@ class _AddForestDataState extends State<AddForestData> {
         var baseDir = await getApplicationDocumentsDirectory();
 
         final String fileName = _image!.path.split("/").last;
-        data.imageUrl = baseDir.path + "/" + fileName;
+        conflictData.imageUrl = baseDir.path + "/" + fileName;
 
-        File image = File(data.imageUrl);
+        File image = File(conflictData.imageUrl);
         image.writeAsBytesSync(_image!.readAsBytesSync());
 
-        hiveService.addBoxes<Conflict>([data], "stored_conflicts");
+        // Conflict conflict = Conflict(
+        //   id: "",
+        //   range: selectedRange!['id'],
+        //   round: selectedRound!['id'],
+        //   bt: selectedBt!['id'],
+        //   village_name: _villageNameController.text,
+        //   cNoName: _cNoController.text,
+        //   conflict: selectedConflict!['id'],
+        //   person_name: _personNameController.text,
+        //   pincodeName: _pincodeNameController.text,
+        //   person_age: _personAgeController.text,
+        //   person_gender: _personGenderController.text,
+        //   sp_causing_death: _spCausingDeathController.text,
+        //   notes: _notesController.text,
+        //   imageUrl: "",
+        //   location: location,
+        //   userName: _userEmail,
+        //   userEmail: "user.email",
+        //   userContact: "user.contactNumber",
+        //   userImage: "user.imageUrl",
+        // );
+
+        hiveService.addBoxes<Conflict>([conflictData], "stored_conflicts");
       }
 
       // Hide the loading spinner
@@ -213,14 +194,6 @@ class _AddForestDataState extends State<AddForestData> {
               child: const Text('OK'),
               onPressed: () {
                 Navigator.of(context).pop();
-
-                // Navigator.of(context).pushAndRemoveUntil(
-                //     MaterialPageRoute(
-                //       builder: (context) => const HomeUser(
-                //         title: 'title',
-                //       ),
-                //     ),
-                //     (route) => false);
               },
             ),
           ],
@@ -271,24 +244,14 @@ class _AddForestDataState extends State<AddForestData> {
       }
     }
 
-
     return uniqueTitle;
   }
 
   Future<void> fetchDynamicLists() async {
-    // if( await hasConnection ) {
-    if( true ) {
-      final userSnapshot = await FirebaseFirestore.instance.collection('dynamic_lists').get();
-      final userData = userSnapshot.docs;
-
-      for (var item in userData) {
-        dynamicLists[item.id] = item['values'];
-      }
-
+    if( await hasConnection ) {
+      dynamicLists = await DynamicListService.fetchDynamicLists();
       // storing into hiveCache
       hiveService.setBox( [dynamicLists], "dynamic_list");
-
-      // dynamicLists['range'] = dynamicLists['range'].toSet().toList();
     }
     else {
       // loading from hive cache
@@ -299,13 +262,13 @@ class _AddForestDataState extends State<AddForestData> {
       }
     }
     // setting the dynamic list for conflict with value none
-    dynamicLists['conflict']?.add('None');
+    // dynamicLists['conflict']?.add('None');
 
     setState(() {
       selectedRange = dynamicLists['range']!.first;
       selectedRound = dynamicLists['round']!.first;
       selectedBt = dynamicLists['beat']!.first;
-      selectedConflict = "None";
+      selectedConflict = dynamicLists['conflict']!.first;
     });
   }
 
@@ -405,7 +368,8 @@ class _AddForestDataState extends State<AddForestData> {
                       decoration: ThemeHelper()
                           .textInputDecoration('Round', 'Enter Round'),
                       value: selectedRound,
-                      items: dynamicLists['round']!.where( (round) => round['range_id'] == selectedRange!['id'] ).map<DropdownMenuItem<Map<String, dynamic>>>(
+                      // items: dynamicLists['round']!.where( (round) => round['range_id'] == selectedRange!['id'] ).map<DropdownMenuItem<Map<String, dynamic>>>(
+                      items: dynamicLists['round']!.map<DropdownMenuItem<Map<String, dynamic>>>(
                             (round) => DropdownMenuItem<Map<String, dynamic>>(
                               child: Text(round['name']),
                               value: round,
@@ -437,8 +401,9 @@ class _AddForestDataState extends State<AddForestData> {
                       decoration: ThemeHelper()
                           .textInputDecoration('Beats', 'Enter Beats'),
                       value: selectedBt,
-                      items: dynamicLists['beat']!.where( (beat) => beat['round_id'] == selectedRound!['id'] ).map<DropdownMenuItem<Map<String, dynamic>>>( (beat) => DropdownMenuItem<Map<String, dynamic>>(
-                              child: Text(beat['name'] ),
+                      // items: dynamicLists['beat']!.where( (beat) => beat['round_id'] == selectedRound!['id'] ).map<DropdownMenuItem<Map<String, dynamic>>>( (beat) => DropdownMenuItem<Map<String, dynamic>>(
+                      items: dynamicLists['beat']!.map<DropdownMenuItem<Map<String, dynamic>>>( (beat) => DropdownMenuItem<Map<String, dynamic>>(
+                        child: Text(beat['name'] ),
                               value: beat,
                           ) ).toList(),
                       onChanged: (Map<String, dynamic>? value) {
@@ -529,13 +494,13 @@ class _AddForestDataState extends State<AddForestData> {
                             ),
                           ),
                       value: selectedConflict,
-                      items: dynamicLists['conflict']!.map<DropdownMenuItem<String>>(
-                            (conflict) => DropdownMenuItem<String>(
-                              child: Text(conflict),
+                      items: dynamicLists['conflict']!.map<DropdownMenuItem<Map<String, dynamic>>>(
+                            (conflict) => DropdownMenuItem<Map<String, dynamic>>(
+                              child: Text(conflict['name']),
                               value: conflict,
                             ),
                           ).toList(),
-                      onChanged: (Object? value) {
+                      onChanged: (Map<String, dynamic>? value) {
                         // if( value != "None" ) {
                         //   setState(() {
                         //     conflictError = false;
@@ -543,7 +508,7 @@ class _AddForestDataState extends State<AddForestData> {
                         //   });
                         // }
 
-                        selectedConflict = value.toString();
+                        selectedConflict = value;
                       },
                     ),
                     if (conflictError)
