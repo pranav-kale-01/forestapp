@@ -4,9 +4,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:forestapp/utils/user_service.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:forestapp/common/models/geopoint.dart' as G;
-import 'package:firebase_storage/firebase_storage.dart';
 
 import '../../common/themeHelper.dart';
 
@@ -34,10 +31,6 @@ class _AddUserScreenState extends State<AddUserScreen> {
   String? longitude;
   String? latitude;
   String? radius;
-  final CollectionReference _userRef = FirebaseFirestore.instance.collection('users');
-
-  FirebaseFirestore firestore = FirebaseFirestore.instance;
-
   File? _image;
   File? _aadharImage;
   File? _forestIDImage;
@@ -66,7 +59,6 @@ class _AddUserScreenState extends State<AddUserScreen> {
   }
 
   Future<void> addUser() async {
-    print("here");
     if (_formKey.currentState!.validate()) {
       setState(() {
         _isProcessing = true;
@@ -89,20 +81,28 @@ class _AddUserScreenState extends State<AddUserScreen> {
           'radius' : radius!
         };
 
-        await UserService.addUser( userData );
+        bool success = await UserService.addUser( context, userData );
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('User added successfully'),
-          ),
-        );
+        if( success ) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('User added successfully'),
+            ),
+          );
 
-        _formKey.currentState!.reset();
-        setState(() {
-          _imageFile = null;
-        });
-        Navigator.of(context).pop();
-
+          _formKey.currentState!.reset();
+          setState(() {
+            _imageFile = null;
+          });
+          Navigator.of(context).pop();
+        }
+        else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('There was and error adding the user'),
+            ),
+          );
+        }
       } catch (error) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

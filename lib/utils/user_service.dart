@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:forestapp/common/models/user.dart';
 import 'package:forestapp/contstant/constant.dart';
@@ -36,7 +35,6 @@ class UserService {
           ),
         );
       } else {
-        // TODO: handle Errors here
         Map<String, dynamic> jsonResponse =
             jsonDecode(await response.stream.bytesToString());
         String message = jsonResponse['message'];
@@ -69,7 +67,7 @@ class UserService {
     }
   }
 
-  static void loginAsUser(BuildContext context, String email, String password) async {
+  static Future<void> loginAsUser(BuildContext context, String email, String password) async {
     try {
       // sending a request to API
       var request = http.MultipartRequest(
@@ -79,6 +77,22 @@ class UserService {
       http.StreamedResponse response = await request.send();
 
       if (response.statusCode == 200) {
+        // getting the user details
+        User? currUser = await UserService.getUser(context, email);
+
+        // Get an instance of shared preferences
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+
+        // Store the email in shared preferences
+        prefs.setInt(SHARED_USER_TYPE, user);
+        prefs.setString(SHARED_USER_EMAIL, email );
+        prefs.setString(SHARED_USER_LONGITUDE, currUser!.longitude.toString() );
+        prefs.setString(SHARED_USER_LATITUDE, currUser.latitude.toString() );
+        prefs.setString(SHARED_USER_RADIUS, currUser.radius.toString() );
+        prefs.setString(SHARED_USER_NAME, currUser.name.toString() );
+        prefs.setString(SHARED_USER_CONTACT, currUser.contactNumber.toString() );
+        prefs.setString(SHARED_USER_IMAGEURL, currUser.imageUrl.toString() );
+
         // Navigate to the HomeAdmin screen on successful login
         Navigator.pushReplacement(
           context,
@@ -88,13 +102,6 @@ class UserService {
             ),
           ),
         );
-
-        // Get an instance of shared preferences
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-
-        // Store the email in shared preferences
-        prefs.setInt(SHARED_USER_TYPE, user);
-        prefs.setString(SHARED_USER_EMAIL, email );
       }
       else {
         print(response.reasonPhrase);
@@ -151,7 +158,7 @@ class UserService {
     }
   }
 
-  static Future<bool> sendOTP( String phoneNumber ) async {
+  static Future<bool> sendOTP( BuildContext context, String phoneNumber ) async {
     var request = http.MultipartRequest('POST', Uri.parse('${baseUrl}admin/admin_login'));
     request.fields.addAll({
       'phone': phoneNumber,
@@ -162,12 +169,27 @@ class UserService {
     if( response.statusCode != 200 ) {
       print( await response.stream.bytesToString( ) );
       print( response.reasonPhrase.toString() );
+      showDialog(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: const Text('Error'),
+          content: Text('Failed to upload data. Error : ${response.reasonPhrase}'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        ),
+      );
     }
 
     return response.statusCode == 200;
   }
 
-  static Future<User?> getUser(String userEmail) async {
+  static Future<User?> getUser(BuildContext context, String userEmail) async {
     // calling the api to get data
     var request = http.MultipartRequest('POST', Uri.parse('${baseUrl}/admin/get_guard'));
     request.fields.addAll({
@@ -195,12 +217,27 @@ class UserService {
     } else {
       print( await response.stream.bytesToString( ) );
       print( response.reasonPhrase );
+      showDialog(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: const Text('Error'),
+          content: Text('Failed to upload data. Error : ${response.reasonPhrase}'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        ),
+      );
     }
 
     return null;
   }
 
-  static Future<List<User>> getAllUsers() async {
+  static Future<List<User>> getAllUsers( BuildContext context ) async {
     try {
       // getting the list of guards from the api
       var request = http.Request('GET', Uri.parse('${baseUrl}/admin/get_all_guards'));
@@ -231,79 +268,118 @@ class UserService {
       } else {
         print(response.reasonPhrase);
         print(await response.stream.bytesToString());
+        showDialog(
+          context: context,
+          builder: (BuildContext context) => AlertDialog(
+            title: const Text('Error'),
+            content: Text('Failed to upload data. Error : ${response.reasonPhrase}'),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('OK'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          ),
+        );
         return [];
       }
     } catch (e, s) {
       debugPrint(e.toString());
       debugPrint(s.toString());
+      showDialog(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: const Text('Error'),
+          content: Text('Failed to upload data. Error : ${e}'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        ),
+      );
       return [];
     }
   }
 
-  static Future<void> addUser( Map<String, dynamic> userData ) async {
-    // Upload the image to Firebase Storage and get the URL
-    Reference storageRef = FirebaseStorage.instance
-        .ref()
-        .child('user-images')
-        .child("${userData['forestID']}/${userData['forestID']}.jpg");
+  static Future<bool> addUser( BuildContext context, Map<String, dynamic> userData ) async {
+    try {
+      var request = http.MultipartRequest('POST', Uri.parse('${baseUrl}admin/add_guard'));
+      request.fields.addAll({
+        'name': userData['name'],
+        'email': userData['email'],
+        'password': userData['password'],
+        'contact': userData['contactNumber'],
+        'aadhar_number': userData['contactNumber'],
+        'forest_id': userData['forestID'],
+        'latitude': userData['latitude'],
+        'longitude': userData['longitude'],
+        'radius': userData['radius'],
+      });
 
-    UploadTask uploadTask = storageRef.putFile(userData['image']);
-    TaskSnapshot downloadUrl = await uploadTask.whenComplete(() => null);
-    final String imageUrl = await downloadUrl.ref.getDownloadURL();
+      request.files.add(await http.MultipartFile.fromPath('profile_photo', userData['image'].path ));
+      request.files.add(await http.MultipartFile.fromPath('forest_id_photo', userData['aadharImage'].path));
+      request.files.add(await http.MultipartFile.fromPath('aadhar_photo', userData['forestIDImage'].path ));
 
-    // Upload the aadhar image to Firebase Storage and get the URL
-    storageRef = FirebaseStorage.instance
-        .ref()
-        .child('user-images')
-        .child("${userData['forestID']}/${userData['forestID']}.jpg");
+      http.StreamedResponse response = await request.send();
 
-    uploadTask = storageRef.putFile( userData['aadharImage']);
-    downloadUrl = await uploadTask.whenComplete(() => null);
-    final String aadharImageUrl = await downloadUrl.ref.getDownloadURL();
 
-    // Upload the forestId image to Firebase Storage and get the URL
-    storageRef = FirebaseStorage.instance
-        .ref()
-        .child('user-images')
-        .child("${userData['forestID']}/${userData['forestID']}.jpg");
+      if( response.statusCode != 200 ) {
+        print("There was an error");
+        print( await response.stream.bytesToString( ) );
+        print(response.reasonPhrase);
+        showDialog(
+          context: context,
+          builder: (BuildContext context) => AlertDialog(
+            title: const Text('Error'),
+            content: Text('Failed to upload data. Error : ${response.reasonPhrase}'),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('OK'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          ),
+        );
+      }
 
-    uploadTask = storageRef.putFile( userData['forestIDImage']);
-    downloadUrl = await uploadTask.whenComplete(() => null);
-    final String forestIdImageUrl = await downloadUrl.ref.getDownloadURL();
-
-    var request = http.MultipartRequest('POST', Uri.parse('https://aishwaryasoftware.xyz/conflict/admin//add_guard'));
-    request.fields.addAll({
-      'name': userData['name'],
-      'email': userData['email'],
-      'password': userData['password'],
-      'contact': userData['contactNumber'],
-      'aadhar_number': userData['contactNumber'],
-      'forest_id': userData['forestID'],
-      'latitude': userData['latitude'],
-      'longitude': userData['longitude'],
-      'radius': userData['radius'],
-      'forest_id_image': forestIdImageUrl,
-      'aadhar_image' : aadharImageUrl,
-      'image': imageUrl
-    });
-    http.StreamedResponse response = await request.send();
-
-    if (response.statusCode == 200) {
-      print(await response.stream.bytesToString());
+      return response.statusCode == 200;
     }
-    else {
-      print(response.reasonPhrase);
+    catch( e, s ) {
+      print( e );
+      print( s );
+      showDialog(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: const Text('Error'),
+          content: Text('Failed to upload data. Error : ${e}'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        ),
+      );
+      return false;
     }
-
   }
 
-  static Future<bool> updateUser(User updatedUser) async {
+  static Future<bool> updateUser(BuildContext context, User updatedUser) async {
     try {
       // calling the API for updating user
       var request = http.MultipartRequest(
           'POST',
-          Uri.parse(
-              'https://aishwaryasoftware.xyz/conflict/admin//update_guard'));
+          Uri.parse('${baseUrl}admin/update_guard'));
       request.fields.addAll({
         'name': updatedUser.name,
         'email': updatedUser.email,
@@ -324,16 +400,46 @@ class UserService {
       } else {
         print('no changes');
         print( await response.stream.bytesToString( ));
+        showDialog(
+          context: context,
+          builder: (BuildContext context) => AlertDialog(
+            title: const Text('Error'),
+            content: Text('Failed to upload data. Error : ${response.reasonPhrase}'),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('OK'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          ),
+        );
         return false;
       }
     } catch (e, s) {
       debugPrint(e.toString());
       debugPrint(s.toString());
+      showDialog(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: const Text('Error'),
+          content: Text('Failed to upload data. Error : ${e}'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        ),
+      );
       return false;
     }
   }
 
-  static Future<void> deleteUser( BuildContext context, String email ) async {
+  static Future<bool> deleteUser( BuildContext context, String email ) async {
     try {
       // sending a request to API
       var request = http.MultipartRequest('POST', Uri.parse('${baseUrl}/admin/delete_guard'));
@@ -344,28 +450,6 @@ class UserService {
 
       if (response.statusCode == 200) {
         print(await response.stream.bytesToString());
-
-        // first deleting the images
-        // Reference storageRef = FirebaseStorage.instance
-        //     .ref()
-        //     .child('user-images')
-        //     .child("${guard.forestId.toString()}/${guard.forestId.toString()}.jpg");
-        //
-        // await storageRef.delete();
-        //
-        // storageRef = FirebaseStorage.instance
-        //     .ref()
-        //     .child('user-images')
-        //     .child("${guard.forestId.toString()}/${guard.forestId.toString()}_aadhar.jpg");
-        //
-        // await storageRef.delete();
-        //
-        // storageRef = FirebaseStorage.instance
-        //     .ref()
-        //     .child('user-images')
-        //     .child("${guard.forestId.toString()}/${guard.forestId.toString()}_forestID.jpg");
-        //
-        // await storageRef.delete();
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -381,55 +465,14 @@ class UserService {
         );
       }
 
-      // final snapshot = await FirebaseFirestore.instance
-      //     .collection('users')
-      //     .where('email', isEqualTo: guard.email)
-      //     .get();
-
-      // if (snapshot.docs.isNotEmpty) {
-      //   // first deleting the images
-      //   Reference storageRef = FirebaseStorage.instance
-      //       .ref()
-      //       .child('user-images')
-      //       .child("${guard.forestId.toString()}/${guard.forestId.toString()}.jpg");
-      //
-      //   await storageRef.delete();
-      //
-      //   storageRef = FirebaseStorage.instance
-      //       .ref()
-      //       .child('user-images')
-      //       .child("${guard.forestId.toString()}/${guard.forestId.toString()}_aadhar.jpg");
-      //
-      //   await storageRef.delete();
-      //
-      //   storageRef = FirebaseStorage.instance
-      //       .ref()
-      //       .child('user-images')
-      //       .child("${guard.forestId.toString()}/${guard.forestId.toString()}_forestID.jpg");
-      //
-      //   await storageRef.delete();
-      //
-      //   // now deleting the record from Firestore database
-      //   await snapshot.docs.first.reference.delete();
-      //
-      //   ScaffoldMessenger.of(context).showSnackBar(
-      //     const SnackBar(
-      //       content: Text('User deleted successfully.'),
-      //     ),
-      //   );
-      // } else {
-      //   ScaffoldMessenger.of(context).showSnackBar(
-      //     const SnackBar(
-      //       content: Text('User not found.'),
-      //     ),
-      //   );
-      // }
+      return response.statusCode == 200;
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error deleting user: $e'),
         ),
       );
+      return false;
     }
   }
 }

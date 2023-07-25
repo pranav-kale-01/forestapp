@@ -15,19 +15,19 @@ class HomeAdmin extends StatefulWidget {
 
 class _HomeAdminState extends State<HomeAdmin> {
   int _selectedIndex = 0;
-  late String _selectedConflict;
+  late Map<String,dynamic> _selectedConflict;
   late final List<Widget> _widgetOptions;
 
   @override
   void initState() {
     super.initState();
 
-    _selectedConflict = '';
+    _selectedConflict = {};
 
     _widgetOptions = <Widget>[
       HomeScreen(
         changeIndex: _changeIndex,
-        setConflict: (String conflict) {
+        setConflict: (Map<String,dynamic> conflict) {
           _selectedConflict = conflict;
         }
       ),
@@ -56,11 +56,11 @@ class _HomeAdminState extends State<HomeAdmin> {
     else {
       print('else');
       _widgetOptions[2] = ForestDataScreen(
-        defaultFilterConflict: '',
+        defaultFilterConflict: {},
         changeScreen: _changeIndex,
       );
     }
-    _selectedConflict = '';
+    _selectedConflict = {};
 
     setState(() {
       _selectedIndex = index;
@@ -80,12 +80,12 @@ class _HomeAdminState extends State<HomeAdmin> {
       else {
         print('else');
         _widgetOptions[2] = ForestDataScreen(
-          defaultFilterConflict: '',
+          defaultFilterConflict: {},
           changeScreen: _changeIndex,
 
         );
       }
-      _selectedConflict = '';
+      _selectedConflict = {};
     }
 
     setState(() {

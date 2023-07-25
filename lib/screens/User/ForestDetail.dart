@@ -1,6 +1,6 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:forestapp/screens/Admin/EditConflictScreen.dart';
+import 'package:forestapp/screens/User/EditConflictScreen.dart';
+import 'package:forestapp/utils/utils.dart';
 import 'package:intl/intl.dart';
 
 import '../../common/models/conflict_model_hive.dart';
@@ -113,7 +113,7 @@ class _ForestDetailState extends State<ForestDetail> {
           AspectRatio(
             aspectRatio: 16 / 9,
             child: Image.network(
-              widget.forestData.imageUrl,
+              '${baseUrl}uploads/conflicts/${widget.forestData.imageUrl}',
               fit: BoxFit.cover,
             ),
           ),
@@ -239,7 +239,7 @@ class _ForestDetailState extends State<ForestDetail> {
                         //
                         // if (snapshot.exists) {
                         //   await snapshot.reference.delete();
-                        bool success = await ConflictService.deleteConflict( widget.forestData.id );
+                        bool success = await ConflictService.deleteConflict( context, widget.forestData.id );
 
                         if( success ) {
                           ScaffoldMessenger.of(context).showSnackBar(

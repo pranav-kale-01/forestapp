@@ -109,7 +109,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
           forestIDImageUrl: '',
       );
 
-      bool userUpdated  = await UserService.updateUser( updatedUser );
+      bool userUpdated  = await UserService.updateUser( context, updatedUser );
 
       if( userUpdated ) {
         // updating the parent list

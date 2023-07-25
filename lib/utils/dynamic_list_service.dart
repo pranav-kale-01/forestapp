@@ -1,10 +1,10 @@
 import 'dart:convert';
-
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:forestapp/utils/utils.dart' show baseUrl;
 
 class DynamicListService {
-  static Future<Map<String, dynamic>> fetchDynamicLists() async {
+  static Future<Map<String, dynamic>> fetchDynamicLists( BuildContext context ) async {
     // fetching all the dynamic lists
     Map<String, dynamic> dynamicLists = {};
 
@@ -20,6 +20,21 @@ class DynamicListService {
           .toList();
     } else {
       print(response.reasonPhrase);
+      showDialog(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: const Text('Error'),
+          content: Text('Failed to upload data. Error : ${response.reasonPhrase}'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        ),
+      );
     }
 
     // round
@@ -71,7 +86,7 @@ class DynamicListService {
     return dynamicLists;
   }
 
-  static Future<void> addField( String type, String value, {range_id = "", round_id = "" } ) async {
+  static Future<int> addField( BuildContext context, String type, String value, {range_id = "", round_id = "" } ) async {
     String endpoint = "";
     Map<String, String> fields = {};
 
@@ -99,14 +114,32 @@ class DynamicListService {
     http.StreamedResponse response = await request.send();
 
     if (response.statusCode == 200) {
-      print(await response.stream.bytesToString());
+      Map<String, dynamic> jsonResponse = jsonDecode( await response.stream.bytesToString() );
+      return int.parse( jsonResponse['message'] );
     }
     else {
       print(response.reasonPhrase);
+      showDialog(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: const Text('Error'),
+          content: Text('Failed to upload data. Error : ${response.reasonPhrase}'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        ),
+      );
+
+      return -1;
     }
   }
 
-  static Future<void> removeField( String type, Map<String, dynamic> item ) async {
+  static Future<void> removeField( BuildContext context, String type, Map<String, dynamic> item ) async {
     String endpoint = "";
     Map<String, String> fields = {};
 
@@ -138,6 +171,21 @@ class DynamicListService {
     }
     else {
       print(response.reasonPhrase);
+      showDialog(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: const Text('Error'),
+          content: Text('Failed to upload data. Error : ${response.reasonPhrase}'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        ),
+      );
     }
   }
 

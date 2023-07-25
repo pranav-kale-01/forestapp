@@ -1,11 +1,13 @@
 import 'dart:async';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:forestapp/common/models/user.dart';
 import 'package:forestapp/contstant/constant.dart';
 import 'package:forestapp/screens/Admin/homeAdmin.dart';
 import 'package:forestapp/screens/User/homeUser.dart';
 import 'package:forestapp/screens/loginScreen.dart';
+import 'package:forestapp/utils/user_service.dart';
+import 'package:forestapp/utils/utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -18,11 +20,7 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-
-  String? _userEmail;
   bool _isVisible = false;
-  bool _isAdmin = false;
 
 
   Future<Widget> check_user() async{

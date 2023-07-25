@@ -1,7 +1,8 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:forestapp/common/models/user.dart';
+import 'package:forestapp/utils/user_service.dart';
+
+import '../../utils/utils.dart';
 
 class UserDetails extends StatelessWidget {
   final User user;
@@ -43,7 +44,7 @@ class UserDetails extends StatelessWidget {
             height: 200,
             decoration: BoxDecoration(
               image: DecorationImage(
-                image: NetworkImage(user.imageUrl),
+                image: NetworkImage('${baseUrl}uploads/guard/profile/${user.imageUrl}'),
                 fit: BoxFit.cover,
               ),
               shape: BoxShape.circle,
@@ -159,38 +160,9 @@ class UserDetails extends StatelessWidget {
                           );
                           if (confirm == true) {
                             try {
-                              final snapshot = await FirebaseFirestore.instance
-                                  .collection('users')
-                                  .where('email', isEqualTo: user.email)
-                                  .get();
-                              if (snapshot.docs.isNotEmpty) {
-                                // first deleting the image
-                                // first deleting the images
-                                Reference storageRef = FirebaseStorage.instance
-                                    .ref()
-                                    .child('user-images')
-                                    .child("${user.forestId.toString()}/${user.forestId.toString()}.jpg");
+                              bool success = await UserService.deleteUser(context, user.email );
 
-                                await storageRef.delete();
-
-                                storageRef = FirebaseStorage.instance
-                                    .ref()
-                                    .child('user-images')
-                                    .child("${user.forestId.toString()}/${user.forestId.toString()}_aadhar.jpg");
-
-                                await storageRef.delete();
-
-                                storageRef = FirebaseStorage.instance
-                                    .ref()
-                                    .child('user-images')
-                                    .child("${user.forestId.toString()}/${user.forestId.toString()}_forestID.jpg");
-
-                                await storageRef.delete();
-
-
-                                // now deleting the record from Firestore database
-                                await snapshot.docs.first.reference.delete();
-
+                              if( success ) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                     content: Text('User deleted successfully.'),

@@ -116,8 +116,8 @@ class _EditConflictState extends State<EditConflict> {
 
     setState(() {
       selectedRange = dynamicLists['range'].where( (range) => range['name'] == widget.conflictData.range ).first;
-      selectedRound = dynamicLists['round'].where( (round) => round['range_id'] == selectedRange!['id'] ).toList().first;
-      selectedBt = dynamicLists['beat'].where( (beat) => beat['round_id'] == selectedRound!['id'] ).toList().first;
+      selectedRound = dynamicLists['round'].where( (round) => round['name'] == widget.conflictData.round ).first;
+      selectedBt = dynamicLists['beat'].where( (beat) => beat['name'] == widget.conflictData.bt ).first;
       selectedConflict = dynamicLists['conflict'].where( (conflict) => conflict['name'] == widget.conflictData.conflict ).first;
     });
   }
@@ -161,8 +161,8 @@ class _EditConflictState extends State<EditConflict> {
             backgroundColor: Colors.black,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person_sharp),
-            label: 'Guard',
+            icon: Icon(Icons.person_add),
+            label: 'Add Forest',
             backgroundColor: Colors.black,
           ),
           BottomNavigationBarItem(
@@ -171,8 +171,8 @@ class _EditConflictState extends State<EditConflict> {
             backgroundColor: Colors.black,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.map),
-            label: 'Maps',
+            icon: Icon(Icons.person),
+            label: 'Profile',
             backgroundColor: Colors.black,
           ),
         ],
@@ -217,10 +217,10 @@ class _EditConflictState extends State<EditConflict> {
                     onChanged: (Map<String, dynamic>? value) {
                       setState(() {
                         selectedRange = value;
-                        selectedRound = dynamicLists['round'].where( (round) => round['range_id'] == selectedRange!['id'] ).toList().first;
-                        selectedBt = dynamicLists['beat'].where( (beat) => beat['round_id'] == selectedRound!['id'] ).toList().first;
-                        // selectedRound = dynamicLists['round'].first;
-                        // selectedBt = dynamicLists['beat'].first;
+                        // selectedRound = dynamicLists['round'].where( (round) => round['range_id'] == selectedRange!['id'] ).toList().first;
+                        selectedRound = dynamicLists['round'].first;
+                        // selectedBt = dynamicLists['beat'].where( (beat) => beat['round_id'] == selectedRound!['id'] ).toList().first;
+                        selectedBt = dynamicLists['beat'].first;
                       });
                     },
                   ),
@@ -242,8 +242,8 @@ class _EditConflictState extends State<EditConflict> {
                     decoration: ThemeHelper()
                         .textInputDecoration('Round', 'Enter Round'),
                     value: selectedRound,
-                    items: dynamicLists['round']!.where( (round) => round['range_id'] == selectedRange!['id'] ).map<DropdownMenuItem<Map<String, dynamic>>>(
-                    // items: dynamicLists['round']!.map<DropdownMenuItem<Map<String, dynamic>>>(
+                    // items: dynamicLists['round']!.where( (round) => round['range_id'] == selectedRange!['id'] ).map<DropdownMenuItem<Map<String, dynamic>>>(
+                    items: dynamicLists['round']!.map<DropdownMenuItem<Map<String, dynamic>>>(
                     (round) => DropdownMenuItem<Map<String, dynamic>>(
                         child: Text(round['name']),
                         value: round,
@@ -253,8 +253,8 @@ class _EditConflictState extends State<EditConflict> {
                     onChanged: (Map<String, dynamic>? value) {
                       setState(() {
                         selectedRound = value;
-                        selectedBt = dynamicLists['beat'].where( (beat) => beat['round_id'] == selectedRound!['id'] ).toList().first;
-                        // selectedBt = dynamicLists['beat'].first;
+                        // selectedBt = dynamicLists['beat'].where( (beat) => beat['round_id'] == selectedRound!['id'] ).toList().first;
+                        selectedBt = dynamicLists['beat'].first;
                       });
                     },
                   ),
@@ -276,8 +276,8 @@ class _EditConflictState extends State<EditConflict> {
                     decoration: ThemeHelper()
                         .textInputDecoration('Beats', 'Enter Beats'),
                     value: selectedBt,
-                    items: dynamicLists['beat']!.where( (beat) => beat['round_id'] == selectedRound!['id'] ).map<DropdownMenuItem<Map<String, dynamic>>>( (beat) => DropdownMenuItem<Map<String, dynamic>>(
-                    // items: dynamicLists['beat']!.map<DropdownMenuItem<Map<String, dynamic>>>( (beat) => DropdownMenuItem<Map<String, dynamic>>(
+                    // items: dynamicLists['beat']!.where( (beat) => beat['round_id'] == selectedRound!['id'] ).map<DropdownMenuItem<Map<String, dynamic>>>( (beat) => DropdownMenuItem<Map<String, dynamic>>(
+                    items: dynamicLists['beat']!.map<DropdownMenuItem<Map<String, dynamic>>>( (beat) => DropdownMenuItem<Map<String, dynamic>>(
                       child: Text(beat['name'] ),
                       value: beat,
                     ) ).toList(),

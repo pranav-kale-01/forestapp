@@ -1,18 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:forestapp/common/models/conflict_model_hive.dart';
 import 'package:intl/intl.dart';
-import '../screens/Admin/ForestDetail.dart';
+import '../screens/Admin/ForestDetail.dart' as adminForestDetail;
+import '../screens/User/ForestDetail.dart' as userForestDetail;
 
 class HomeScreenListTile extends StatefulWidget {
   final Function(int) changeIndex;
   final Function(Conflict) deleteData;
   Conflict forestData;
+  final bool isAdmin;
 
   HomeScreenListTile({
     Key? key,
     required this.forestData,
     required this.changeIndex,
-    required this.deleteData
+    required this.deleteData,
+    required this.isAdmin
   }) : super(key: key);
 
   @override
@@ -36,17 +39,28 @@ class _HomeScreenListTileState extends State<HomeScreenListTile> {
             .push(
             MaterialPageRoute(
                 builder: (context) =>
-                    ForestDetail(
-                        forestData: widget.forestData,
-                        currentIndex: 0,
-                        changeIndex: widget.changeIndex,
-                        changeData: (Conflict newData) {
-                          setState(() {
-                            widget.forestData = newData;
-                          });
-                        },
-                        deleteData: widget.deleteData,
+                    widget.isAdmin ? adminForestDetail.ForestDetail(
+                      forestData: widget.forestData,
+                      currentIndex: 0,
+                      changeIndex: widget.changeIndex,
+                      changeData: (Conflict newData) {
+                        setState(() {
+                          widget.forestData = newData;
+                        });
+                      },
+                      deleteData: widget.deleteData,
+                    ) : userForestDetail.ForestDetail(
+                      forestData: widget.forestData,
+                      currentIndex: 0,
+                      changeIndex: widget.changeIndex,
+                      changeData: (Conflict newData) {
+                        setState(() {
+                          widget.forestData = newData;
+                        });
+                      },
+                      deleteData: widget.deleteData,
                     )
+
             )
         );
       },

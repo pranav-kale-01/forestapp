@@ -1,9 +1,9 @@
 // ignore_for_file: library_private_types_in_public_api, use_build_context_synchronously
+import 'dart:convert';
 import 'dart:io';
-
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:forestapp/common/models/geopoint.dart' as G;
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
+
 import 'package:forestapp/common/models/conflict_model_hive.dart';
 import 'package:forestapp/common/models/user.dart';
 import 'package:forestapp/contstant/constant.dart';
@@ -12,12 +12,13 @@ import 'package:forestapp/utils/dynamic_list_service.dart';
 import 'package:forestapp/utils/hive_service.dart';
 import 'package:forestapp/utils/user_service.dart';
 import 'package:forestapp/utils/utils.dart';
+import 'package:forestapp/common/models/geopoint.dart' as G;
+
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import '../../common/models/timestamp.dart';
 import '../../common/themeHelper.dart';
 
 class AddForestData extends StatefulWidget {
@@ -63,6 +64,7 @@ class _AddForestDataState extends State<AddForestData> {
   Map<dynamic, dynamic> dynamicLists = {};
 
   HiveService hiveService = HiveService();
+  var test = {"id" : "12", "name": "humans killed"};
 
   @override
   void initState() {
@@ -108,7 +110,22 @@ class _AddForestDataState extends State<AddForestData> {
 
     try {
       // getting user
-      // final User? user = await UserService.getUser( _userEmail );
+      String name, contactNumber, imageUrl;
+
+      if( await hasConnection ) {
+        final User? user = await UserService.getUser( context, _userEmail );
+        name = user!.name;
+        contactNumber = user.contactNumber;
+        imageUrl = user.imageUrl;
+      }
+      else {
+        // loading from sharedPreferences
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        name = (await prefs.getString(SHARED_USER_NAME))!;
+        contactNumber = (await prefs.getString(SHARED_USER_CONTACT))!;
+        imageUrl = (await prefs.getString(SHARED_USER_IMAGEURL))!;
+
+      }
 
       // Get the current location
       final position = await Geolocator.getCurrentPosition();
@@ -128,77 +145,122 @@ class _AddForestDataState extends State<AddForestData> {
         person_gender: _personGenderController.text,
         sp_causing_death: _spCausingDeathController.text,
         notes: _notesController.text,
-        imageUrl: "",
+        imageUrl: _image!.path.toString(),
         location: location,
-        userName: "user.name",
+        userName: name,
         userEmail: _userEmail,
-        userContact: "user.contactNumber",
-        userImage: "user.imageUrl",
+        userContact: contactNumber,
+        userImage: imageUrl,
       );
 
-
+      bool success = false;
       // getting the image url
       if (await hasConnection) {
         // updating the data on firebase
         // Create a new document in the 'forestdata' collection
-        await ConflictService.addConflict( conflictData );
+        success = await ConflictService.addConflict( context, conflictData, _image!.path.toString() );
       } else {
-        // if the device does not have internet connection adding caching the
-        // object to upload later
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Loading the page in Offline mode'),
+          ),
+        );
 
         // creating a folder for storing image and storing the image there
-        var baseDir = await getApplicationDocumentsDirectory();
-
         final String fileName = _image!.path.split("/").last;
-        conflictData.imageUrl = baseDir.path + "/" + fileName;
 
-        File image = File(conflictData.imageUrl);
-        image.writeAsBytesSync(_image!.readAsBytesSync());
+        if (Platform.isAndroid) {
+          var androidInfo = await DeviceInfoPlugin().androidInfo;
+          var release = androidInfo.version.release;
 
-        // Conflict conflict = Conflict(
-        //   id: "",
-        //   range: selectedRange!['id'],
-        //   round: selectedRound!['id'],
-        //   bt: selectedBt!['id'],
-        //   village_name: _villageNameController.text,
-        //   cNoName: _cNoController.text,
-        //   conflict: selectedConflict!['id'],
-        //   person_name: _personNameController.text,
-        //   pincodeName: _pincodeNameController.text,
-        //   person_age: _personAgeController.text,
-        //   person_gender: _personGenderController.text,
-        //   sp_causing_death: _spCausingDeathController.text,
-        //   notes: _notesController.text,
-        //   imageUrl: "",
-        //   location: location,
-        //   userName: _userEmail,
-        //   userEmail: "user.email",
-        //   userContact: "user.contactNumber",
-        //   userImage: "user.imageUrl",
-        // );
+          if( int.parse(release) < 10 ) {
+            var storagePermission = await Permission.storage.request();
+
+            if( ! await storagePermission.isGranted ) {
+              throw Exception('Storage permission not granted');
+            }
+          }
+          else {
+            var storagePermission = await Permission.manageExternalStorage;
+
+            if( await storagePermission.isGranted ) {
+              storagePermission.request();
+
+              if( ! await storagePermission.isGranted ) {
+                throw Exception('Storage permission not granted');
+              }
+            }
+          }
+        }
+
+        Directory? directory = await getExternalStorageDirectory();
+        String newPath = "";
+
+        List<String> paths = directory!.path.split("/");
+        for (int x = 1; x < paths.length; x++) {
+          String folder = paths[x];
+          if (folder != "Android") {
+            newPath += "/" + folder;
+          } else {
+            break;
+          }
+        }
+        newPath = newPath + "/ConflictApp/data/.cachedImages";
+        directory = Directory(newPath);
+
+        if (!await directory.exists()) {
+          await directory.create(recursive: true);
+        }
+
+        var file = File('${directory.path}/$fileName');
+        await file.writeAsBytes(_image!.readAsBytesSync());
+
+        // setting the image url as filepath
+        conflictData.imageUrl = directory.path + "/" + fileName;
 
         hiveService.addBoxes<Conflict>([conflictData], "stored_conflicts");
+        success = true;
       }
 
       // Hide the loading spinner
       Navigator.pop(context);
 
-      // Show an alert dialog indicating success
-      showDialog(
-        context: context,
-        builder: (BuildContext context) => AlertDialog(
-          title: const Text('Success'),
-          content: const Text('Data added successfully.'),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('OK'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        ),
-      );
+      if( success ) {
+        // Show an alert dialog indicating success
+        showDialog(
+          context: context,
+          builder: (BuildContext context) => AlertDialog(
+            title: const Text('Success'),
+            content: const Text('Data added successfully.'),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('OK'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          ),
+        );
+      }
+      else {
+        // Show an alert dialog indicating success
+        showDialog(
+          context: context,
+          builder: (BuildContext context) => AlertDialog(
+            title: const Text('Failure'),
+            content: const Text('Failed To Uplaod Conflict'),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('OK'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          ),
+        );
+      }
     } catch (error, stacktrace) {
       debugPrint(error.toString());
       debugPrint(stacktrace.toString());
@@ -225,44 +287,112 @@ class _AddForestDataState extends State<AddForestData> {
     }
   }
 
-  Future<String> getUniqueTitle() async {
-    int counter = 0;
-    String uniqueTitle = "unknown";
-    bool titleExists = true;
-
-    while (titleExists) {
-      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-          .collection('forestdata')
-          .where('title', isEqualTo: uniqueTitle)
-          .get();
-
-      if (querySnapshot.docs.isEmpty) {
-        titleExists = false;
-      } else {
-        counter++;
-        uniqueTitle = 'unknown($counter)';
-      }
-    }
-
-    return uniqueTitle;
-  }
-
   Future<void> fetchDynamicLists() async {
     if( await hasConnection ) {
-      dynamicLists = await DynamicListService.fetchDynamicLists();
+      dynamicLists = await DynamicListService.fetchDynamicLists(context);
+
       // storing into hiveCache
       hiveService.setBox( [dynamicLists], "dynamic_list");
     }
     else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Loading the page in Offline mode'),
+        ),
+      );
+
       // loading from hive cache
       bool exists = await hiveService.isExists(boxName: 'dynamic_list');
+
       if( exists ) {
-        final userData = (await hiveService.getBoxes<Map<dynamic, dynamic>>('dynamic_list'));
-        dynamicLists = userData[0] ;
+        final userData = await hiveService.getBoxes<Map<dynamic, dynamic>>('dynamic_list');
+        Map<String, dynamic> items = Map<String, dynamic>.from( userData[0] );
+
+        for( var key in items.keys ) {
+          items[key] = items[key].map( (value) => Map<String,dynamic>.from( value) ).toList();
+        }
+
+        dynamicLists.addAll(items);
       }
     }
-    // setting the dynamic list for conflict with value none
-    // dynamicLists['conflict']?.add('None');
+
+    dynamicLists = jsonDecode( jsonEncode(dynamicLists) );
+
+    if( dynamicLists['range'].isEmpty ) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: const Text('Error'),
+          content: Text('No Ranges Found, please Add a range first'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    if( dynamicLists['round'].isEmpty ) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: const Text('Error'),
+          content: Text('No Rounds Found, please Add a round first'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    if( dynamicLists['beat'].isEmpty ) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: const Text('Error'),
+          content: Text('No Beats Found, please Add a Beat first'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    if( dynamicLists['conflict'].isEmpty ) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: const Text('Error'),
+          content: Text('No Conflicts Found, please Add a conflict first'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        ),
+      );
+      return;
+    }
 
     setState(() {
       selectedRange = dynamicLists['range']!.first;
@@ -336,17 +466,22 @@ class _AddForestDataState extends State<AddForestData> {
                       height: 10,
                     ),
                     DropdownButtonFormField(
-                      decoration: ThemeHelper().textInputDecoration('Range', 'Enter Range'),
                       value: selectedRange,
-                      items: dynamicLists['range'].map<DropdownMenuItem<Map<String, dynamic>>>( (range) => DropdownMenuItem<Map<String, dynamic>>(
+                      decoration: ThemeHelper().textInputDecoration('Range', 'Enter Range'),
+                      items: dynamicLists['range'].map<DropdownMenuItem<Map<String,dynamic>>>( (range) => DropdownMenuItem<Map<String,dynamic>>(
                         value: range,
                         child: Text( range['name'] ),
                       ) ).toList(),
-                      onChanged: (Map<String, dynamic>? value) {
+                      onChanged: (var value) {
                         setState(() {
-                          selectedRange = value;
-                          selectedRound = dynamicLists['round'].where( (round) => round['range_id'] == selectedRange!['id'] ).toList().first;
-                          selectedBt = dynamicLists['beat'].where( (beat) => beat['round_id'] == selectedRound!['id'] ).toList().first;
+                          selectedRange = value as Map<String, dynamic>;
+                          List<dynamic> rounds = dynamicLists['round'].where( (round) => round['range_id'] == selectedRange!['id'] ).toList();
+                          selectedRound = rounds.isEmpty ? {} : rounds.first;
+
+                          if( rounds.isNotEmpty ) {
+                            List<dynamic> beats = dynamicLists['beat'].where( (beat) => beat['round_id'] == selectedRound!['id'] ).toList();
+                            selectedBt = beats.isEmpty ? {} : beats.first;
+                          }
                         });
                       },
                     ),
@@ -368,15 +503,14 @@ class _AddForestDataState extends State<AddForestData> {
                       decoration: ThemeHelper()
                           .textInputDecoration('Round', 'Enter Round'),
                       value: selectedRound,
-                      // items: dynamicLists['round']!.where( (round) => round['range_id'] == selectedRange!['id'] ).map<DropdownMenuItem<Map<String, dynamic>>>(
-                      items: dynamicLists['round']!.map<DropdownMenuItem<Map<String, dynamic>>>(
-                            (round) => DropdownMenuItem<Map<String, dynamic>>(
+                      items: dynamicLists['round']!.where( (round) => round['range_id'] == selectedRange!['id'] ).map<DropdownMenuItem<Map<String,dynamic>>>(
+                            (round) => DropdownMenuItem<Map<String,dynamic>>(
                               child: Text(round['name']),
                               value: round,
                             ),
                           )
                           .toList(),
-                      onChanged: (Map<String, dynamic>? value) {
+                      onChanged: (Map<String,dynamic>? value) {
                         setState(() {
                           selectedRound = value;
                           selectedBt = dynamicLists['beat'].where( (beat) => beat['round_id'] == selectedRound!['id'] ).toList().first;
@@ -398,11 +532,9 @@ class _AddForestDataState extends State<AddForestData> {
                       height: 10,
                     ),
                     DropdownButtonFormField(
-                      decoration: ThemeHelper()
-                          .textInputDecoration('Beats', 'Enter Beats'),
+                      decoration: ThemeHelper().textInputDecoration('Beats', 'Enter Beats'),
                       value: selectedBt,
-                      // items: dynamicLists['beat']!.where( (beat) => beat['round_id'] == selectedRound!['id'] ).map<DropdownMenuItem<Map<String, dynamic>>>( (beat) => DropdownMenuItem<Map<String, dynamic>>(
-                      items: dynamicLists['beat']!.map<DropdownMenuItem<Map<String, dynamic>>>( (beat) => DropdownMenuItem<Map<String, dynamic>>(
+                      items: dynamicLists['beat']!.where( (beat) => beat['round_id'] == selectedRound!['id'] ).map<DropdownMenuItem<Map<String, dynamic>>>( (beat) => DropdownMenuItem<Map<String, dynamic>>(
                         child: Text(beat['name'] ),
                               value: beat,
                           ) ).toList(),
@@ -493,22 +625,15 @@ class _AddForestDataState extends State<AddForestData> {
                               borderRadius: BorderRadius.circular(20),
                             ),
                           ),
-                      value: selectedConflict,
-                      items: dynamicLists['conflict']!.map<DropdownMenuItem<Map<String, dynamic>>>(
+                      items: dynamicLists['conflict'].map<DropdownMenuItem<Map<String, dynamic>>>(
                             (conflict) => DropdownMenuItem<Map<String, dynamic>>(
-                              child: Text(conflict['name']),
+                              child: Text(conflict['name'].toString()),
                               value: conflict,
                             ),
                           ).toList(),
-                      onChanged: (Map<String, dynamic>? value) {
-                        // if( value != "None" ) {
-                        //   setState(() {
-                        //     conflictError = false;
-                        //     conflictFieldColor = Colors.black.withOpacity(0.1);
-                        //   });
-                        // }
-
-                        selectedConflict = value;
+                      onChanged: (var value) {
+                        print( value );
+                        selectedConflict = value as Map<String, dynamic>;
                       },
                     ),
                     if (conflictError)

@@ -1,9 +1,6 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:forestapp/common/models/conflict_model_hive.dart';
-import 'package:forestapp/common/models/timestamp.dart';
-import 'package:forestapp/common/models/geopoint.dart' as G;
 import 'package:forestapp/utils/conflict_service.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -29,6 +26,7 @@ class _MapScreenState extends State<MapScreen> {
   late MapZoomPanBehavior _zoomPanBehavior;
   late List<MapLatLng> _markers;
   static GlobalKey previewContainer = new GlobalKey();
+  late Future<void> _future;
   int fileCount = 0 ;
 
   bool showInfoDialog = false;
@@ -137,7 +135,7 @@ class _MapScreenState extends State<MapScreen> {
   void initState() {
     super.initState();
 
-    fetchUserProfileData();
+    _future = fetchUserProfileData();
     _zoomPanBehavior = MapZoomPanBehavior(
       enableDoubleTapZooming: true, // enable or disable double tap zooming
       enablePinching: true, // enable or disable pinching to zoom
@@ -145,16 +143,9 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  Future<void> fetchUserEmail() async {
-    // final prefs = await SharedPreferences.getInstance();
-    // final userEmail = prefs.getString('userEmail');
-    setState(() {
-      // _userEmail = userEmail ?? '';
-    });
-  }
 
   Future<void> fetchUserProfileData() async {
-    final profileDataList = await ConflictService.getData();
+    final profileDataList = await ConflictService.getData(context);
     setState(() {
       _profileDataList = profileDataList;
 
@@ -162,8 +153,6 @@ class _MapScreenState extends State<MapScreen> {
           .map((profileData) => MapLatLng(
               profileData.location.latitude,
               profileData.location.longitude,
-
-              // DateFormat('MMM d, yyyy h:mm a').format(widget.forestData.datetime!.toDate())
           )
         ).toList();
     });
@@ -172,59 +161,6 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context).size;
-
-    if (_profileDataList.isEmpty) {
-      return Scaffold(
-        appBar: AppBar(
-          elevation: 0,
-          flexibleSpace: Container(
-            height: 120,
-            decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.green, Colors.greenAccent],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(15),
-                  bottomRight: Radius.circular(15),
-                )
-            ),
-          ),
-          title: const Text(
-            'Map',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          actions: [
-            IconButton(
-                onPressed: () {
-                  takeScreenShot();
-                },
-                icon: Icon(
-                    Icons.download_sharp
-                )
-            )
-          ],
-        ),
-        body: Center(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                "No Data Found.....",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
-              ),
-              SizedBox(
-                width: 5,
-              ),
-              CircularProgressIndicator()
-            ],
-          ),
-        ),
-      );
-    }
 
     return Scaffold(
       appBar: AppBar(
@@ -260,105 +196,129 @@ class _MapScreenState extends State<MapScreen> {
           )
         ],
       ),
-      body: RepaintBoundary(
-        key: previewContainer,
-        child: Stack(
-          alignment: Alignment.bottomCenter,
-          children: [
-            GestureDetector(
-              onTap: () {
-                setState(() {
-                  showInfoDialog = false;
-                });
-              },
-              child: SfMaps(
-                layers: [
-                   MapTileLayer(
-                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    initialZoomLevel: 13,
-                    initialFocalLatLng: MapLatLng(21.5549701, 79.1735154),
-                    zoomPanBehavior: _zoomPanBehavior,
-                    markerBuilder: (BuildContext context, int index) {
-                      return MapMarker(
-                        latitude: _markers[index].latitude,
-                        longitude: _markers[index].longitude,
-                        child: GestureDetector(
-                          child: Icon(
-                            Icons.location_on,
-                            size: 50,
-                            color: Colors.red,
-                          ),
-                          onTap: () {
-                            setState(() {
-                              _ind = index;
-                              showInfoDialog = true;
-                            });
-                          },
-                        ),
-                      );
-                    },
-                    initialMarkersCount: _markers.length,
+      body: FutureBuilder(
+        future: _future,
+        builder: (context, snapshot) {
+          if( snapshot.connectionState == ConnectionState.waiting ) {
+            return Center(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "No Data Found.....",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
                   ),
+                  SizedBox(
+                    width: 5,
+                  ),
+                  CircularProgressIndicator()
                 ],
               ),
-            ),
-            if( showInfoDialog )
-              Container(
-                  width: mediaQuery.width * 0.96,
-                  margin: const EdgeInsets.symmetric( vertical: 8.0, ),
-                  decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular( 15.0, ),
-                      color: Colors.white,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.shade500,
-                          offset: const Offset( 1, 4),
-                          blurRadius: 2,
-                        )
-                      ]
-                  ),
-                  child: Padding(
-                    padding: EdgeInsets.only(top: 12.0, left: 12.0, right: 12.0),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _profileDataList[_ind].village_name,
-                          style: const TextStyle(
-                              fontSize: 26,
-                              fontWeight: FontWeight.w600
-                          ),
-                        ),
-                        const SizedBox(
-                          height: 10,
-                        ),
-                        Text(
-                          "Last Updated - " + DateFormat('MMM d, yyyy h:mm a').format(_profileDataList[_ind].datetime!.toDate()),
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                        const SizedBox(
-                          height: 10,
-                        ),
-                        Text(
-                          "Location - " + _profileDataList[_ind].location.latitude.toString() + "N, " + _profileDataList[_ind].location.latitude.toString() + "E",
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                        const SizedBox(
-                          height: 10,
+            );
+          }
+          else {
+            return RepaintBoundary(
+              key: previewContainer,
+              child: Stack(
+                alignment: Alignment.bottomCenter,
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        showInfoDialog = false;
+                      });
+                    },
+                    child: SfMaps(
+                      layers: [
+                        MapTileLayer(
+                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          initialZoomLevel: 13,
+                          initialFocalLatLng: MapLatLng(21.5549701, 79.1735154),
+                          zoomPanBehavior: _zoomPanBehavior,
+                          markerBuilder: (BuildContext context, int index) {
+                            return MapMarker(
+                              latitude: _markers[index].latitude,
+                              longitude: _markers[index].longitude,
+                              child: GestureDetector(
+                                child: Icon(
+                                  Icons.location_on,
+                                  size: 50,
+                                  color: Colors.red,
+                                ),
+                                onTap: () {
+                                  setState(() {
+                                    _ind = index;
+                                    showInfoDialog = true;
+                                  });
+                                },
+                              ),
+                            );
+                          },
+                          initialMarkersCount: _markers.length,
                         ),
                       ],
                     ),
-                  )
-              )
-          ],
-        ),
+                  ),
+                  if( showInfoDialog )
+                    Container(
+                        width: mediaQuery.width * 0.96,
+                        margin: const EdgeInsets.symmetric( vertical: 8.0, ),
+                        decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular( 15.0, ),
+                            color: Colors.white,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.shade500,
+                                offset: const Offset( 1, 4),
+                                blurRadius: 2,
+                              )
+                            ]
+                        ),
+                        child: Padding(
+                          padding: EdgeInsets.only(top: 12.0, left: 12.0, right: 12.0),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _profileDataList[_ind].village_name,
+                                style: const TextStyle(
+                                    fontSize: 26,
+                                    fontWeight: FontWeight.w600
+                                ),
+                              ),
+                              const SizedBox(
+                                height: 10,
+                              ),
+                              Text(
+                                "Last Updated - " + DateFormat('MMM d, yyyy h:mm a').format(_profileDataList[_ind].datetime!.toDate()),
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                              const SizedBox(
+                                height: 10,
+                              ),
+                              Text(
+                                "Location - " + _profileDataList[_ind].location.latitude.toString() + "N, " + _profileDataList[_ind].location.latitude.toString() + "E",
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                              const SizedBox(
+                                height: 10,
+                              ),
+                            ],
+                          ),
+                        )
+                    )
+                ],
+              ),
+            );
+          }
+        },
       ),
     );
   }

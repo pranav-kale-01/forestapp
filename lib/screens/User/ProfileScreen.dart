@@ -18,11 +18,12 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   late String _userEmail;
   User? _profileData;
+  late Future<void> _future;
 
   @override
   void initState() {
     super.initState();
-    fetchUserEmail();
+    _future = fetchUserEmail();
   }
 
   Future<void> fetchUserEmail() async {
@@ -32,7 +33,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _userEmail = userEmail ?? '';
     });
 
-    _profileData = await UserService.getUser( _userEmail );
+    if( await hasConnection ) {
+      _profileData = await UserService.getUser( context, _userEmail );
+    }
 
     setState(() {});
   }
@@ -40,10 +43,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_profileData == null) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
@@ -88,6 +87,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             Util.hasUserLocation = false;
                             SharedPreferences prefs = await SharedPreferences.getInstance();
                             prefs.remove(SHARED_USER_EMAIL);
+                            prefs.remove(SHARED_USER_LONGITUDE);
+                            prefs.remove(SHARED_USER_LATITUDE);
+                            prefs.remove(SHARED_USER_RADIUS);
+                            prefs.remove(SHARED_USER_NAME);
+                            prefs.remove(SHARED_USER_CONTACT);
+                            prefs.remove(SHARED_USER_IMAGEURL);
                             prefs.setInt(SHARED_USER_TYPE, noOne );
                             Navigator.pushAndRemoveUntil(
                               context,
@@ -111,124 +116,138 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ],
       ),
-      body: Center(
-        child: _profileData == null ? CircularProgressIndicator( ) : Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              const SizedBox(
-                height: 100,
-              ),
-              Container(
-                width: 150.0,
-                height: 150.0,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  image: DecorationImage(
-                    image: NetworkImage(_profileData!.imageUrl),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16.0),
-              Text(
-                _profileData!.name,
-                style: const TextStyle(
-                  fontSize: 24.0,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8.0),
-              Text(
-                _profileData!.email,
-                style: const TextStyle(
-                  fontSize: 16.0,
-                ),
-              ),
-              const SizedBox(height: 8.0),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text("Contact Number: "),
-                  Text(
-                    _profileData!.contactNumber,
-                    style: const TextStyle(
-                      fontSize: 16.0,
+      body: FutureBuilder(
+        future: _future,
+        builder: (context, snapshot) {
+          if( snapshot.connectionState == ConnectionState.waiting ) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          else {
+            return Center(
+              child: _profileData == null ? Center(
+                child: Text("Unable to Load profile Data"),
+              ): Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: <Widget>[
+                    const SizedBox(
+                      height: 100,
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16.0),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text("Aadhar Number: "),
-                  Text(
-                    _profileData!.aadharNumber,
-                    style: const TextStyle(
-                      fontSize: 16.0,
+                    Container(
+                      width: 150.0,
+                      height: 150.0,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        image: DecorationImage(
+                          image: NetworkImage(
+                            '${baseUrl}uploads/guard/profile/${_profileData!.imageUrl}',
+                          ),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16.0),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text("Forest ID: "),
-                  Text(
-                    _profileData!.forestId.toString(),
-                    style: const TextStyle(
-                      fontSize: 16.0,
+                    const SizedBox(height: 16.0),
+                    Text(
+                      _profileData!.name,
+                      style: const TextStyle(
+                        fontSize: 24.0,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16.0),
+                    const SizedBox(height: 8.0),
+                    Text(
+                      _profileData!.email,
+                      style: const TextStyle(
+                        fontSize: 16.0,
+                      ),
+                    ),
+                    const SizedBox(height: 8.0),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text("Contact Number: "),
+                        Text(
+                          _profileData!.contactNumber,
+                          style: const TextStyle(
+                            fontSize: 16.0,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16.0),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text("Aadhar Number: "),
+                        Text(
+                          _profileData!.aadharNumber,
+                          style: const TextStyle(
+                            fontSize: 16.0,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16.0),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text("Forest ID: "),
+                        Text(
+                          _profileData!.forestId.toString(),
+                          style: const TextStyle(
+                            fontSize: 16.0,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16.0),
 
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text("Longitude: "),
-                  Text(
-                    _profileData!.longitude.toString(),
-                    style: const TextStyle(
-                      fontSize: 16.0,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text("Longitude: "),
+                        Text(
+                          _profileData!.longitude.toString(),
+                          style: const TextStyle(
+                            fontSize: 16.0,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16.0),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text("Latitude: "),
-                  Text(
-                    _profileData!.latitude.toString(),
-                    style: const TextStyle(
-                      fontSize: 16.0,
+                    const SizedBox(height: 16.0),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text("Latitude: "),
+                        Text(
+                          _profileData!.latitude.toString(),
+                          style: const TextStyle(
+                            fontSize: 16.0,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16.0),
+                    const SizedBox(height: 16.0),
 
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text("Radius Area: "),
-                  Text(
-                    _profileData!.radius.toString(),
-                    style: const TextStyle(
-                      fontSize: 16.0,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text("Radius Area: "),
+                        Text(
+                          _profileData!.radius.toString(),
+                          style: const TextStyle(
+                            fontSize: 16.0,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16.0),
+                    const SizedBox(height: 16.0),
 
-              const Spacer(),
-            ]),
+                    const Spacer(),
+                  ]),
+            );
+          }
+        },
       ),
     );
   }

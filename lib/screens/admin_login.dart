@@ -60,22 +60,25 @@ class _AdminLoginState extends State<AdminLogin> {
                                       }
                                       return null;
                                     },
+                                    keyboardType: TextInputType.number,
                                   ),
                                 ),
-                                if( otpSent )
-                                  Container(
-                                      alignment: Alignment.topLeft,
-                                      padding: const EdgeInsets.symmetric( vertical: 6.0, horizontal: 6.0, ),
-                                      child: Text("OTP sent..!")
-                                  ),
 
-                                if( !otpSent )
+                                // if( otpSent )
+                                //   Container(
+                                //       alignment: Alignment.topLeft,
+                                //       padding: const EdgeInsets.symmetric( vertical: 6.0, horizontal: 6.0, ),
+                                //       child: Text("OTP sent..!")
+                                //   ),
+
+                                // if( !otpSent )
                                   const SizedBox(height: 10.0),
 
                                 Container(
                                   decoration:
                                   ThemeHelper().inputBoxDecorationShaddow(),
                                   child: TextFormField(
+                                    enabled: otpSent,
                                     controller: _OTPController,
                                     obscureText: true,
                                     decoration: ThemeHelper()
@@ -91,7 +94,48 @@ class _AdminLoginState extends State<AdminLogin> {
                                   ),
                                 ),
                                 const SizedBox(
-                                  height: 20,
+                                  height: 10,
+                                ),
+                                GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        // sending Otp
+                                        otpSent = true;
+                                        UserService.sendOTP( context, _phoneController.text );
+                                      });
+
+                                      // show success message
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            'OTP Sent to phone number +91 ${_phoneController.text}',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                          duration: const Duration(seconds: 4),
+                                          backgroundColor: Colors.green,
+                                          behavior: SnackBarBehavior.floating,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    child: Container(
+                                      alignment: Alignment.topLeft,
+                                      padding: const EdgeInsets.only( top: 16.0, ),
+                                      child: Text(
+                                        "Resend OTP",
+                                        style: TextStyle(
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                      ),
+                                    )
+                                ),
+                                const SizedBox(
+                                  height: 30,
                                 ),
                                 Container(
                                   padding: const EdgeInsets.fromLTRB(
@@ -120,7 +164,27 @@ class _AdminLoginState extends State<AdminLogin> {
                                       else {
                                         setState(() {
                                           // sending Otp
-                                          UserService.sendOTP( _phoneController.text ).then((value) => otpSent = value);
+                                          otpSent = true;
+                                          UserService.sendOTP( context, _phoneController.text );
+
+                                          // show success message
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                'OTP Sent to phone number +91 ${_phoneController.text}',
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 16,
+                                                ),
+                                              ),
+                                              duration: const Duration(seconds: 4),
+                                              backgroundColor: Colors.green,
+                                              behavior: SnackBarBehavior.floating,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(10),
+                                              ),
+                                            ),
+                                          );
                                         });
                                       }
                                     },
@@ -129,7 +193,7 @@ class _AdminLoginState extends State<AdminLogin> {
                                 GestureDetector(
                                     onTap: () {
                                       // Navigating to Sign in as admin
-                                      Navigator.of(context).push(
+                                      Navigator.of(context).pushReplacement(
                                           MaterialPageRoute(builder: (context) => LoginScreen() )
                                       );
                                     },

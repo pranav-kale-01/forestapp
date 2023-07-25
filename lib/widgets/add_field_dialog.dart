@@ -3,18 +3,18 @@ import 'package:forestapp/common/models/DynamicListsModel.dart';
 import 'package:forestapp/common/themeHelper.dart';
 import 'package:forestapp/utils/dynamic_list_service.dart';
 
-class AddBeatsDialog extends StatefulWidget {
+class AddFieldDialog extends StatefulWidget {
   final DynamicListsModel listItem;
   List<DynamicListsModel> attributeList;
   List<DropdownMenuItem<Map<String, dynamic>>> rounds;
 
-  AddBeatsDialog({Key? key, required this.listItem, required this.attributeList, required this.rounds}) : super(key: key);
+  AddFieldDialog({Key? key, required this.listItem, required this.attributeList, required this.rounds}) : super(key: key);
 
   @override
-  _AddBeatsDialogState createState() => _AddBeatsDialogState();
+  _AddFieldDialogState createState() => _AddFieldDialogState();
 }
 
-class _AddBeatsDialogState extends State<AddBeatsDialog> {
+class _AddFieldDialogState extends State<AddFieldDialog> {
   String selectedRangeId = "";
   String selectedRoundId = "";
   String newField = "";
@@ -147,32 +147,53 @@ class _AddBeatsDialogState extends State<AddBeatsDialog> {
             // returning if the field is empty
 
             if (newField.isEmpty) {
-              Navigator.of(context).pop();
+              Navigator.of(context).pop( widget.listItem  );
               return;
             }
 
+            // removing trailing and leading spaces
+            newField = newField.trim();
+
             if( widget.listItem.id == 'range' ) {
-              DynamicListService.addField(widget.listItem.id, newField);
+              int id = await DynamicListService.addField(context, widget.listItem.id, newField);
               widget.listItem.values.add({
-                "id": (int.parse(widget.listItem.values.last['id'] ) + 1 ).toString(),
+                "id": id,
                 "name": newField
               });
             }
             else if (widget.listItem.id == 'round') {
-              DynamicListService.addField(
+              int id = await DynamicListService.addField(
+                  context,
                   widget.listItem.id,
                   newField,
                   range_id: selectedRangeId
               );
-              widget.listItem.values.add( {"id": (int.parse(widget.listItem.values.last['id'] ) + 1 ).toString(), "name" : newField, "range_id": selectedRangeId } );
+              widget.listItem.values.add({
+                "id": id,
+                "name" : newField,
+                "range_id": selectedRangeId
+              });
             } else if (widget.listItem.id == 'beat') {
-              DynamicListService.addField(widget.listItem.id, newField,
-                  range_id: selectedRangeId, round_id: selectedRoundId);
+              int id =  await DynamicListService.addField(context, widget.listItem.id, newField, range_id: selectedRangeId, round_id: selectedRoundId);
 
-              widget.listItem.values.add( {"id": (int.parse(widget.listItem.values.last['id'] ) + 1 ).toString(), "name" : newField, "range_id": selectedRangeId, "round_id": selectedRoundId } );
+              widget.listItem.values.add( {
+                "id": id,
+                "name" : newField,
+                "range_id": selectedRangeId,
+                "round_id": selectedRoundId
+              } );
+            }
+            else if (widget.listItem.id == 'conflict' ) {
+              int id =  await DynamicListService.addField(context, widget.listItem.id, newField );
+              widget.listItem.values.add( {
+                "id": id,
+                "name" : newField,
+                "range_id": selectedRangeId,
+                "round_id": selectedRoundId
+              } );
             }
 
-            Navigator.of(context).pop();
+            Navigator.of(context).pop( widget.listItem );
 
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(

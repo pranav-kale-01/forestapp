@@ -12,13 +12,10 @@ import '../loginScreen.dart';
 
 class HomeScreen extends StatefulWidget {
   final Function(int) changeIndex;
-  final Function( String) setConflict;
+  final Function(Map<String,dynamic>) setConflict;
 
-  const HomeScreen({
-  super.key,
-  required this.setConflict,
-  required this.changeIndex
-  });
+  const HomeScreen(
+      {super.key, required this.setConflict, required this.changeIndex});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -27,42 +24,44 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   late List<Conflict> _profileDataList = [];
   HiveService hiveService = HiveService();
+  late Future<void> _future;
 
   int _TotalConflictsCount = 0;
 
   Map<String, int> conflictsCounter = {
-    'cattle injured' : 0,
-    'cattle killed' : 0,
-    'humans injured' : 0,
-    'humans killed' : 0,
-    'crop damaged' : 0,
+    'cattle injured': 0,
+    'cattle killed': 0,
+    'humans injured': 0,
+    'humans killed': 0,
+    'crop damaged': 0,
   };
 
   @override
   void initState() {
     super.initState();
-    init();
+    _future = init();
   }
 
   Future<void> init() async {
-    await fetchUserProfileData();
+    await fetchConflicts();
   }
 
-  Future<void> fetchUserProfileData() async {
+  Future<void> fetchConflicts() async {
     // getting the count of conflicts
-    List<dynamic> conflictCounts = await ConflictService.getCounts();
+    List<dynamic> conflictCounts = await ConflictService.getCounts(context);
 
-    for( Map<String, dynamic> conflict in conflictCounts.reversed ) {
-      _TotalConflictsCount += int.parse( conflict['count'] );
-      conflictsCounter[conflict['conflict_name'].toLowerCase()] = int.parse( conflict['count'] );
+    for (Map<String, dynamic> conflict in conflictCounts.reversed) {
+      _TotalConflictsCount += int.parse(conflict['count']);
+      conflictsCounter[conflict['conflict_name'].toLowerCase()] =
+          int.parse(conflict['count']);
     }
 
     // getting the recent entries
-    List<Conflict> conflictList = await ConflictService.getRecentEntries();
+    List<Conflict> conflictList = await ConflictService.getRecentEntries(context);
 
     // if the data is loaded from cache showing a bottom popup to user alerting
     // that the app is running in offline mode
-    if( !(await hasConnection) ) {
+    if (!(await hasConnection)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Loading the page in Offline mode'),
@@ -93,8 +92,7 @@ class _HomeScreenState extends State<HomeScreen> {
               borderRadius: BorderRadius.only(
                 bottomLeft: Radius.circular(15),
                 bottomRight: Radius.circular(15),
-              )
-          ),
+              )),
         ),
         title: const Text(
           'Pench MH',
@@ -120,7 +118,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         TextButton(
                           onPressed: () async {
-                            SharedPreferences prefs =  await SharedPreferences.getInstance();
+                            SharedPreferences prefs =
+                                await SharedPreferences.getInstance();
                             prefs.remove(SHARED_USER_EMAIL);
                             prefs.remove(SHARED_USER_TYPE);
                             Navigator.pushAndRemoveUntil(
@@ -145,368 +144,390 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: _profileDataList.isEmpty ? Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(),
-            const SizedBox(
-              height: 15,
-            ),
-            Text(
-              "Loading Data.....",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
-            ),
-          ],
-        ),
-      ) : Stack(
-        children: [
-          Container(
-            padding: const EdgeInsets.only(top: 15),
-            width: mediaQuery.size.width,
-            height: mediaQuery.size.height * 0.45,
-            color: Colors.white,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // button to edit dynamic lists
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors
-                            .greenAccent.shade400, // Background color
-                        // Text Color (Foreground color)
-                      ),
-                      onPressed: () async {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(builder: (context) => EditListsScreen(
-                            changeIndex: widget.changeIndex,
-                          )
-                          )
-                        );
-                      },
-                      child: Text("Edit Attribute Lists")
+      body: FutureBuilder(
+        future: _future,
+        builder: (context, snapshot) {
+          if( snapshot.connectionState == ConnectionState.waiting ) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  const SizedBox(
+                    height: 15,
                   ),
-                ),
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          widget.setConflict( '' );
-                          widget.changeIndex( 2 );
-                        },
-                        child: Container(
-                            margin: const EdgeInsets.symmetric( horizontal: 5, vertical: 5),
-                            padding: const EdgeInsets.all(15),
-                            height: mediaQuery.size.height * 0.15,
-                            decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(15),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
-                                    blurRadius: 20,
-                                    offset: const Offset(0, 5),
-                                  )
-                                ]
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                Text(
-                                  "Total conflicts",
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                  ),
-                                ),
-                                Text(
-                                  _TotalConflictsCount.toString(),
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                  ),
-                                ),
-                              ],
-                            )
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          widget.setConflict( 'humans injured' );
-                          widget.changeIndex( 2 );
-                        },
-                        child: Container(
-                            margin: const EdgeInsets.symmetric( horizontal: 5, vertical: 5),
-                            padding: const EdgeInsets.all(15),
-                            height: mediaQuery.size.height * 0.15,
-                            decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(15),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
-                                    blurRadius: 20,
-                                    offset: const Offset(0, 5),
-                                  )
-                                ]
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                Text(
-                                  "Humans Injured",
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                  ),
-                                ),
-                                Text(
-                                  conflictsCounter['humans injured'].toString(),
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                  ),
-                                ),
-                              ],
-                            )
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          widget.setConflict( 'humans killed' );
-                          widget.changeIndex( 2 );
-                        },
-                        child: Container(
-                            margin: const EdgeInsets.symmetric( horizontal: 5, vertical: 5),
-                            padding: const EdgeInsets.all(15),
-                            height: mediaQuery.size.height * 0.15,
-                            decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(15),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
-                                    blurRadius: 20,
-                                    offset: const Offset(0, 5),
-                                  )
-                                ]
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                Text(
-                                  "Humans Killed",
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                  ),
-                                ),
-                                Text(
-                                  conflictsCounter['humans killed'].toString(),
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                  ),
-                                ),
-                              ],
-                            )
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          widget.setConflict( 'cattle injured' );
-                          widget.changeIndex( 2 );
-                        },
-                        child: Container(
-                            margin: const EdgeInsets.symmetric( horizontal: 5, vertical: 5),
-                            padding: const EdgeInsets.all(15),
-                            height: mediaQuery.size.height * 0.15,
-                            decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(15),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
-                                    blurRadius: 20,
-                                    offset: const Offset(0, 5),
-                                  )
-                                ]
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                Text(
-                                  "Cattle Injured",
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                  ),
-                                ),
-                                Text(
-                                  conflictsCounter['cattle injured'].toString(),
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                  ),
-                                ),
-                              ],
-                            )
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          widget.setConflict( 'cattle killed' );
-                          widget.changeIndex( 2 );
-                        },
-                        child: Container(
-                            margin: const EdgeInsets.symmetric( horizontal: 5, vertical: 5),
-                            padding: const EdgeInsets.all(15),
-                            height: mediaQuery.size.height * 0.15,
-                            decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(15),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
-                                    blurRadius: 20,
-                                    offset: const Offset(0, 5),
-                                  )
-                                ]
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                Text(
-                                  "Cattle Killed",
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                  ),
-                                ),
-                                Text(
-                                  conflictsCounter['cattle killed'].toString(),
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                  ),
-                                ),
-                              ],
-                            )
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          widget.setConflict( 'crop damaged' );
-                          widget.changeIndex( 2 );
-                        },
-                        child: Container(
-                            margin: const EdgeInsets.symmetric( horizontal: 5, vertical: 5),
-                            padding: const EdgeInsets.all(15),
-                            height: mediaQuery.size.height * 0.15,
-                            decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(15),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
-                                    blurRadius: 20,
-                                    offset: const Offset(0, 5),
-                                  )
-                                ]
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                Text(
-                                  "Crop Damaged",
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                  ),
-                                ),
-                                Text(
-                                  conflictsCounter['crop damaged'].toString(),
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                  ),
-                                ),
-                              ],
-                            )
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          Container(
-            margin: EdgeInsets.only(top: mediaQuery.size.height * 0.41 ),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(10),
-                topRight: Radius.circular(10),
+                  Text(
+                    "Loading Data.....",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+                  ),
+                ],
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.shade500,
-                  blurRadius: 5,
-                  offset: const Offset(1, 1),
-                )
-              ],
-              color: Colors.white,
-            ),
-            alignment: Alignment.bottomCenter,
-            width: mediaQuery.size.width,
-            height: mediaQuery.size.height * 0.4,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            );
+          }
+          else {
+            return Stack(
               children: [
-                SizedBox(
-                  height: 10,
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric( vertical: 10.0, horizontal: 4.0),
-                  child: Text(
-                    "Recent",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                Container(
+                  padding: const EdgeInsets.only(top: 15),
+                  width: mediaQuery.size.width,
+                  height: mediaQuery.size.height * 0.45,
+                  color: Colors.white,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // button to edit dynamic lists
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                              Colors.greenAccent.shade400, // Background color
+                              // Text Color (Foreground color)
+                            ),
+                            onPressed: () async {
+                              Navigator.of(context).push(MaterialPageRoute(
+                                  builder: (context) => EditListsScreen(
+                                    changeIndex: widget.changeIndex,
+                                  )));
+                            },
+                            child: Text("Edit Attribute Lists")),
+                      ),
+
+                      Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                widget.setConflict({"name": '', "id": ""});
+                                widget.changeIndex(2);
+                              },
+                              child: Container(
+                                  margin: const EdgeInsets.symmetric(
+                                      horizontal: 5, vertical: 5),
+                                  padding: const EdgeInsets.all(15),
+                                  height: mediaQuery.size.height * 0.15,
+                                  decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(15),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.1),
+                                          blurRadius: 20,
+                                          offset: const Offset(0, 5),
+                                        )
+                                      ]),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                    children: [
+                                      Text(
+                                        "Total conflicts",
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                        ),
+                                      ),
+                                      Text(
+                                        _TotalConflictsCount.toString(),
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                        ),
+                                      ),
+                                    ],
+                                  )),
+                            ),
+                          ),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                widget.setConflict({"name": 'humans injured', "id": ""});
+                                widget.changeIndex(2);
+                              },
+                              child: Container(
+                                  margin: const EdgeInsets.symmetric(
+                                      horizontal: 5, vertical: 5),
+                                  padding: const EdgeInsets.all(15),
+                                  height: mediaQuery.size.height * 0.15,
+                                  decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(15),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.1),
+                                          blurRadius: 20,
+                                          offset: const Offset(0, 5),
+                                        )
+                                      ]),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                    children: [
+                                      Text(
+                                        "Humans Injured",
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                        ),
+                                      ),
+                                      Text(
+                                        conflictsCounter['humans injured'].toString(),
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                        ),
+                                      ),
+                                    ],
+                                  )),
+                            ),
+                          ),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                widget.setConflict({"name": 'humans killed', "id": ""});
+                                widget.changeIndex(2);
+                              },
+                              child: Container(
+                                  margin: const EdgeInsets.symmetric(
+                                      horizontal: 5, vertical: 5),
+                                  padding: const EdgeInsets.all(15),
+                                  height: mediaQuery.size.height * 0.15,
+                                  decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(15),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.1),
+                                          blurRadius: 20,
+                                          offset: const Offset(0, 5),
+                                        )
+                                      ]),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                    children: [
+                                      Text(
+                                        "Humans Killed",
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                        ),
+                                      ),
+                                      Text(
+                                        conflictsCounter['humans killed'].toString(),
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                        ),
+                                      ),
+                                    ],
+                                  )),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                widget.setConflict({"name": 'cattle injured', "id": ""});
+                                widget.changeIndex(2);
+                              },
+                              child: Container(
+                                  margin: const EdgeInsets.symmetric(
+                                      horizontal: 5, vertical: 5),
+                                  padding: const EdgeInsets.all(15),
+                                  height: mediaQuery.size.height * 0.15,
+                                  decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(15),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.1),
+                                          blurRadius: 20,
+                                          offset: const Offset(0, 5),
+                                        )
+                                      ]),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                    children: [
+                                      Text(
+                                        "Cattle Injured",
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                        ),
+                                      ),
+                                      Text(
+                                        conflictsCounter['cattle injured'].toString(),
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                        ),
+                                      ),
+                                    ],
+                                  )),
+                            ),
+                          ),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                widget.setConflict({"name": 'cattle killed', "id": ""});
+                                widget.changeIndex(2);
+                              },
+                              child: Container(
+                                  margin: const EdgeInsets.symmetric(
+                                      horizontal: 5, vertical: 5),
+                                  padding: const EdgeInsets.all(15),
+                                  height: mediaQuery.size.height * 0.15,
+                                  decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(15),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.1),
+                                          blurRadius: 20,
+                                          offset: const Offset(0, 5),
+                                        )
+                                      ]),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                    children: [
+                                      Text(
+                                        "Cattle Killed",
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                        ),
+                                      ),
+                                      Text(
+                                        conflictsCounter['cattle killed'].toString(),
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                        ),
+                                      ),
+                                    ],
+                                  )),
+                            ),
+                          ),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                widget.setConflict({"name": 'crop damaged', "id": ""});
+                                widget.changeIndex(2);
+                              },
+                              child: Container(
+                                  margin: const EdgeInsets.symmetric(
+                                      horizontal: 5, vertical: 5),
+                                  padding: const EdgeInsets.all(15),
+                                  height: mediaQuery.size.height * 0.15,
+                                  decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(15),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.1),
+                                          blurRadius: 20,
+                                          offset: const Offset(0, 5),
+                                        )
+                                      ]),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                    children: [
+                                      Text(
+                                        "Crop Damaged",
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                        ),
+                                      ),
+                                      Text(
+                                        conflictsCounter['crop damaged'].toString(),
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                        ),
+                                      ),
+                                    ],
+                                  )),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-                SizedBox(
-                  height: mediaQuery.size.height * 0.32,
-                  child: RefreshIndicator(
-                    onRefresh: fetchUserProfileData,
-                    child: SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      child: Column(
-                        children: (_profileDataList.length >= 5 ? _profileDataList.sublist(0,5) : _profileDataList).map((forestData) =>  HomeScreenListTile(
-                          forestData: forestData,
-                          changeIndex: widget.changeIndex,
-                          deleteData: (Conflict data) {
-                            setState(() {
-                              _profileDataList.removeWhere((element) => element.id == data.id );
-                            });
-                          },
-                        ),
-                        ).toList(),
-                      ),
+                Container(
+                  margin: EdgeInsets.only(top: mediaQuery.size.height * 0.41),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(10),
+                      topRight: Radius.circular(10),
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.shade500,
+                        blurRadius: 5,
+                        offset: const Offset(1, 1),
+                      )
+                    ],
+                    color: Colors.white,
+                  ),
+                  alignment: Alignment.bottomCenter,
+                  width: mediaQuery.size.width,
+                  height: mediaQuery.size.height * 0.5,
+                  padding: const EdgeInsets.only(left: 4.0, ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      SizedBox(
+                        height: 10,
+                      ),
+                      Container(
+                        alignment: Alignment.topLeft,
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 10.0, horizontal: 4.0),
+                        child: Text(
+                          "Recent",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      _profileDataList.isEmpty
+                          ? Expanded(
+                        child: Center(
+                          child: Text(
+                            "No data found",
+                            style: TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                      )
+                          : SizedBox(
+                        height: mediaQuery.size.height * 0.32,
+                        child: RefreshIndicator(
+                          onRefresh: fetchConflicts,
+                          child: SingleChildScrollView(
+                            physics: const BouncingScrollPhysics(),
+                            child: Column(
+                              children: (_profileDataList.length >= 5
+                                  ? _profileDataList.sublist(0, 5)
+                                  : _profileDataList)
+                                  .map(
+                                    (forestData) => HomeScreenListTile(
+                                  isAdmin: true,
+                                  forestData: forestData,
+                                  changeIndex: widget.changeIndex,
+                                  deleteData: (Conflict data) {
+                                    setState(() {
+                                      _profileDataList.removeWhere(
+                                              (element) =>
+                                          element.id == data.id);
+                                    });
+                                  },
+                                ),
+                              )
+                                  .toList(),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
-            ),
-          ),
-        ],
+            );
+          }
+        },
       ),
     );
   }

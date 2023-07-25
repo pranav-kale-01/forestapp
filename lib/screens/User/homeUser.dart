@@ -17,7 +17,7 @@ class HomeUser extends StatefulWidget {
 
 class _HomeUserState extends State<HomeUser> {
   int _selectedIndex = 0;
-  late String _selectedConflict;
+  late Map<String, dynamic> _selectedConflict;
   late final List<Widget> _widgetOptions;
   bool _showNavBar = false;
 
@@ -25,12 +25,12 @@ class _HomeUserState extends State<HomeUser> {
   void initState() {
     super.initState();
 
-    _selectedConflict = '';
+    _selectedConflict = {};
 
     _widgetOptions = <Widget>[
       HomeScreen(
           changeIndex: _changeIndex,
-          setConflict: (String conflict) {
+          setConflict: (Map<String,dynamic> conflict) {
             _selectedConflict = conflict;
           },
           showNavBar: (bool value) {
@@ -57,12 +57,12 @@ class _HomeUserState extends State<HomeUser> {
       );
     } else {
       _widgetOptions[2] = ForestDataScreen(
-        defaultFilterConflict: '',
+        defaultFilterConflict: {},
         changeScreen: _changeIndex,
         userEmail: widget.userEmail,
       );
     }
-    _selectedConflict = '';
+    _selectedConflict = {};
 
     setState(() {
       _selectedIndex = index;
@@ -79,12 +79,12 @@ class _HomeUserState extends State<HomeUser> {
         );
       } else {
         _widgetOptions[2] = ForestDataScreen(
-          defaultFilterConflict: '',
+          defaultFilterConflict: {},
           changeScreen: _changeIndex,
           userEmail: widget.userEmail,
         );
       }
-      _selectedConflict = '';
+      _selectedConflict = {};
     }
 
     setState(() {

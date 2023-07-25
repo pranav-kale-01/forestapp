@@ -18,7 +18,7 @@ import '../../widgets/home_screen_list_tile.dart';
 
 class HomeScreen extends StatefulWidget {
   final Function(int) changeIndex;
-  final Function(String) setConflict;
+  final Function(Map<String,dynamic>) setConflict;
   final Function(bool) showNavBar;
 
   const HomeScreen(
@@ -41,6 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   int _TotalConflictsCount = 0;
   bool isLoading = true;
+  bool conflictUploaded = false;
 
   Map<String, int> conflictsCounter = {
     'cattle injured': 0,
@@ -49,6 +50,10 @@ class _HomeScreenState extends State<HomeScreen> {
     'humans killed': 0,
     'crop damaged': 0,
   };
+
+  late double _longitude;
+  late double _latitude;
+  late double _circleRadius ; // radius in meters, 50000=km
 
   StreamSubscription? connection;
   bool isOffline = false;
@@ -77,17 +82,32 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> fetchUserEmail() async {
     final prefs = await SharedPreferences.getInstance();
     final userEmail = prefs.getString(SHARED_USER_EMAIL);
+    final double longitude = double.parse( prefs.getString(SHARED_USER_LONGITUDE)! );
+    final double latitude = double.parse( prefs.getString(SHARED_USER_LATITUDE)! );
+    final double radius = double.parse( prefs.getString(SHARED_USER_RADIUS)! );
 
     setState(() {
       _userEmail = userEmail ?? '';
+      _latitude = latitude;
+      _longitude = longitude;
+      _circleRadius = radius;
     });
     fetchUserProfileData();
   }
 
   Future<void> fetchUserProfileData() async {
     _TotalConflictsCount = 0;
-    final List<Conflict> conflictList =
-        await ConflictService.getRecentEntries(userEmail: _userEmail);
+
+    // initializing the conflictCounter
+    List<dynamic> conflictCounts = await ConflictService.getCounts(context);
+
+    for (Map<String, dynamic> conflict in conflictCounts.reversed) {
+      _TotalConflictsCount += int.parse(conflict['count']);
+      conflictsCounter[conflict['conflict_name'].toLowerCase()] =
+          int.parse(conflict['count']);
+    }
+
+    List<Conflict> conflictList = [];
 
     // if the data is loaded from cache showing a bottom popup to user alerting
     // that the app is running in offline mode
@@ -99,38 +119,46 @@ class _HomeScreenState extends State<HomeScreen> {
       );
 
       // also setting up a listener to trigger when the device is back online
-      connection = Connectivity()
-          .onConnectivityChanged
-          .listen((ConnectivityResult result) {
+      connection = Connectivity().onConnectivityChanged.listen((ConnectivityResult result) {
         // trigger only when user comes back online
         if (result != ConnectivityResult.none) {
-          fetchUserProfileData().then((value) => {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    backgroundColor: Colors.green,
-                    content: Text(
-                      "Back Online! Uploading stored Conflicts",
-                      style: TextStyle(color: Colors.black),
-                    ),
-                  ),
-                )
-              });
-
           // uploading the data to server
-          uploadStoredConflicts();
+          uploadStoredConflicts().then((uploaded) => {
+            if( uploaded )
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  backgroundColor: Colors.green,
+                  content: Text(
+                    "Back Online! Uploading stored Conflicts",
+                    style: TextStyle(color: Colors.black),
+                  ),
+                ),
+              )
 
-          // unsubscribing the subscription once executed
+          }).then((value) => fetchUserProfileData() );
+
           connection?.cancel();
         }
       });
     }
-
-    for (var item in conflictList) {
-      if (!conflictsCounter.containsKey(item.conflict)) {
-        conflictsCounter[item.conflict] = 0;
+    else {
+      if( !conflictUploaded ) {
+        conflictUploaded = true;
+        uploadStoredConflicts().then((uploaded) => {
+          if( uploaded )
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                backgroundColor: Colors.green,
+                content: Text(
+                  "Back Online! Uploading stored Conflicts",
+                  style: TextStyle(color: Colors.black),
+                ),
+              ),
+            )
+        }).then((value) => fetchUserProfileData() );
       }
 
-      conflictsCounter[item.conflict] = conflictsCounter[item.conflict]! + 1;
+      conflictList = await ConflictService.getRecentEntries(context, userEmail: _userEmail);
     }
 
     setState(() {
@@ -248,47 +276,51 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<bool> isPointInsideCircle(LatLng point) async {
     // sending an API request to check
-    var request = http.MultipartRequest(
-        'POST', Uri.parse('${baseUrl}/guard/is_guard_in_range'));
-    request.fields.addAll({
-      'email': _userEmail,
-      'latitude': point.latitude.toString(),
-      'longitude': point.longitude.toString()
-    });
-
-    http.StreamedResponse response = await request.send();
-    return response.statusCode == 200;
-
-    // if ( _longitude==null || _latitude==null ) {
-    //   return false;
-    // }
+    // var request = http.MultipartRequest(
+    //     'POST', Uri.parse('${baseUrl}/guard/is_guard_in_range'));
+    // request.fields.addAll({
+    //   'email': _userEmail,
+    //   'latitude': point.latitude.toString(),
+    //   'longitude': point.longitude.toString()
+    // });
     //
-    // double distance = Geolocator.distanceBetween(
-    //   point.latitude,
-    //   point.longitude,
-    //   _latitude!,
-    //   _longitude!,
-    // );
-    //
-    // // showDialog(context: context, builder: (context) => AlertDialog( title: Text( distance.toString() ), ));
-    // // for debugging
+    // http.StreamedResponse response = await request.send();
+    // return response.statusCode == 200;
+
+    double distance = Geolocator.distanceBetween(
+      point.latitude,
+      point.longitude,
+      _latitude,
+      _longitude,
+    );
+
+    // showDialog(context: context, builder: (context) => AlertDialog( title: Text( distance.toString() ), ));
+    // for debugging
     // print( point.latitude.toString() + "|" + point.longitude.toString() );
     // print( _latitude.toString() + "|" + _longitude.toString() );
     // print("distance is : " + distance.toString() );
-    //
-    // return (distance <= _circleRadius);
+
+    return (distance <= _circleRadius);
   }
 
-  Future<void> uploadStoredConflicts() async {
+  Future<bool> uploadStoredConflicts() async {
     // getting all the conflicts in stored_conflicts
     var storedConflicts = await hiveService.getBoxes('stored_conflicts');
 
-    for (Conflict conflict in storedConflicts) {
-      await ConflictService.addConflict(conflict);
+    if( storedConflicts.length == 0 ) {
+      return false;
     }
 
-    // clearing the stored conflicts once they are uploaded
-    hiveService.setBox([], 'store_conflicts');
+    for (Conflict conflict in storedConflicts) {
+      await ConflictService.addConflict(context, conflict, conflict.imageUrl );
+    }
+
+    clearStoredConflicts();
+    return true;
+  }
+
+  Future<void> clearStoredConflicts() async {
+    await hiveService.deleteBox( 'stored_conflicts' );
   }
 
   @override
@@ -362,8 +394,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
-                body: _profileDataList.isEmpty
-                    ? isLoading
+                body:  isLoading
                         ? Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -381,9 +412,6 @@ class _HomeScreenState extends State<HomeScreen> {
                               ],
                             ),
                           )
-                        : Center(
-                            child: Text("No Data Found"),
-                          )
                     : Stack(
                         children: [
                           Container(
@@ -398,7 +426,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     Expanded(
                                       child: GestureDetector(
                                         onTap: () {
-                                          widget.setConflict('');
+                                          widget.setConflict( {"name": "", "id": "" });
                                           widget.changeIndex(2);
                                         },
                                         child: Container(
@@ -443,7 +471,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     Expanded(
                                       child: GestureDetector(
                                         onTap: () {
-                                          widget.setConflict('humans injured');
+                                          widget.setConflict({"name": 'humans injured', "id": ""});
                                           widget.changeIndex(2);
                                         },
                                         child: Container(
@@ -489,7 +517,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     Expanded(
                                       child: GestureDetector(
                                         onTap: () {
-                                          widget.setConflict('humans killed');
+                                          widget.setConflict({"name": 'humans killed', "id": ""});
                                           widget.changeIndex(2);
                                         },
                                         child: Container(
@@ -539,7 +567,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     Expanded(
                                       child: GestureDetector(
                                         onTap: () {
-                                          widget.setConflict('cattle injured');
+                                          widget.setConflict({"name": 'cattle injured', "id": ""});
                                           widget.changeIndex(2);
                                         },
                                         child: Container(
@@ -585,7 +613,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     Expanded(
                                       child: GestureDetector(
                                         onTap: () {
-                                          widget.setConflict('cattle killed');
+                                          widget.setConflict({"name": 'cattle killed', "id": ""});
                                           widget.changeIndex(2);
                                         },
                                         child: Container(
@@ -631,7 +659,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     Expanded(
                                       child: GestureDetector(
                                         onTap: () {
-                                          widget.setConflict('crop damaged');
+                                          widget.setConflict({"name": 'crop damaged', "id": ""});
                                           widget.changeIndex(2);
                                         },
                                         child: Container(
@@ -692,6 +720,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             alignment: Alignment.bottomCenter,
                             width: mediaQuery.size.width,
                             height: mediaQuery.size.height * 0.5,
+                            padding: const EdgeInsets.only(left: 4.0, ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -709,7 +738,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   ),
                                 ),
-                                SizedBox(
+                                _profileDataList.isEmpty ? Expanded(
+                                  child: Center(
+                                    child: Text("No data found"),
+                                  ),
+                                ) : SizedBox(
                                   height: mediaQuery.size.height * 0.37,
                                   child: RefreshIndicator(
                                     onRefresh: fetchUserProfileData,
@@ -722,6 +755,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                             .map(
                                               (forestData) =>
                                                   HomeScreenListTile(
+                                                    isAdmin: false,
                                                 forestData: forestData,
                                                 changeIndex: widget.changeIndex,
                                                 deleteData: (Conflict data) {

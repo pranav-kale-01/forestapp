@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:forestapp/utils/dynamic_list_service.dart';
-import 'package:forestapp/widgets/add_beats_dialog.dart';
+import 'package:forestapp/widgets/add_field_dialog.dart';
 
 import '../../common/models/DynamicListsModel.dart';
 
@@ -30,7 +30,7 @@ class _EditListsScreenState extends State<EditListsScreen> {
   void getAttributeList() async {
     // fetching the list of attributes from firebase
     Map<String, dynamic> dynamicLists =
-        await DynamicListService.fetchDynamicLists();
+        await DynamicListService.fetchDynamicLists(context);
 
     attributeList = dynamicLists.keys
         .map((e) => DynamicListsModel(id: e, values: dynamicLists[e]))
@@ -59,20 +59,23 @@ class _EditListsScreenState extends State<EditListsScreen> {
     // showing dialog to add a value
     showDialog(
       context: context,
-      builder: ((context) =>  AddBeatsDialog(
+      builder: ((context) =>  AddFieldDialog(
         listItem: e,
         rounds: _rounds,
         attributeList: attributeList,
       )),
-    );
+    ).then(( updatedListItem ) {
+      setState(() {
+        if( updatedListItem != null ) {
+          attributeList.where( (item) => item.id == e.id ).toList().first = updatedListItem;
+        }
+      });
+
+    });
   }
 
   Future<void> removeItem(DynamicListsModel e, Map<String, dynamic> item ) async {
-    DynamicListService.removeField( e.id, item );
-    // await FirebaseFirestore.instance
-    //     .collection('dynamic_lists')
-    //     .doc(e.id)
-    //     .set({"values": e.values}, SetOptions(merge: true));
+    DynamicListService.removeField( context, e.id, item );
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

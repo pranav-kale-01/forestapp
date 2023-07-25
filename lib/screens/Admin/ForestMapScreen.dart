@@ -85,7 +85,7 @@ class _ForestMapScreenState extends State<ForestMapScreen> {
   }
 
   Future<void> fetchUserProfileData() async {
-    final profileDataList = await ConflictService.getData();
+    final profileDataList = await ConflictService.getData(context);
 
     // if the data is loaded from cache showing a bottom popup to user alerting
     // that the app is running in offline mode

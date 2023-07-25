@@ -21,6 +21,13 @@ class ThemeHelper {
             ),
             borderRadius: BorderRadius.circular(20.0)
         ),
+        disabledBorder: OutlineInputBorder(
+            borderSide: const BorderSide(
+                color: Colors.transparent,
+                width: 1.0
+            ),
+            borderRadius: BorderRadius.circular(20.0)
+        ),
         hintText: hintText,
         hintStyle: TextStyle(
           fontSize: 14.0,

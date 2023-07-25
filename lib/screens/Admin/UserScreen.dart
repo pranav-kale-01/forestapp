@@ -39,7 +39,7 @@ class _UserScreenState extends State<UserScreen> {
       );
     }
 
-    List<User> profileDataList = await UserService.getAllUsers();
+    List<User> profileDataList = await UserService.getAllUsers(context);
 
     setState(() {
       guardsList = profileDataList;
@@ -119,7 +119,7 @@ class _UserScreenState extends State<UserScreen> {
                           changeIndex: widget.changeIndex,
                         ),
                     )
-                  );
+                  ).then((value) => fetchUserProfileData() );
                 },
                 icon: Icon(
                   Icons.add
@@ -164,7 +164,7 @@ class _UserScreenState extends State<UserScreen> {
                                       user: guard,
                                     )
                                 ),
-                              );
+                              ).then((value) => fetchUserProfileData() );
                             },
                             child: Card(
                               child: Padding(
@@ -174,7 +174,7 @@ class _UserScreenState extends State<UserScreen> {
                                   CrossAxisAlignment.center,
                                   children: [
                                     CircleAvatar(
-                                      backgroundImage: NetworkImage(guard.imageUrl),
+                                      backgroundImage: NetworkImage('${baseUrl}uploads/guard/profile/${guard.imageUrl}'),
                                     ),
                                     const SizedBox(width: 16.0),
                                     Expanded(

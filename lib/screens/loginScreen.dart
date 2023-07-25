@@ -101,14 +101,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                           color: Colors.white),
                                     ),
                                     onPressed: () async {
-                                      UserService.loginAsUser( context, _emailController.text.trim(), _passwordController.text.trim() );
+                                      await UserService.loginAsUser( context, _emailController.text.trim(), _passwordController.text.trim() );
                                     },
                                   ),
                                 ),
                                 GestureDetector(
                                     onTap: () {
                                       // Navigating to Sign in as admin
-                                      Navigator.of(context).push(
+                                      Navigator.of(context).pushReplacement(
                                         MaterialPageRoute(builder: (context) => AdminLogin() )
                                       );
                                     },
