@@ -397,7 +397,6 @@ class ConflictService {
 
       String fileName = 'forest_data.xlsx';
 
-
       if (Platform.isAndroid) {
         var androidInfo = await DeviceInfoPlugin().androidInfo;
         var release = androidInfo.version.release;
@@ -419,6 +418,11 @@ class ConflictService {
               throw Exception('Storage permission not granted');
             }
           }
+        }
+
+        final storagePermission = await Permission.manageExternalStorage.request();
+        if( storagePermission.isDenied || storagePermission.isRestricted ) {
+          openAppSettings();
         }
       }
 

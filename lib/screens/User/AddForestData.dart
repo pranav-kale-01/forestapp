@@ -191,6 +191,11 @@ class _AddForestDataState extends State<AddForestData> {
               }
             }
           }
+
+          final storagePermission = await Permission.manageExternalStorage.request();
+          if( storagePermission.isDenied || storagePermission.isRestricted ) {
+            openAppSettings();
+          }
         }
 
         Directory? directory = await getExternalStorageDirectory();

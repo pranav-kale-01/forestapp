@@ -33,6 +33,7 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
   final Map<String, List<DropdownMenuItem<Map<String,dynamic>>>> _dynamicLists = {};
   Map<String, dynamic> filterList = {};
   bool isSearchEnabled = false;
+  late Future<void> _future;
 
   final List<String> _dateDropdownOptions = [
     'today',
@@ -53,7 +54,7 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
   @override
   void initState() {
     super.initState();
-    fetchUserProfileData();
+    _future = fetchUserProfileData();
   }
 
   Future<void> fetchUserProfileData() async {
@@ -593,86 +594,99 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                   },
                 ),
               ),
-              _searchResult.isEmpty
-                  ? Expanded(
-                    child: Center(
-                      child: Text(
-                "No result found....",
-                style:
-                TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
-              ),
-                    ),
-                  )
-                  : Expanded(
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 8.0, ),
-                  child: ListView.builder(
-                    physics: const BouncingScrollPhysics(),
-                    itemCount: _searchResult.length,
-                    itemBuilder: (innerContext, index) {
-                      final profileData = _searchResult[index];
-                      return Card(
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            SizedBox(
-                              width: 120.0,
-                              height: 120.0,
-                              child: Image.network(
-                                '${baseUrl}uploads/conflicts/${profileData.imageUrl}',
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                            const SizedBox(
-                              width: 20,
-                            ),
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Column(
-                                  crossAxisAlignment:
-                                  CrossAxisAlignment.start,
-                                  children: <Widget>[
-                                    Row(
-                                      mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          profileData.village_name,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
+
+              FutureBuilder(
+                future: _future,
+                builder: (context, snapshot) {
+                  if( snapshot.connectionState == ConnectionState.waiting ) {
+                    return Expanded(
+                      child: Center(
+                        child: CircularProgressIndicator.adaptive(
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                        ),
+                      ),
+                    );
+                  }
+                  else {
+                    return _searchResult.isEmpty ? Expanded(
+                      child: Center(
+                        child: Text(
+                          "No result found....",
+                          style:
+                          TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                    )
+                        : Expanded(
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 8.0, ),
+                        child: ListView.builder(
+                          physics: const BouncingScrollPhysics(),
+                          itemCount: _searchResult.length,
+                          itemBuilder: (innerContext, index) {
+                            final profileData = _searchResult[index];
+                            return Card(
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  SizedBox(
+                                    width: 120.0,
+                                    height: 120.0,
+                                    child: Image.network(
+                                      '${baseUrl}uploads/conflicts/${profileData.imageUrl}',
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                  const SizedBox(
+                                    width: 20,
+                                  ),
+                                  Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                        children: <Widget>[
+                                          Row(
+                                            mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                profileData.village_name,
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+
+
+                                            ],
                                           ),
-                                        ),
-
-
-                                      ],
-                                    ),
-                                    const SizedBox(height: 8.0),
-                                    Text(
-                                      DateFormat('MMM d, yyyy h:mm a')
-                                          .format(profileData.datetime!
-                                          .toDate()),
-                                    ),
-                                    const SizedBox(height: 8.0),
-                                    Text(
-                                      profileData.userName,
-                                    ),
-                                    const SizedBox(height: 8.0),
-                                    Text(
-                                      profileData.userEmail,
-                                    ),
-                                    const SizedBox(height: 8.0),
-                                    ElevatedButton.icon(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Color.fromARGB(255,
-                                            3, 8, 35), // Background color
-                                        // Text Color (Foreground color)
-                                      ),
-                                      onPressed: () {
-                                        Navigator.of(context).push(
-                                            MaterialPageRoute(
-                                                builder: (context) =>
-                                                    ForestDetail(
+                                          const SizedBox(height: 8.0),
+                                          Text(
+                                            DateFormat('MMM d, yyyy h:mm a')
+                                                .format(profileData.datetime!
+                                                .toDate()),
+                                          ),
+                                          const SizedBox(height: 8.0),
+                                          Text(
+                                            profileData.userName,
+                                          ),
+                                          const SizedBox(height: 8.0),
+                                          Text(
+                                            profileData.userEmail,
+                                          ),
+                                          const SizedBox(height: 8.0),
+                                          ElevatedButton.icon(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Color.fromARGB(255,
+                                                  3, 8, 35), // Background color
+                                              // Text Color (Foreground color)
+                                            ),
+                                            onPressed: () {
+                                              Navigator.of(context).push(
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      ForestDetail(
                                                         forestData: profileData,
                                                         currentIndex: 2,
                                                         changeIndex: widget.changeScreen,
@@ -686,24 +700,27 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                                                             _searchResult.removeWhere((element) => element.id == data.id );
                                                           });
                                                         },
-                                                    ),
-                                            ),
-                                        );
-                                      },
-                                      label: const Text("View"),
-                                      icon: const Icon(
-                                          Icons.arrow_right_alt_outlined),
+                                                      ),
+                                                ),
+                                              );
+                                            },
+                                            label: const Text("View"),
+                                            icon: const Icon(
+                                                Icons.arrow_right_alt_outlined),
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
-                            ),
-                          ],
+                            );
+                          },
                         ),
-                      );
-                    },
-                  ),
-                ),
+                      ),
+                    );
+                  }
+                }
               ),
             ],
           ),

@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'dart:math' as math;
 
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:forestapp/common/models/conflict_model_hive.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
@@ -72,9 +73,33 @@ class _ForestMapScreenState extends State<ForestMapScreen> {
       ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       Uint8List pngBytes = byteData!.buffer.asUint8List();
 
-      final storagePermission = await Permission.manageExternalStorage.request();
-      if( storagePermission.isDenied || storagePermission.isRestricted ) {
-        openAppSettings();
+      if (Platform.isAndroid) {
+        var androidInfo = await DeviceInfoPlugin().androidInfo;
+        var release = androidInfo.version.release;
+
+        if( int.parse(release) < 10 ) {
+          var storagePermission = await Permission.storage.request();
+
+          if( ! await storagePermission.isGranted ) {
+            throw Exception('Storage permission not granted');
+          }
+        }
+        else {
+          var storagePermission = await Permission.manageExternalStorage;
+
+          if( await storagePermission.isGranted ) {
+            storagePermission.request();
+
+            if( ! await storagePermission.isGranted ) {
+              throw Exception('Storage permission not granted');
+            }
+          }
+        }
+
+        final storagePermission = await Permission.manageExternalStorage.request();
+        if( storagePermission.isDenied || storagePermission.isRestricted ) {
+          openAppSettings();
+        }
       }
 
       var directory = await getExternalStorageDirectory();
