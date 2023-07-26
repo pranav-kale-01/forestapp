@@ -38,14 +38,14 @@ class UserService {
         Map<String, dynamic> jsonResponse = jsonDecode(await response.stream.bytesToString());
         String message = jsonResponse['message'];
 
-        if (message == 'Wrong Email or password') {
+        if (message == 'Phone Number Does not match') {
           showDialog(
             context: context,
             builder: (BuildContext context) {
               return AlertDialog(
                 title: const Text('Wrong Credentials'),
                 content: const Text(
-                    'Wrong Email or Password provided for that user.'),
+                    'Phone Number does not match!'),
                 actions: <Widget>[
                   ElevatedButton(
                     onPressed: () {
@@ -192,26 +192,49 @@ class UserService {
     });
 
     http.StreamedResponse response = await request.send();
+    Map<String, dynamic> jsonResponse = jsonDecode( await response.stream.bytesToString( ) );
+    String message = jsonResponse['message'];
 
     if( response.statusCode != 200 ) {
-      print( await response.stream.bytesToString( ) );
-      var jsonResponse = jsonDecode(await response.stream.bytesToString());
-      print( jsonResponse );
-      showDialog(
-        context: context,
-        builder: (BuildContext context) => AlertDialog(
-          title: const Text('Error'),
-          content: Text('Failed to upload data. Error : ${jsonResponse.toString()}'),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('OK'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        ),
-      );
+      if (message == 'Phone Number Does not match') {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Wrong Credentials'),
+              content: const Text(
+                  'Phone Number does not match!'),
+              actions: <Widget>[
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
+      }
+      else {
+        var jsonResponse = jsonDecode(await response.stream.bytesToString());
+        print( jsonResponse );
+        showDialog(
+          context: context,
+          builder: (BuildContext context) => AlertDialog(
+            title: const Text('Error'),
+            content: Text('Failed to upload data. Error : ${jsonResponse.toString()}'),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('OK'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          ),
+        );
+      }
     }
 
 

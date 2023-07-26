@@ -97,31 +97,32 @@ class _AdminLoginState extends State<AdminLogin> {
                                   height: 10,
                                 ),
                                 GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        // sending Otp
-                                        otpSent = true;
-                                        UserService.sendOTP( context, _phoneController.text );
-                                      });
+                                    onTap: ()  async {
+                                      // sending Otp
+                                      otpSent = await UserService.sendOTP( context, _phoneController.text );
 
-                                      // show success message
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            'OTP Sent to phone number +91 ${_phoneController.text}',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 16,
+                                      if( otpSent ) {
+                                        // show success message
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              'OTP Sent to phone number +91 ${_phoneController.text}',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                            duration: const Duration(seconds: 4),
+                                            backgroundColor: Colors.green,
+                                            behavior: SnackBarBehavior.floating,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(10),
                                             ),
                                           ),
-                                          duration: const Duration(seconds: 4),
-                                          backgroundColor: Colors.green,
-                                          behavior: SnackBarBehavior.floating,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(10),
-                                          ),
-                                        ),
-                                      );
+                                        );
+                                      }
+
+                                      setState(() {});
                                     },
                                     child: Container(
                                       alignment: Alignment.topLeft,
@@ -162,11 +163,10 @@ class _AdminLoginState extends State<AdminLogin> {
                                         UserService.loginAsAdmin(  context, _phoneController.text.trim(), _OTPController.text.trim()  );
                                       }
                                       else {
-                                        setState(() {
-                                          // sending Otp
-                                          otpSent = true;
-                                          UserService.sendOTP( context, _phoneController.text );
+                                        // sending Otp
+                                        otpSent = await UserService.sendOTP( context, _phoneController.text );
 
+                                        if( otpSent ) {
                                           // show success message
                                           ScaffoldMessenger.of(context).showSnackBar(
                                             SnackBar(
@@ -185,7 +185,9 @@ class _AdminLoginState extends State<AdminLogin> {
                                               ),
                                             ),
                                           );
-                                        });
+                                        }
+
+                                        setState(() {});
                                       }
                                     },
                                   ),

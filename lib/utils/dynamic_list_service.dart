@@ -162,7 +162,7 @@ class DynamicListService {
 
     if (response.statusCode == 200) {
       Map<String, dynamic> jsonResponse = jsonDecode( await response.stream.bytesToString() );
-      return int.parse( jsonResponse['message'] );
+      return jsonResponse['message'];
     }
     else {
       print(response.reasonPhrase);
@@ -194,19 +194,19 @@ class DynamicListService {
     // setting the values as per the type
     if( type == 'range' ) {
       endpoint = "delete_range";
-      fields.addAll( {"id" : item['id']} );
+      fields.addAll( {"id" : item['id'].toString() } );
     }
     else if( type == 'round' ) {
       endpoint = "delete_round";
-      fields.addAll( {'round_id' : item['id'] } );
+      fields.addAll( {'round_id' : item['id'].toString() } );
     }
     else if( type == 'beat' ) {
       endpoint = "delete_beat";
-      fields.addAll( { 'beat_id' : item['id'] } );
+      fields.addAll( { 'beat_id' : item['id'].toString() } );
     }
     else {
       endpoint = "delete_conflict_type";
-      fields.addAll( {'id' : item['id'] } );
+      fields.addAll( {'id' : item['id'].toString() } );
     }
 
     var request = http.MultipartRequest('POST', Uri.parse('${baseUrl}admin/$endpoint'));

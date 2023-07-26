@@ -71,7 +71,7 @@ class _AddFieldDialogState extends State<AddFieldDialog> {
                       ))
                       .toList(),
                   onChanged: (Map<String, dynamic>? value) {
-                    selectedRangeId = value!['id'];
+                    selectedRangeId = value!['id'].toString();
                   },
                 ),
               ],
@@ -104,7 +104,7 @@ class _AddFieldDialogState extends State<AddFieldDialog> {
                       .toList(),
                   onChanged: (Map<String, dynamic>? value) {
                     setState(() {
-                      selectedRangeId = value!['id'];
+                      selectedRangeId = value!['id'].toString();
                       widget.rounds = widget.attributeList
                           .firstWhere((item) => item.id == 'round')
                           .values
@@ -134,7 +134,7 @@ class _AddFieldDialogState extends State<AddFieldDialog> {
                         .textInputDecoration('Round', 'Enter Round'),
                     items: widget.rounds,
                     onChanged: (Map<String, dynamic>? value) {
-                      selectedRoundId = value!['id'];
+                      selectedRoundId = value!['id'].toString();
                     }),
               ],
             )

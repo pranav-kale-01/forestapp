@@ -12,7 +12,6 @@ import 'package:forestapp/utils/utils.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlng/latlng.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:http/http.dart' as http;
 
 import '../../widgets/home_screen_list_tile.dart';
 
@@ -92,37 +91,72 @@ class _HomeScreenState extends State<HomeScreen> {
       _longitude = longitude;
       _circleRadius = radius;
     });
-    fetchUserProfileData();
+    await fetchUserProfileData();
   }
 
   Future<void> fetchUserProfileData() async {
-    _TotalConflictsCount = 0;
+    try {
+      _TotalConflictsCount = 0;
+      conflictsCounter = {
+        'cattle injured': 0,
+        'cattle killed': 0,
+        'humans injured': 0,
+        'humans killed': 0,
+        'crop damaged': 0,
+      };
 
-    // initializing the conflictCounter
-    List<dynamic> conflictCounts = await ConflictService.getCounts(context);
+      // if the data is loaded from cache showing a bottom popup to user alerting
+      // that the app is running in offline mode
+      if (!(await hasConnection)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Loading the page in Offline mode'),
+          ),
+        );
 
-    for (Map<String, dynamic> conflict in conflictCounts.reversed) {
-      _TotalConflictsCount += int.parse(conflict['count']);
-      conflictsCounter[conflict['conflict_name'].toLowerCase()] =
-          int.parse(conflict['count']);
-    }
+        // also setting up a listener to trigger when the device is back online
+        connection = Connectivity().onConnectivityChanged.listen((ConnectivityResult result) {
+          // trigger only when user comes back online
+          if (result != ConnectivityResult.none) {
+            // uploading the data to server
+            uploadStoredConflicts().then((uploaded) => {
+              if( uploaded )
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    backgroundColor: Colors.green,
+                    content: Text(
+                      "Back Online! Uploading stored Conflicts",
+                      style: TextStyle(color: Colors.black),
+                    ),
+                  ),
+                )
 
-    List<Conflict> conflictList = [];
+            }).then((value) => fetchUserProfileData() );
 
-    // if the data is loaded from cache showing a bottom popup to user alerting
-    // that the app is running in offline mode
-    if (!(await hasConnection)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Loading the page in Offline mode'),
-        ),
-      );
+            connection?.cancel();
+          }
+        });
 
-      // also setting up a listener to trigger when the device is back online
-      connection = Connectivity().onConnectivityChanged.listen((ConnectivityResult result) {
-        // trigger only when user comes back online
-        if (result != ConnectivityResult.none) {
-          // uploading the data to server
+        setState(() {
+          isLoading = false;
+          _profileDataList = [];
+          _TotalConflictsCount = 0;
+        });
+      }
+      else {
+        // initializing the conflictCounter
+        List<dynamic> conflictCounts = await ConflictService.getCounts(context);
+
+        for (Map<String, dynamic> conflict in conflictCounts.reversed) {
+          _TotalConflictsCount += int.parse(conflict['count']);
+          conflictsCounter[conflict['conflict_name'].toLowerCase()] =
+              int.parse(conflict['count']);
+        }
+
+        List<Conflict> conflictList = [];
+
+        if( !conflictUploaded ) {
+          conflictUploaded = true;
           uploadStoredConflicts().then((uploaded) => {
             if( uploaded )
               ScaffoldMessenger.of(context).showSnackBar(
@@ -134,38 +168,25 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               )
-
           }).then((value) => fetchUserProfileData() );
-
-          connection?.cancel();
         }
-      });
-    }
-    else {
-      if( !conflictUploaded ) {
-        conflictUploaded = true;
-        uploadStoredConflicts().then((uploaded) => {
-          if( uploaded )
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                backgroundColor: Colors.green,
-                content: Text(
-                  "Back Online! Uploading stored Conflicts",
-                  style: TextStyle(color: Colors.black),
-                ),
-              ),
-            )
-        }).then((value) => fetchUserProfileData() );
+
+        conflictList = await ConflictService.getRecentEntries(context, userEmail: _userEmail);
+
+        setState(() {
+          isLoading = false;
+          _profileDataList = conflictList;
+          _TotalConflictsCount = conflictList.length;
+        });
       }
 
-      conflictList = await ConflictService.getRecentEntries(context, userEmail: _userEmail);
+
+    }
+    catch( e, s ) {
+      print( e );
+      print( s );
     }
 
-    setState(() {
-      isLoading = false;
-      _profileDataList = conflictList;
-      _TotalConflictsCount = conflictList.length;
-    });
   }
 
   Future<void> _getCurrentLocation() async {
@@ -394,8 +415,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
-                body:  isLoading
-                        ? Center(
+                body: isLoading ? Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -411,8 +431,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ],
                             ),
-                          )
-                    : Stack(
+                          )  : Stack(
                         children: [
                           Container(
                             padding: const EdgeInsets.only(top: 15),

@@ -601,10 +601,14 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                     );
                   }
                   else {
-                    return _searchResult.isEmpty ? Text(
-                      "No result found....",
-                      style:
-                      TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                    return _searchResult.isEmpty ? Expanded(
+                      child: Center(
+                        child: Text(
+                          "No result found....",
+                          style:
+                          TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                        ),
+                      ),
                     )
                         : Expanded(
                       child: Container(

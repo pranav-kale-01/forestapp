@@ -28,13 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   int _TotalConflictsCount = 0;
 
-  Map<String, int> conflictsCounter = {
-    'cattle injured': 0,
-    'cattle killed': 0,
-    'humans injured': 0,
-    'humans killed': 0,
-    'crop damaged': 0,
-  };
+  Map<String, int> conflictsCounter = {};
 
   @override
   void initState() {
@@ -47,17 +41,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> fetchConflicts() async {
-    // getting the count of conflicts
-    List<dynamic> conflictCounts = await ConflictService.getCounts(context);
-
-    for (Map<String, dynamic> conflict in conflictCounts.reversed) {
-      _TotalConflictsCount += int.parse(conflict['count']);
-      conflictsCounter[conflict['conflict_name'].toLowerCase()] =
-          int.parse(conflict['count']);
-    }
-
-    // getting the recent entries
-    List<Conflict> conflictList = await ConflictService.getRecentEntries(context);
+    _TotalConflictsCount = 0;
+    conflictsCounter = {
+      'cattle injured': 0,
+      'cattle killed': 0,
+      'humans injured': 0,
+      'humans killed': 0,
+      'crop damaged': 0,
+    };
 
     // if the data is loaded from cache showing a bottom popup to user alerting
     // that the app is running in offline mode
@@ -68,10 +59,23 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
     }
+    else {
+      // getting the count of conflicts
+      List<dynamic> conflictCounts = await ConflictService.getCounts(context);
 
-    setState(() {
-      _profileDataList = conflictList;
-    });
+      for (Map<String, dynamic> conflict in conflictCounts.reversed) {
+        _TotalConflictsCount += int.parse(conflict['count']);
+        conflictsCounter[conflict['conflict_name'].toLowerCase()] =
+            int.parse(conflict['count']);
+      }
+
+      // getting the recent entries
+      List<Conflict> conflictList = await ConflictService.getRecentEntries(context);
+
+      setState(() {
+        _profileDataList = conflictList;
+      });
+    }
   }
 
   @override
