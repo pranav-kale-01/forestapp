@@ -217,10 +217,10 @@ class _EditConflictState extends State<EditConflict> {
                     onChanged: (Map<String, dynamic>? value) {
                       setState(() {
                         selectedRange = value;
-                        selectedRound = dynamicLists['round'].where( (round) => round['range_id'] == selectedRange!['id'] ).toList().first;
-                        selectedBt = dynamicLists['beat'].where( (beat) => beat['round_id'] == selectedRound!['id'] ).toList().first;
-                        // selectedRound = dynamicLists['round'].first;
-                        // selectedBt = dynamicLists['beat'].first;
+                        var rounds = dynamicLists['round'].where( (round) => round['range_id'] == selectedRange!['id'] ).toList();
+                        selectedRound = rounds.isNotEmpty ? rounds.first : {};
+                        var beats = dynamicLists['beat'].where( (beat) => beat['round_id'] == selectedRound!['id'] ).toList();
+                        selectedBt = beats.isNotEmpty ? beats.first : {};
                       });
                     },
                   ),
@@ -253,7 +253,8 @@ class _EditConflictState extends State<EditConflict> {
                     onChanged: (Map<String, dynamic>? value) {
                       setState(() {
                         selectedRound = value;
-                        selectedBt = dynamicLists['beat'].where( (beat) => beat['round_id'] == selectedRound!['id'] ).toList().first;
+                        var beats = dynamicLists['beat'].where( (beat) => beat['round_id'] == selectedRound!['id'] ).toList();
+                        selectedBt = beats.isNotEmpty ? beats.first : {};
                         // selectedBt = dynamicLists['beat'].first;
                       });
                     },

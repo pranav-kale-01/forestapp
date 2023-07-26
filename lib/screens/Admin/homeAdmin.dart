@@ -47,14 +47,13 @@ class _HomeAdminState extends State<HomeAdmin> {
 
   void _changeIndex( int index ) {
     if( _selectedConflict.isNotEmpty ) {
-      print('iof');
+      print( _selectedConflict );
       _widgetOptions[2] = ForestDataScreen(
         defaultFilterConflict: _selectedConflict,
         changeScreen: _changeIndex,
       );
     }
     else {
-      print('else');
       _widgetOptions[2] = ForestDataScreen(
         defaultFilterConflict: {},
         changeScreen: _changeIndex,

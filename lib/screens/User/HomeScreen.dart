@@ -426,7 +426,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     Expanded(
                                       child: GestureDetector(
                                         onTap: () {
-                                          widget.setConflict( {"name": "", "id": "" });
+                                          widget.setConflict({});
                                           widget.changeIndex(2);
                                         },
                                         child: Container(
@@ -720,16 +720,17 @@ class _HomeScreenState extends State<HomeScreen> {
                             alignment: Alignment.bottomCenter,
                             width: mediaQuery.size.width,
                             height: mediaQuery.size.height * 0.5,
-                            padding: const EdgeInsets.only(left: 4.0, ),
                             child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 SizedBox(
                                   height: 10,
                                 ),
-                                Padding(
+                                Container(
+                                  alignment: Alignment.topLeft,
+                                  width: mediaQuery.size.width,
                                   padding: const EdgeInsets.symmetric(
-                                      vertical: 10.0, horizontal: 4.0),
+                                      vertical: 10.0, horizontal: 12.0),
                                   child: Text(
                                     "Recent",
                                     style: TextStyle(

@@ -141,7 +141,7 @@ class _ForestDetailState extends State<ForestDetail> {
                     Row(
                       children: [
                         CircleAvatar(
-                          backgroundImage: NetworkImage(widget.forestData.userImage),
+                          backgroundImage: NetworkImage("${baseUrl}uploads/guard/profile/${widget.forestData.imageUrl}"),
                         ),
                         SizedBox(width: 8),
                         Column(

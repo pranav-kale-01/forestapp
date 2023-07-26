@@ -20,11 +20,12 @@ class DynamicListService {
           .toList();
     } else {
       print(response.reasonPhrase);
+      var jsonResponse = jsonDecode(await response.stream.bytesToString());
       showDialog(
         context: context,
         builder: (BuildContext context) => AlertDialog(
           title: const Text('Error'),
-          content: Text('Failed to upload data. Error : ${response.reasonPhrase}'),
+          content: Text('Failed to upload data. Error : ${jsonResponse.toString()}'),
           actions: <Widget>[
             TextButton(
               child: const Text('OK'),
@@ -42,8 +43,7 @@ class DynamicListService {
     response = await request.send();
 
     if (response.statusCode == 200) {
-      List<dynamic> jsonResponse =
-          jsonDecode(await response.stream.bytesToString());
+      List<dynamic> jsonResponse = jsonDecode(await response.stream.bytesToString());
       dynamicLists['round'] = jsonResponse.
             where( (item) => item['id'] != "-1"  ).map((item) => {
                 'id': item['id'],
@@ -53,6 +53,22 @@ class DynamicListService {
           .toList();
     } else {
       print(response.reasonPhrase);
+      var jsonResponse = jsonDecode(await response.stream.bytesToString());
+      showDialog(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: const Text('Error'),
+          content: Text('Failed to upload data. Error : ${jsonResponse.toString()}'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        ),
+      );
     }
 
     // beat
@@ -69,11 +85,26 @@ class DynamicListService {
           }).toList();
     } else {
       print(response.reasonPhrase);
+      var jsonResponse = jsonDecode(await response.stream.bytesToString());
+      showDialog(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: const Text('Error'),
+          content: Text('Failed to upload data. Error : ${jsonResponse.toString()}'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        ),
+      );
     }
 
     // conflict
-    request =
-        http.Request('GET', Uri.parse('${baseUrl}admin/get_conflict_types'));
+    request = http.Request('GET', Uri.parse('${baseUrl}admin/get_conflict_types'));
     response = await request.send();
 
     if (response.statusCode == 200) {
@@ -81,6 +112,22 @@ class DynamicListService {
       dynamicLists['conflict'] = jsonResponse.where( (item) => item['id'] != "-1"  ).map((item) => { "id" : item['id'], "name" : item['conflict_name'] }).toList();
     } else {
       print(response.reasonPhrase);
+      var jsonResponse = jsonDecode(await response.stream.bytesToString());
+      showDialog(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: const Text('Error'),
+          content: Text('Failed to upload data. Error : ${jsonResponse.toString()}'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        ),
+      );
     }
 
     return dynamicLists;
@@ -119,11 +166,12 @@ class DynamicListService {
     }
     else {
       print(response.reasonPhrase);
+      var jsonResponse = jsonDecode(await response.stream.bytesToString());
       showDialog(
         context: context,
         builder: (BuildContext context) => AlertDialog(
           title: const Text('Error'),
-          content: Text('Failed to upload data. Error : ${response.reasonPhrase}'),
+          content: Text('Failed to upload data. Error : ${jsonResponse.toString()}'),
           actions: <Widget>[
             TextButton(
               child: const Text('OK'),
@@ -171,11 +219,12 @@ class DynamicListService {
     }
     else {
       print(response.reasonPhrase);
+      var jsonResponse = jsonDecode(await response.stream.bytesToString());
       showDialog(
         context: context,
         builder: (BuildContext context) => AlertDialog(
           title: const Text('Error'),
-          content: Text('Failed to upload data. Error : ${response.reasonPhrase}'),
+          content: Text('Failed to upload data. Error : ${jsonResponse.toString()}'),
           actions: <Widget>[
             TextButton(
               child: const Text('OK'),

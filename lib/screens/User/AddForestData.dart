@@ -254,7 +254,7 @@ class _AddForestDataState extends State<AddForestData> {
           context: context,
           builder: (BuildContext context) => AlertDialog(
             title: const Text('Failure'),
-            content: const Text('Failed To Uplaod Conflict'),
+            content: const Text('Failed To Upload Conflict'),
             actions: <Widget>[
               TextButton(
                 child: const Text('OK'),

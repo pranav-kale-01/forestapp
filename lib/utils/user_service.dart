@@ -35,8 +35,7 @@ class UserService {
           ),
         );
       } else {
-        Map<String, dynamic> jsonResponse =
-            jsonDecode(await response.stream.bytesToString());
+        Map<String, dynamic> jsonResponse = jsonDecode(await response.stream.bytesToString());
         String message = jsonResponse['message'];
 
         if (message == 'Wrong Email or password') {
@@ -64,14 +63,28 @@ class UserService {
       // Handle any errors that occur during sign in
       debugPrint(e.toString());
       debugPrint(s.toString());
+      showDialog(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: const Text('Error'),
+          content: Text(e.toString()),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        ),
+      );
     }
   }
 
   static Future<void> loginAsUser(BuildContext context, String email, String password) async {
     try {
       // sending a request to API
-      var request = http.MultipartRequest(
-          'POST', Uri.parse('${baseUrl}guard/guard_login'));
+      var request = http.MultipartRequest('POST', Uri.parse('${baseUrl}guard/guard_login'));
       request.fields.addAll({'email': email, 'password': password});
 
       http.StreamedResponse response = await request.send();
@@ -105,8 +118,7 @@ class UserService {
       }
       else {
         print(response.reasonPhrase);
-        Map<String, dynamic> jsonResponse =
-            jsonDecode(await response.stream.bytesToString());
+        Map<String, dynamic> jsonResponse = jsonDecode(await response.stream.bytesToString());
         String message = jsonResponse['message'];
 
         if (message == "Wrong Password") {
@@ -155,6 +167,21 @@ class UserService {
       // Handle any errors that occur during sign in
       debugPrint(e.toString());
       debugPrint(s.toString());
+      showDialog(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: const Text('Error'),
+          content: Text(e.toString()),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        ),
+      );
     }
   }
 
@@ -168,12 +195,13 @@ class UserService {
 
     if( response.statusCode != 200 ) {
       print( await response.stream.bytesToString( ) );
-      print( response.reasonPhrase.toString() );
+      var jsonResponse = jsonDecode(await response.stream.bytesToString());
+      print( jsonResponse );
       showDialog(
         context: context,
         builder: (BuildContext context) => AlertDialog(
           title: const Text('Error'),
-          content: Text('Failed to upload data. Error : ${response.reasonPhrase}'),
+          content: Text('Failed to upload data. Error : ${jsonResponse.toString()}'),
           actions: <Widget>[
             TextButton(
               child: const Text('OK'),
@@ -185,6 +213,7 @@ class UserService {
         ),
       );
     }
+
 
     return response.statusCode == 200;
   }
@@ -215,13 +244,14 @@ class UserService {
           forestIDImageUrl: ''
       );
     } else {
-      print( await response.stream.bytesToString( ) );
       print( response.reasonPhrase );
+      var jsonResponse = jsonDecode(await response.stream.bytesToString());
+      print( jsonResponse );
       showDialog(
         context: context,
         builder: (BuildContext context) => AlertDialog(
           title: const Text('Error'),
-          content: Text('Failed to upload data. Error : ${response.reasonPhrase}'),
+          content: Text('Failed to upload data. Error : ${jsonResponse.toString()}'),
           actions: <Widget>[
             TextButton(
               child: const Text('OK'),
@@ -267,12 +297,13 @@ class UserService {
         return profileDataList;
       } else {
         print(response.reasonPhrase);
-        print(await response.stream.bytesToString());
+        var jsonResponse = jsonDecode(await response.stream.bytesToString());
+        print( jsonResponse );
         showDialog(
           context: context,
           builder: (BuildContext context) => AlertDialog(
             title: const Text('Error'),
-            content: Text('Failed to upload data. Error : ${response.reasonPhrase}'),
+            content: Text('Failed to upload data. Error : ${jsonResponse.toString()}'),
             actions: <Widget>[
               TextButton(
                 child: const Text('OK'),
@@ -283,6 +314,7 @@ class UserService {
             ],
           ),
         );
+
         return [];
       }
     } catch (e, s) {
@@ -398,13 +430,14 @@ class UserService {
       if (response.statusCode == 200) {
         return true;
       } else {
-        print('no changes');
-        print( await response.stream.bytesToString( ));
+        print( response.reasonPhrase );
+        var jsonResponse = jsonDecode(await response.stream.bytesToString());
+        print( jsonResponse );
         showDialog(
           context: context,
           builder: (BuildContext context) => AlertDialog(
             title: const Text('Error'),
-            content: Text('Failed to upload data. Error : ${response.reasonPhrase}'),
+            content: Text('Failed to upload data. Error : ${jsonResponse.toString()}'),
             actions: <Widget>[
               TextButton(
                 child: const Text('OK'),

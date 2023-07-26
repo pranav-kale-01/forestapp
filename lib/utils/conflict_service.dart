@@ -26,12 +26,12 @@ class ConflictService {
       return jsonResponse;
     }
     else {
-      print(response.reasonPhrase);
+      List<dynamic> jsonResponse = jsonDecode( await response.stream.bytesToString() );
       showDialog(
         context: context,
         builder: (BuildContext context) => AlertDialog(
           title: const Text('Error'),
-          content: Text('Failed to upload data. Error : ${response.reasonPhrase}'),
+          content: Text('Failed to upload data. Error : ${jsonResponse.toString()}'),
           actions: <Widget>[
             TextButton(
               child: const Text('OK'),
@@ -83,12 +83,12 @@ class ConflictService {
       ).toList();
     }
     else {
-      print(response.reasonPhrase);
+      var jsonResponse = jsonDecode(await response.stream.bytesToString());
       showDialog(
         context: context,
         builder: (BuildContext context) => AlertDialog(
           title: const Text('Error'),
-          content: Text(response.reasonPhrase.toString() ),
+          content: Text( jsonResponse.toString() ),
           actions: <Widget>[
             TextButton(
               child: const Text('OK'),
@@ -126,12 +126,12 @@ class ConflictService {
         jsonResult = jsonDecode( await response.stream.bytesToString() );
       }
       else {
-        print(response.reasonPhrase);
+        var jsonResponse = jsonDecode(await response.stream.bytesToString());
         showDialog(
           context: context,
           builder: (BuildContext context) => AlertDialog(
             title: const Text('Error'),
-            content: Text('Failed to upload data. Error : ${response.reasonPhrase}'),
+            content: Text('Failed to upload data. Error : ${jsonResponse.toString()}'),
             actions: <Widget>[
               TextButton(
                 child: const Text('OK'),
@@ -206,12 +206,15 @@ class ConflictService {
 
       if( response.statusCode != 200 ) {
         print(response.reasonPhrase);
-        print( await response.stream.bytesToString( ) );
+        var jsonResponse = jsonDecode( await response.stream.bytesToString( ) );
+
+        print( jsonResponse );
+
         showDialog(
           context: context,
           builder: (BuildContext context) => AlertDialog(
             title: const Text('Error'),
-            content: Text('Failed to upload data. Error : ${response.reasonPhrase}'),
+            content: Text('Failed to upload data. Error : ${jsonResponse.toString()}'),
             actions: <Widget>[
               TextButton(
                 child: const Text('OK'),
@@ -232,9 +235,6 @@ class ConflictService {
 
       return false;
     }
-
-
-
   }
 
   static Future<Conflict> editConflict( BuildContext context, Map<String, dynamic> data ) async {
@@ -267,11 +267,12 @@ class ConflictService {
     }
     else {
       print(response.reasonPhrase);
+      var jsonResponse = jsonDecode(await response.stream.bytesToString());
       showDialog(
         context: context,
         builder: (BuildContext context) => AlertDialog(
           title: const Text('Error'),
-          content: Text('Failed to upload data. Error : ${response.reasonPhrase}'),
+          content: Text('Failed to upload data. Error : ${jsonResponse.toString()}'),
           actions: <Widget>[
             TextButton(
               child: const Text('OK'),
@@ -316,7 +317,8 @@ class ConflictService {
     });
 
     http.StreamedResponse response = await request.send();
-    print( await response.stream.bytesToString( ) );
+    var jsonResponse = jsonDecode(await response.stream.bytesToString());
+    print( jsonResponse );
 
     if( response.statusCode != 200 ) {
       print( await response.stream.bytesToString() );
@@ -325,7 +327,7 @@ class ConflictService {
         context: context,
         builder: (BuildContext context) => AlertDialog(
           title: const Text('Error'),
-          content: Text('Failed to upload data. Error : ${response.reasonPhrase}'),
+          content: Text('Failed to upload data. Error : ${jsonResponse.toString()}'),
           actions: <Widget>[
             TextButton(
               child: const Text('OK'),
