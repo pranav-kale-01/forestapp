@@ -145,7 +145,7 @@ class _HomeScreenState extends State<HomeScreen> {
       }
       else {
         // initializing the conflictCounter
-        List<dynamic> conflictCounts = await ConflictService.getCounts(context);
+        List<dynamic> conflictCounts = await ConflictService.getCounts(context, userEmail: _userEmail );
 
         for (Map<String, dynamic> conflict in conflictCounts.reversed) {
           _TotalConflictsCount += int.parse(conflict['count']);

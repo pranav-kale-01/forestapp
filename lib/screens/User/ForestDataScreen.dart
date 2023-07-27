@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter/material.dart' as material;
 import 'package:forestapp/common/models/conflict_model_hive.dart';

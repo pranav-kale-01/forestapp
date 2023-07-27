@@ -17,8 +17,12 @@ import '../common/models/timestamp.dart';
 class ConflictService {
   static HiveService hiveService = HiveService();
 
-  static Future<List<dynamic>> getCounts( BuildContext context) async  {
-    var request = http.Request('GET', Uri.parse('${baseUrl}/admin/get_counts'));
+  static Future<List<dynamic>> getCounts( BuildContext context, {String userEmail=""} ) async  {
+    var request = http.MultipartRequest('POST', Uri.parse('${baseUrl}/admin/get_counts'));
+    request.fields.addAll({
+      "email" : userEmail,
+    });
+
     http.StreamedResponse response = await request.send();
 
     if (response.statusCode == 200) {
