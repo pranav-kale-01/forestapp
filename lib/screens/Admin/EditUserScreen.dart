@@ -73,6 +73,17 @@ class _EditUserScreenState extends State<EditUserScreen> {
 
   Future<void> editUser() async {
     if (_formKey.currentState!.validate()) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) =>  Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+            strokeWidth: 2,
+          ),
+        ),
+      );
+g
       _formKey.currentState!.save();
 
       if( imageUrl == null ) {

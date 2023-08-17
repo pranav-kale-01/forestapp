@@ -155,25 +155,25 @@ class ConflictService {
             range: doc['range_name'],
             round: doc['round_name'],
             bt: doc['beat_name'],
-            cNoName: doc['cn_sr_name'],
-            conflict: doc['conflict_name'],
-            notes: doc['notes'],
-            person_age: doc['age'],
-            imageUrl: doc['photo'],
-            userName: doc['guard_name'],
-            userEmail: doc['email'],
-            person_name: doc['name'],
-            person_gender: doc['gender'],
-            pincodeName: doc['pincode'],
-            sp_causing_death: doc['sp_causing_death'],
             village_name: doc['village_name'],
+            cNoName: doc['cn_sr_name'],
+            pincodeName: doc['pincode'],
+            conflict: doc['conflict_name'],
+            person_name: doc['name'],
+            person_age: doc['age'],
+            person_gender: doc['gender'],
+            sp_causing_death: doc['sp_causing_death'],
+            notes: doc['notes'],
             datetime: TimeStamp.fromDate( DateTime.parse(doc['created_at']) ),
             location: GeoPoint(
                 latitude: double.parse( doc['latitude'] ),
                 longitude: double.parse( doc['longitude'] )
             ),
             userContact: doc['guard_contact'],
-            userImage: doc['photo']
+            userImage: doc['photo'],
+            imageUrl: doc['photo'],
+            userName: doc['guard_name'],
+            userEmail: doc['email'],
         );
         _conflictList.add(conflict);
       }).toList();

@@ -30,13 +30,13 @@ class ConflictAdapter extends TypeAdapter<Conflict> {
       person_gender: fields[10] as String,
       sp_causing_death: fields[11] as String,
       notes: fields[12] as String,
-      imageUrl: fields[17] as String,
-      userName: fields[18] as String,
-      userEmail: fields[19] as String,
       datetime: fields[13] as TimeStamp?,
       location: fields[14] as GeoPoint,
       userContact: fields[15] as String,
       userImage: fields[16] as String,
+      imageUrl: fields[17] as String,
+      userName: fields[18] as String,
+      userEmail: fields[19] as String,
     );
   }
 
@@ -92,7 +92,7 @@ class ConflictAdapter extends TypeAdapter<Conflict> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is ConflictAdapter &&
-          runtimeType == other.runtimeType &&
-          typeId == other.typeId;
+          other is ConflictAdapter &&
+              runtimeType == other.runtimeType &&
+              typeId == other.typeId;
 }

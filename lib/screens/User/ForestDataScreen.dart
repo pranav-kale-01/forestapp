@@ -109,9 +109,11 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
   }
 
   void _searchList(String searchQuery) {
+    searchQuery = searchQuery.trim();
+
     List<Conflict> tempList = [];
     _profileDataList.forEach((profileData) {
-      if (profileData.village_name.toLowerCase().contains(searchQuery.toLowerCase()) || profileData.userName.toLowerCase().contains(searchQuery.toLowerCase()) || profileData.userEmail.toLowerCase().contains(searchQuery.toLowerCase())) {
+      if (profileData.village_name.trim().toLowerCase().contains(searchQuery.toLowerCase()) || profileData.userName.trim().toLowerCase().contains(searchQuery.toLowerCase()) || profileData.userEmail.trim().toLowerCase().contains(searchQuery.toLowerCase())) {
         tempList.add(profileData);
       }
     });
@@ -211,8 +213,11 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
       isSearchEnabled = true;
       _searchList(searchQuery);
     } else {
-      _searchResult = _profileDataList;
-      isSearchEnabled = false;
+      setState(() {
+        _searchResult = _profileDataList;
+        isSearchEnabled = false;
+      });
+
       filterData();
     }
   }
@@ -589,7 +594,7 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
               ),
               FutureBuilder(
                 future: _future,
-                builder: (context, snapshot) {
+                builder: (futureContext, snapshot) {
                   if( snapshot.connectionState == ConnectionState.waiting ) {
                     return Expanded(
                       child: Center(

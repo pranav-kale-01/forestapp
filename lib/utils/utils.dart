@@ -2,6 +2,9 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 
 class Util {
   static bool hasUserLocation = false;
+
+  // for debugging
+  static bool showDebugDialog = true;
 }
 
 Future<bool> get hasConnection async => ( await Connectivity().checkConnectivity() ) != ConnectivityResult.none;

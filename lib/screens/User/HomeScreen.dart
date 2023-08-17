@@ -58,6 +58,9 @@ class _HomeScreenState extends State<HomeScreen> {
   bool isOffline = false;
   bool userInRange = false;
 
+  late LatLng _point;
+  double _distance = 0.0;
+
   @override
   void initState() {
     super.initState();
@@ -267,7 +270,16 @@ class _HomeScreenState extends State<HomeScreen> {
   AlertDialog _isInside(BuildContext context) {
     return AlertDialog(
       title: const Text('You are outside the privileged area..'),
-      content: const Text('Do you want to exit the app?'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('Do you want to exit the app?'),
+          Text( "Current : " + _point.latitude.toString() + ", " + _point.longitude.toString() ),
+          Text( "Stored : " + _latitude.toString() + ", " + _longitude.toString() ),
+          Text("Radius : " + ( _circleRadius / 1000 ).toString() +  "km" ),
+          Text("Distance : " + ( _distance / 1000 ).round().toString() + "Km" ),
+        ],
+      ),
       actions: <Widget>[
         TextButton(
           onPressed: () async {
@@ -277,7 +289,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(builder: (context) => const LoginScreen()),
-              (route) => false,
+                  (route) => false,
             );
           },
           child: Text('Logout',
@@ -392,6 +404,37 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Text("Some error occured!"),
               );
             } else {
+              // for debugging
+              if( Util.showDebugDialog ) {
+                Util.showDebugDialog = false;
+                WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+                  showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: Text("Debugging Info"),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text( "Current : " + _point.latitude.toString() + ", " + _point.longitude.toString() ),
+                            Text( "Stored : " + _latitude.toString() + ", " + _longitude.toString() ),
+                            Text("Radius : " +  ( _circleRadius / 1000 ).toString() +  "km" ),
+                            Text("Distance : " + ( _distance / 1000 ).round().toString() + "Km" ),
+                          ],
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                            child: Text("Ok"),
+                          ),
+                        ],
+                      )
+                  );
+                });
+              }
+
               return Scaffold(
                 appBar: AppBar(
                   elevation: 0,
