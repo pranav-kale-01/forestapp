@@ -80,6 +80,8 @@ class _ForestDetailState extends State<ForestDetail> {
   @override
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
+    print( widget.forestData.userImage );
+    print( widget.forestData.imageUrl );
 
     return Scaffold(
       appBar:AppBar(
@@ -137,7 +139,8 @@ class _ForestDetailState extends State<ForestDetail> {
                     Row(
                       children: [
                         CircleAvatar(
-                          backgroundImage: NetworkImage("${baseUrl}uploads/guard/profile/${widget.forestData.imageUrl}"),
+                          backgroundImage: NetworkImage(
+                              "${baseUrl}uploads/guard/profile/${widget.forestData.userImage}"),
                         ),
                         SizedBox(width: 8),
                         Column(

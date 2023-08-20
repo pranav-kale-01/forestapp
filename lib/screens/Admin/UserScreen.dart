@@ -155,6 +155,7 @@ class _UserScreenState extends State<UserScreen> {
                         itemCount: guardsList.length,
                         itemBuilder: (innerContext, index) {
                           final User guard = guardsList[index];
+                          guard.radius = (guard.radius / 1000 ).round();
 
                           return InkWell(
                             onTap: () {

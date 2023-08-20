@@ -366,15 +366,15 @@ class UserService {
     try {
       var request = http.MultipartRequest('POST', Uri.parse('${baseUrl}admin/add_guard'));
       request.fields.addAll({
-        'name': userData['name'],
-        'email': userData['email'],
-        'password': userData['password'],
-        'contact': userData['contactNumber'],
-        'aadhar_number': userData['contactNumber'],
-        'forest_id': userData['forestID'],
-        'latitude': userData['latitude'],
-        'longitude': userData['longitude'],
-        'radius': userData['radius'],
+        'name': userData['name'].toString(),
+        'email': userData['email'].toString(),
+        'password': userData['password'].toString(),
+        'contact': userData['contactNumber'].toString(),
+        'aadhar_number': userData['contactNumber'].toString(),
+        'forest_id': userData['forestID'].toString(),
+        'latitude': userData['latitude'].toString(),
+        'longitude': userData['longitude'].toString(),
+        'radius':  ( userData['radius'] * 1000 ).toString(),
       });
 
       request.files.add(await http.MultipartFile.fromPath('profile_photo', userData['image'].path ));

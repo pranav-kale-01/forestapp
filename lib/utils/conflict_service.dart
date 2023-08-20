@@ -7,6 +7,7 @@ import 'package:forestapp/common/models/conflict_model_hive.dart';
 import 'package:forestapp/common/models/geopoint.dart';
 import 'package:forestapp/utils/hive_service.dart';
 import 'package:forestapp/utils/utils.dart';
+import 'package:forestapp/widgets/error_dialog.dart';
 import 'package:http/http.dart' as http;
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
@@ -17,36 +18,49 @@ import '../common/models/timestamp.dart';
 class ConflictService {
   static HiveService hiveService = HiveService();
 
-  static Future<List<dynamic>> getCounts( BuildContext context, {String userEmail=""} ) async  {
-    var request = http.MultipartRequest('POST', Uri.parse('${baseUrl}/admin/get_counts'));
-    request.fields.addAll({
-      "email" : userEmail,
-    });
+  static Future<Map<String,dynamic>> getCounts( BuildContext context, {String userEmail=""} ) async  {
+    try {
+      var request = http.MultipartRequest('POST', Uri.parse('${baseUrl}/admin/get_counts'));
+      request.fields.addAll({
+        "email" : userEmail,
+      });
 
-    http.StreamedResponse response = await request.send();
+      http.StreamedResponse response = await request.send();
 
-    if (response.statusCode == 200) {
-      List<dynamic> jsonResponse = jsonDecode( await response.stream.bytesToString());
-      return jsonResponse;
+      if (response.statusCode == 200) {
+        Map<String, dynamic> jsonResponse = jsonDecode( await response.stream.bytesToString());
+        return jsonResponse;
+      }
+      else {
+        Map<String, dynamic> jsonResponse = jsonDecode( await response.stream.bytesToString() );
+        showDialog(
+          context: context,
+          builder: (BuildContext context) => AlertDialog(
+            title: const Text('Error'),
+            content: Text('Failed to upload data. Error : ${jsonResponse.toString()}'),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('OK'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          ),
+        );
+        return {};
+      }
     }
-    else {
-      List<dynamic> jsonResponse = jsonDecode( await response.stream.bytesToString() );
+    catch( e, s ) {
+      debugPrint( e.toString() );
+      debugPrint( s.toString()) ;
+
       showDialog(
         context: context,
-        builder: (BuildContext context) => AlertDialog(
-          title: const Text('Error'),
-          content: Text('Failed to upload data. Error : ${jsonResponse.toString()}'),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('OK'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        ),
+        builder: (context) => ErrorDialog(s.toString()),
       );
-      return [];
+
+      return {};
     }
   }
 

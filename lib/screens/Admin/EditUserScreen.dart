@@ -83,7 +83,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
           ),
         ),
       );
-g
+
       _formKey.currentState!.save();
 
       if( imageUrl == null ) {
@@ -100,7 +100,7 @@ g
           forestId: int.parse( _forestId ),
           longitude: double.parse(longitude!),
           latitude: double.parse(latitude!),
-          radius: int.parse( radius! ),
+          radius: int.parse( radius! ) * 1000,
           aadharImageUrl: widget.user.aadharImageUrl,
           forestIDImageUrl: widget.user.forestIDImageUrl,
       );
@@ -471,7 +471,7 @@ g
 
                     const SizedBox(height: 16.0),
                     Text(
-                      "Radius",
+                      "Radius in KM",
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -480,18 +480,18 @@ g
                     const SizedBox(height: 16.0),
                     TextFormField(
                       decoration:ThemeHelper().textInputDecoration(
-                          'Radius', 'Enter Radius'
+                          'Radius', 'Enter Radius in KM'
                       ),
                       keyboardType: TextInputType.number,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter a Radius';
+                          return 'Enter Radius in KM';
                         }
                         return null;
                       },
-                      initialValue: widget.user.radius.toString(),
+                      initialValue: ( widget.user.radius  / 1000 ).round().toString(),
                       onSaved: (value) {
-                        radius = value!;
+                        radius = (int.parse( value! ) * 1000).toString();
                       },
                     ),
                     const SizedBox(height: 16.0),

@@ -123,7 +123,7 @@ class UserDetails extends StatelessWidget {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'Radius range:${user.radius}',
+                    'Radius Range : ${ (user.radius / 1000 ).round().toString() }',
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.grey[600],

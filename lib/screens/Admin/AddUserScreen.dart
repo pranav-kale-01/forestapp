@@ -78,7 +78,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
           'privileged_user' : false,
           'latitude' :  latitude!,
           'longitude' : longitude!,
-          'radius' : radius!
+          'radius' : int.parse( radius! ) * 1000,
         };
 
         bool success = await UserService.addUser( context, userData );
@@ -396,7 +396,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
 
                   const SizedBox(height: 16.0),
                   Text(
-                    "Radius",
+                    "Radius in KM",
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -407,7 +407,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
                   ),
                   TextFormField(
                     decoration: ThemeHelper().textInputDecoration(
-                        'Radius', 'Enter Radius'
+                        'Radius', 'Enter Radius in KM'
                     ),
                     keyboardType: TextInputType.phone,
                     validator: (value) {

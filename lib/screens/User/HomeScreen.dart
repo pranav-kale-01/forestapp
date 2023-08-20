@@ -42,7 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool isLoading = true;
   bool conflictUploaded = false;
 
-  Map<String, int> conflictsCounter = {
+  Map<String, dynamic> conflictsCounter = {
     'cattle injured': 0,
     'cattle killed': 0,
     'humans injured': 0,
@@ -148,13 +148,13 @@ class _HomeScreenState extends State<HomeScreen> {
       }
       else {
         // initializing the conflictCounter
-        List<dynamic> conflictCounts = await ConflictService.getCounts(context, userEmail: _userEmail );
-
-        for (Map<String, dynamic> conflict in conflictCounts.reversed) {
-          _TotalConflictsCount += int.parse(conflict['count']);
-          conflictsCounter[conflict['conflict_name'].toLowerCase()] =
-              int.parse(conflict['count']);
-        }
+        conflictsCounter = await ConflictService.getCounts(context, userEmail: _userEmail );
+        //
+        // for (Map<String, dynamic> conflict in conflictCounts.reversed) {
+        //   _TotalConflictsCount += int.parse(conflict['count']);
+        //   conflictsCounter[conflict['conflict_name'].toLowerCase()] =
+        //       int.parse(conflict['count']);
+        // }
 
         List<Conflict> conflictList = [];
 
@@ -308,32 +308,21 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<bool> isPointInsideCircle(LatLng point) async {
-    // sending an API request to check
-    // var request = http.MultipartRequest(
-    //     'POST', Uri.parse('${baseUrl}/guard/is_guard_in_range'));
-    // request.fields.addAll({
-    //   'email': _userEmail,
-    //   'latitude': point.latitude.toString(),
-    //   'longitude': point.longitude.toString()
-    // });
-    //
-    // http.StreamedResponse response = await request.send();
-    // return response.statusCode == 200;
+    _point = point;
 
-    double distance = Geolocator.distanceBetween(
+    _distance = Geolocator.distanceBetween(
       point.latitude,
       point.longitude,
       _latitude,
       _longitude,
     );
 
-    // showDialog(context: context, builder: (context) => AlertDialog( title: Text( distance.toString() ), ));
     // for debugging
-    // print( point.latitude.toString() + "|" + point.longitude.toString() );
-    // print( _latitude.toString() + "|" + _longitude.toString() );
-    // print("distance is : " + distance.toString() );
+    print( point.latitude.toString() + "|" + point.longitude.toString() );
+    print( _latitude.toString() + "|" + _longitude.toString() );
+    print("distance is : " + _distance.toString() );
 
-    return (distance <= _circleRadius);
+    return (_distance <= _circleRadius);
   }
 
   Future<bool> uploadStoredConflicts() async {
@@ -540,12 +529,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                             margin: const EdgeInsets.symmetric(
                                                 horizontal: 5, vertical: 5),
                                             padding: const EdgeInsets.all(15),
-                                            height:
-                                                mediaQuery.size.height * 0.15,
+                                            height: mediaQuery.size.height * 0.15,
                                             decoration: BoxDecoration(
                                                 color: Colors.white,
-                                                borderRadius:
-                                                    BorderRadius.circular(15),
+                                                borderRadius: BorderRadius.circular(15),
                                                 boxShadow: [
                                                   BoxShadow(
                                                     color: Colors.black
@@ -565,9 +552,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   ),
                                                 ),
                                                 Text(
-                                                  conflictsCounter[
-                                                          'humans injured']
-                                                      .toString(),
+                                                  conflictsCounter.containsKey('humans injured') ? conflictsCounter['humans injured'].toString() : "0",
                                                   style: TextStyle(
                                                     fontSize: 18,
                                                   ),
@@ -611,9 +596,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   ),
                                                 ),
                                                 Text(
-                                                  conflictsCounter[
-                                                          'humans killed']
-                                                      .toString(),
+                                                  conflictsCounter.containsKey('humans killed') ? conflictsCounter['humans killed'].toString() : "0",
                                                   style: TextStyle(
                                                     fontSize: 18,
                                                   ),
@@ -661,9 +644,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   ),
                                                 ),
                                                 Text(
-                                                  conflictsCounter[
-                                                          'cattle injured']
-                                                      .toString(),
+                                                  conflictsCounter.containsKey('cattle injured') ? conflictsCounter['cattle injured'].toString() : "0",
                                                   style: TextStyle(
                                                     fontSize: 18,
                                                   ),
@@ -707,9 +688,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   ),
                                                 ),
                                                 Text(
-                                                  conflictsCounter[
-                                                          'cattle killed']
-                                                      .toString(),
+                                                  conflictsCounter.containsKey('cattle killed') ? conflictsCounter['cattle killed'].toString() : "0",
                                                   style: TextStyle(
                                                     fontSize: 18,
                                                   ),
@@ -753,9 +732,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   ),
                                                 ),
                                                 Text(
-                                                  conflictsCounter[
-                                                          'crop damaged']
-                                                      .toString(),
+                                                  conflictsCounter.containsKey('crop damaged') ? conflictsCounter['crop damaged'].toString() : "0",
                                                   style: TextStyle(
                                                     fontSize: 18,
                                                   ),

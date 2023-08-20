@@ -28,7 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   int _TotalConflictsCount = 0;
 
-  Map<String, int> conflictsCounter = {};
+  Map<String, dynamic> conflictsCounter = {};
 
   @override
   void initState() {
@@ -41,13 +41,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> fetchConflicts() async {
-    _TotalConflictsCount = 0;
     conflictsCounter = {
       'cattle injured': 0,
       'cattle killed': 0,
       'humans injured': 0,
       'humans killed': 0,
       'crop damaged': 0,
+      'total_conflicts': 0
     };
 
     // if the data is loaded from cache showing a bottom popup to user alerting
@@ -60,14 +60,16 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
     else {
-      // getting the count of conflicts
-      List<dynamic> conflictCounts = await ConflictService.getCounts(context);
 
-      for (Map<String, dynamic> conflict in conflictCounts.reversed) {
-        _TotalConflictsCount += int.parse(conflict['count']);
-        conflictsCounter[conflict['conflict_name'].toLowerCase()] =
-            int.parse(conflict['count']);
-      }
+      // getting the count of conflicts
+      conflictsCounter = await ConflictService.getCounts(context);
+
+      // for (Map<String, dynamic> conflict in conflictCounts.reversed) {
+      //   _TotalConflictsCount += int.parse(conflict['count']);
+      //
+      //   conflictsCounter[conflict['conflict_name'].toLowerCase()] =
+      //       int.parse(conflict['count']);
+      // }
 
       // getting the recent entries
       List<Conflict> conflictList = await ConflictService.getRecentEntries(context);
@@ -230,7 +232,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ),
                                       ),
                                       Text(
-                                        _TotalConflictsCount.toString(),
+                                        conflictsCounter.containsKey('total_conflicts') ? conflictsCounter['total_conflicts'].toString() : "0",
                                         style: TextStyle(
                                           fontSize: 18,
                                         ),
@@ -270,7 +272,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ),
                                       ),
                                       Text(
-                                        conflictsCounter['humans injured'].toString(),
+                                        conflictsCounter.containsKey('humans injured') ? conflictsCounter['humans injured'].toString() : "0",
                                         style: TextStyle(
                                           fontSize: 18,
                                         ),
@@ -310,7 +312,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ),
                                       ),
                                       Text(
-                                        conflictsCounter['humans killed'].toString(),
+                                        conflictsCounter.containsKey('humans killed') ? conflictsCounter['humans killed'].toString() : "0",
                                         style: TextStyle(
                                           fontSize: 18,
                                         ),
@@ -354,7 +356,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ),
                                       ),
                                       Text(
-                                        conflictsCounter['cattle injured'].toString(),
+                                        conflictsCounter.containsKey('cattle injured') ? conflictsCounter['cattle injured'].toString() : "0",
                                         style: TextStyle(
                                           fontSize: 18,
                                         ),
@@ -394,7 +396,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ),
                                       ),
                                       Text(
-                                        conflictsCounter['cattle killed'].toString(),
+                                        conflictsCounter.containsKey('cattle killed') ? conflictsCounter['cattle killed'].toString() : "0",
                                         style: TextStyle(
                                           fontSize: 18,
                                         ),
@@ -434,7 +436,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ),
                                       ),
                                       Text(
-                                        conflictsCounter['crop damaged'].toString(),
+                                        conflictsCounter.containsKey('crop damaged') ? conflictsCounter['crop damaged'].toString() : "0",
                                         style: TextStyle(
                                           fontSize: 18,
                                         ),

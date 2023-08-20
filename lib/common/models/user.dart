@@ -11,7 +11,7 @@ class User {
   final int forestId;
   final double longitude;
   final double latitude;
-  final int radius;
+  int radius;
   String? password;
   final Timestamp? datetime;
 
