@@ -137,29 +137,29 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
       if (filterList.keys.contains('range')) {
         setState(() {
           _searchResult = _searchResult
-              .where((data) => data.range == filterList['range']['name'] )
+              .where((data) => data.range == filterList['range']['name'].toLowerCase() )
               .toList();
         });
       }
       if (filterList.keys.contains('conflict')) {
         setState(() {
           _searchResult = _searchResult
-              .where((data) => data.conflict == filterList['conflict']['name'] )
+              .where((data) => data.conflict == filterList['conflict']['name'].toLowerCase() )
               .toList();
         });
       }
       if (filterList.keys.contains('round')) {
-        print("in here");
+
         setState(() {
           _searchResult = _searchResult
-              .where((data) => data.bt.toLowerCase() == filterList['round']['name'] )
+              .where((data) => data.round.toLowerCase() == filterList['round']['name'].toLowerCase() )
               .toList();
         });
       }
       if (filterList.keys.contains('beat')) {
         setState(() {
           _searchResult = _searchResult
-              .where((data) => data.bt.toLowerCase() == filterList['beat']['name'] )
+              .where((data) => data.bt.toLowerCase() == filterList['beat']['name'].toLowerCase() )
               .toList();
         });
       }

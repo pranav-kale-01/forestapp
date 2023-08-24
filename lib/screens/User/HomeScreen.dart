@@ -38,12 +38,13 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void>? _future;
   LatLng? _currentLocation;
 
-  int _TotalConflictsCount = 0;
+
   bool isLoading = true;
   bool conflictUploaded = false;
 
   Map<String, dynamic> conflictsCounter = {
-    'cattle injured': 0,
+    'total_conflicts' : 0,
+    'cattle injured' : 0,
     'cattle killed': 0,
     'humans injured': 0,
     'humans killed': 0,
@@ -99,8 +100,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> fetchUserProfileData() async {
     try {
-      _TotalConflictsCount = 0;
+
       conflictsCounter = {
+        'total_conflicts': 0,
         'cattle injured': 0,
         'cattle killed': 0,
         'humans injured': 0,
@@ -143,18 +145,11 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           isLoading = false;
           _profileDataList = [];
-          _TotalConflictsCount = 0;
         });
       }
       else {
         // initializing the conflictCounter
         conflictsCounter = await ConflictService.getCounts(context, userEmail: _userEmail );
-        //
-        // for (Map<String, dynamic> conflict in conflictCounts.reversed) {
-        //   _TotalConflictsCount += int.parse(conflict['count']);
-        //   conflictsCounter[conflict['conflict_name'].toLowerCase()] =
-        //       int.parse(conflict['count']);
-        // }
 
         List<Conflict> conflictList = [];
 
@@ -179,7 +174,6 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           isLoading = false;
           _profileDataList = conflictList;
-          _TotalConflictsCount = conflictList.length;
         });
       }
 
@@ -272,12 +266,13 @@ class _HomeScreenState extends State<HomeScreen> {
       title: const Text('You are outside the privileged area..'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text('Do you want to exit the app?'),
-          Text( "Current : " + _point.latitude.toString() + ", " + _point.longitude.toString() ),
-          Text( "Stored : " + _latitude.toString() + ", " + _longitude.toString() ),
-          Text("Radius : " + ( _circleRadius / 1000 ).toString() +  "km" ),
-          Text("Distance : " + ( _distance / 1000 ).round().toString() + "Km" ),
+          // Text( "Current : " + _point.latitude.toString() + ", " + _point.longitude.toString() ),
+          // Text( "Stored : " + _latitude.toString() + ", " + _longitude.toString() ),
+          // Text("Radius : " + ( _circleRadius / 1000 ).toString() +  "km" ),
+          // Text("Distance : " + ( _distance / 1000 ).round().toString() + "Km" ),
         ],
       ),
       actions: <Widget>[
@@ -509,8 +504,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   ),
                                                 ),
                                                 Text(
-                                                  _TotalConflictsCount
-                                                      .toString(),
+                                                  conflictsCounter.containsKey('total_conflicts') ? conflictsCounter['total_conflicts'].toString() : "0",
                                                   style: TextStyle(
                                                     fontSize: 18,
                                                   ),

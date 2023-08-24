@@ -156,7 +156,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(height: 8.0),
                     Text(
-                      _profileData!.email,
+                      "Email : " + _profileData!.email,
                       style: const TextStyle(
                         fontSize: 16.0,
                       ),
@@ -234,7 +234,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         Text("Radius Area: "),
                         Text(
-                          (  ( _profileData!.radius / 1000 ).round() ).toString(),
+                          (  ( _profileData!.radius / 1000 ).round() ).toString() + "Km",
                           style: const TextStyle(
                             fontSize: 16.0,
                           ),

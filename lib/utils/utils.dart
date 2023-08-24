@@ -4,7 +4,7 @@ class Util {
   static bool hasUserLocation = false;
 
   // for debugging
-  static bool showDebugDialog = true;
+  static bool showDebugDialog = false;
 }
 
 Future<bool> get hasConnection async => ( await Connectivity().checkConnectivity() ) != ConnectivityResult.none;

@@ -88,7 +88,7 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    // secured();
+    secured();
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
