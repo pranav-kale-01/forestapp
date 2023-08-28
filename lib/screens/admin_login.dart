@@ -16,7 +16,6 @@ class _AdminLoginState extends State<AdminLogin> {
   final TextEditingController _OTPController = TextEditingController();
   bool otpSent = false;
 
-
   @override
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
@@ -163,6 +162,17 @@ class _AdminLoginState extends State<AdminLogin> {
                                         UserService.loginAsAdmin(  context, _phoneController.text.trim(), _OTPController.text.trim()  );
                                       }
                                       else {
+                                        showDialog(
+                                          context: context,
+                                          barrierDismissible: false,
+                                          builder: (context) =>  Center(
+                                            child: CircularProgressIndicator(
+                                              valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+                                              strokeWidth: 2,
+                                            ),
+                                          ),
+                                        );
+
                                         // sending Otp
                                         otpSent = await UserService.sendOTP( context, _phoneController.text );
 

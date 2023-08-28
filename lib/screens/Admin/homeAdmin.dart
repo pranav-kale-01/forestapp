@@ -69,7 +69,6 @@ class _HomeAdminState extends State<HomeAdmin> {
   void _onItemTapped(int index) {
     if( index == 2 ) {
       if( _selectedConflict.isNotEmpty ) {
-        print('iof');
         _widgetOptions[2] = ForestDataScreen(
           defaultFilterConflict: _selectedConflict,
           changeScreen: _changeIndex,
@@ -77,7 +76,6 @@ class _HomeAdminState extends State<HomeAdmin> {
         );
       }
       else {
-        print('else');
         _widgetOptions[2] = ForestDataScreen(
           defaultFilterConflict: {},
           changeScreen: _changeIndex,

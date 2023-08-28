@@ -12,6 +12,17 @@ import 'package:forestapp/utils/utils.dart' show baseUrl;
 class UserService {
   static void loginAsAdmin(BuildContext context, String phone, String otp) async {
     try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) =>  Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+            strokeWidth: 2,
+          ),
+        ),
+      );
+
       var request = http.MultipartRequest('POST', Uri.parse('${baseUrl}admin//verify_otp'));
       request.fields.addAll({
         'phone': phone,
@@ -27,6 +38,9 @@ class UserService {
         // Store the email in shared preferences
         prefs.setInt(SHARED_USER_TYPE, admin);
 
+        // removing the progress bar
+        Navigator.of(context).pop();
+
         // Navigate to the HomeAdmin screen on successful login
         Navigator.pushReplacement(
           context,
@@ -34,11 +48,17 @@ class UserService {
             builder: (context) => const HomeAdmin(),
           ),
         );
+
+        return;
+
       } else {
         Map<String, dynamic> jsonResponse = jsonDecode(await response.stream.bytesToString());
         String message = jsonResponse['message'];
 
         if (message == 'Phone Number Does not match') {
+          // removing the progress bar
+          Navigator.of(context).pop();
+
           showDialog(
             context: context,
             builder: (BuildContext context) {
@@ -58,11 +78,38 @@ class UserService {
             },
           );
         }
+        else if( message == "Otp does not match" ) {
+          // removing the progress bar
+          Navigator.of(context).pop();
+
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text('Incorrect OTP'),
+                content: const Text(
+                    'The OTP does not match. Please Enter a Valid OTP!'),
+                actions: <Widget>[
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text('OK'),
+                  ),
+                ],
+              );
+            },
+          );
+        }
       }
     } catch (e, s) {
       // Handle any errors that occur during sign in
       debugPrint(e.toString());
       debugPrint(s.toString());
+
+      // removing the progress bar
+      Navigator.of(context).pop();
+
       showDialog(
         context: context,
         builder: (BuildContext context) => AlertDialog(
@@ -195,7 +242,11 @@ class UserService {
     Map<String, dynamic> jsonResponse = jsonDecode( await response.stream.bytesToString( ) );
     String message = jsonResponse['message'];
 
+    // removing the progress bar
+    Navigator.of(context).pop();
+
     if( response.statusCode != 200 ) {
+
       if (message == 'Phone Number Does not match') {
         showDialog(
           context: context,
@@ -218,12 +269,14 @@ class UserService {
       }
       else {
         var jsonResponse = jsonDecode(await response.stream.bytesToString());
-        print( jsonResponse );
+        // removing the progress bar
+        Navigator.of(context).pop();
+
         showDialog(
           context: context,
           builder: (BuildContext context) => AlertDialog(
             title: const Text('Error'),
-            content: Text('Failed to upload data. Error : ${jsonResponse.toString()}'),
+            content: Text('Failed to send OTP. Error : ${jsonResponse.toString()}'),
             actions: <Widget>[
               TextButton(
                 child: const Text('OK'),
@@ -236,7 +289,6 @@ class UserService {
         );
       }
     }
-
 
     return response.statusCode == 200;
   }

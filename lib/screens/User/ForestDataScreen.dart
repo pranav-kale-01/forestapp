@@ -12,7 +12,7 @@ import 'ForestDetail.dart';
 class ForestDataScreen extends StatefulWidget {
   final String userEmail;
   final Function(int) changeScreen;
-  final Map<String,dynamic> defaultFilterConflict;
+  final Map<String, dynamic> defaultFilterConflict;
 
   const ForestDataScreen({
     Key? key,
@@ -28,7 +28,8 @@ class ForestDataScreen extends StatefulWidget {
 class _ForestDataScreenState extends State<ForestDataScreen> {
   final TextEditingController _searchController = TextEditingController();
 
-  final Map<String, List<DropdownMenuItem<Map<String,dynamic>>>> _dynamicLists = {};
+  final Map<String, List<DropdownMenuItem<Map<String, dynamic>>>>
+      _dynamicLists = {};
   Map<String, dynamic> filterList = {};
   late List<Conflict> _profileDataList = [];
   late List<Conflict> _searchResult = [];
@@ -42,13 +43,14 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
     'this Week',
     'this Month',
     'this Year',
+    'all'
   ];
 
   String _selectedFilter = 'All';
-  Map<String,dynamic>? _selectedRange;
-  Map<String,dynamic>? _selectedConflict;
-  Map<String,dynamic>? _selectedRound;
-  Map<String,dynamic>? _selectedBt;
+  Map<String, dynamic>? _selectedRange;
+  Map<String, dynamic>? _selectedConflict;
+  Map<String, dynamic>? _selectedRound;
+  Map<String, dynamic>? _selectedBt;
   String? _selectedDate;
 
   @override
@@ -58,11 +60,12 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
   }
 
   Future<void> fetchUserProfileData() async {
-    final profileDataList = await ConflictService.getData( context, userEmail: widget.userEmail );
+    final profileDataList =
+        await ConflictService.getData(context, userEmail: widget.userEmail);
 
     // if the data is loaded from cache showing a bottom popup to user alerting
     // that the app is running in offline mode
-    if( !(await hasConnection) ) {
+    if (!(await hasConnection)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Loading the page in Offline mode'),
@@ -72,35 +75,35 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
 
     // fetching the list of attributes
     final dynamicItems = await DynamicListService.fetchDynamicLists(context);
-    for( var item in dynamicItems.keys ) {
-      _dynamicLists.addAll(
-          {
-            item : dynamicItems[item].map<DropdownMenuItem<Map<String, dynamic>>>(
-                  (Map<String, dynamic> e) => DropdownMenuItem<Map<String, dynamic>>(
+    for (var item in dynamicItems.keys) {
+      _dynamicLists.addAll({
+        item: dynamicItems[item]
+            .map<DropdownMenuItem<Map<String, dynamic>>>(
+              (Map<String, dynamic> e) =>
+                  DropdownMenuItem<Map<String, dynamic>>(
                 child: Text(e['name']),
                 value: e,
               ),
-            ).toList(),
-          }
-      );
+            )
+            .toList(),
+      });
     }
 
-    _selectedRange = _dynamicLists['range']?.first.value;
-    _selectedConflict = _dynamicLists['conflict']?.first.value;
-    _selectedRound = _dynamicLists['round']?.first.value;
-    _selectedBt = _dynamicLists['bt']?.first.value;
-
+    // disabling setting the first value as default
+    // _selectedRange = _dynamicLists['range']?.first.value;
+    // _selectedConflict = _dynamicLists['conflict']?.first.value;
+    // _selectedRound = _dynamicLists['round']?.first.value;
+    // _selectedBt = _dynamicLists['bt']?.first.value;
 
     // if defaultFilterConflict is not null then filtering the data according to conflict
-    if( widget.defaultFilterConflict.isNotEmpty ) {
+    if (widget.defaultFilterConflict.isNotEmpty) {
       setState(() {
         _profileDataList = profileDataList;
         _searchResult = profileDataList;
         filterList['conflict'] = widget.defaultFilterConflict;
         filterData();
       });
-    }
-    else {
+    } else {
       setState(() {
         _profileDataList = profileDataList;
         _searchResult = profileDataList;
@@ -113,7 +116,18 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
 
     List<Conflict> tempList = [];
     _profileDataList.forEach((profileData) {
-      if (profileData.village_name.trim().toLowerCase().contains(searchQuery.toLowerCase()) || profileData.userName.trim().toLowerCase().contains(searchQuery.toLowerCase()) || profileData.userEmail.trim().toLowerCase().contains(searchQuery.toLowerCase())) {
+      if (profileData.village_name
+              .trim()
+              .toLowerCase()
+              .contains(searchQuery.toLowerCase()) ||
+          profileData.userName
+              .trim()
+              .toLowerCase()
+              .contains(searchQuery.toLowerCase()) ||
+          profileData.userEmail
+              .trim()
+              .toLowerCase()
+              .contains(searchQuery.toLowerCase())) {
         tempList.add(profileData);
       }
     });
@@ -127,39 +141,45 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
 
   void filterData() {
     try {
-      if( isSearchEnabled ) {
+      if (isSearchEnabled) {
         _searchResult = _baseSearchData;
-      }
-      else {
+      } else {
         _searchResult = _profileDataList;
       }
 
       if (filterList.keys.contains('range')) {
         setState(() {
           _searchResult = _searchResult
-              .where((data) => data.range == filterList['range']['name'].toLowerCase() )
+              .where((data) =>
+                  data.range.toLowerCase() ==
+                  filterList['range']['name'].toLowerCase())
               .toList();
         });
       }
       if (filterList.keys.contains('conflict')) {
         setState(() {
           _searchResult = _searchResult
-              .where((data) => data.conflict == filterList['conflict']['name'].toLowerCase() )
+              .where((data) =>
+                  data.conflict.toLowerCase() ==
+                  filterList['conflict']['name'].toLowerCase())
               .toList();
         });
       }
       if (filterList.keys.contains('round')) {
-
         setState(() {
           _searchResult = _searchResult
-              .where((data) => data.round.toLowerCase() == filterList['round']['name'].toLowerCase() )
+              .where((data) =>
+                  data.round.toLowerCase() ==
+                  filterList['round']['name'].toLowerCase())
               .toList();
         });
       }
       if (filterList.keys.contains('beat')) {
         setState(() {
           _searchResult = _searchResult
-              .where((data) => data.bt.toLowerCase() == filterList['beat']['name'].toLowerCase() )
+              .where((data) =>
+                  data.bt.toLowerCase() ==
+                  filterList['beat']['name'].toLowerCase())
               .toList();
         });
       }
@@ -201,10 +221,9 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
           _searchResult = tempList;
         });
       }
-    }
-    catch( e, s) {
-      debugPrint( e.toString() );
-      debugPrint( s.toString() );
+    } catch (e, s) {
+      debugPrint(e.toString());
+      debugPrint(s.toString());
     }
   }
 
@@ -271,22 +290,26 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                                   color: Colors.black45,
                                   width: 1,
                                 ),
-                                borderRadius: BorderRadius.circular( 15 ),
+                                borderRadius: BorderRadius.circular(15),
                               ),
                               width: 30,
                               child: Padding(
-                                padding: const EdgeInsets.symmetric( horizontal: 8.0, ),
-                                child: DropdownButton<Map<String,dynamic>>(
-                                  menuMaxHeight: MediaQuery.of(context).size.height * 0.5,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8.0,
+                                ),
+                                child: DropdownButton<Map<String, dynamic>>(
+                                  menuMaxHeight:
+                                      MediaQuery.of(context).size.height * 0.5,
                                   isExpanded: true,
                                   underline: Container(),
-                                  value: _selectedRange, // the currently selected title
+                                  value:
+                                      _selectedRange, // the currently selected title
                                   items: _dynamicLists['range'],
                                   style: TextStyle(
                                     // overflow: TextOverflow.ellipsis,
                                     color: Colors.black,
                                   ),
-                                  onChanged: (Map<String,dynamic>? newValue) {
+                                  onChanged: (Map<String, dynamic>? newValue) {
                                     setState(() {
                                       _selectedRange = newValue!;
                                     });
@@ -295,7 +318,13 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                                     // setting the list of beats based on selected range
                                     filterData();
 
-                                    _selectedRound = _dynamicLists['round']?.where( (DropdownMenuItem round) => round.value['range_id'] == _selectedRange!['id'] ).map((e) => e.value ).toList().first;
+                                    _selectedRound = _dynamicLists['round']
+                                        ?.where((DropdownMenuItem round) =>
+                                            round.value['range_id'] ==
+                                            _selectedRange!['id'])
+                                        .map((e) => e.value)
+                                        .toList()
+                                        .first;
                                   },
                                 ),
                               ),
@@ -308,12 +337,12 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                             icon: Icon(Icons.clear),
                             onPressed: () {
                               clearDropdown('range');
+                              setState(() {});
                             },
                           ),
                         ],
                       ),
                     ),
-
                     const SizedBox(height: 16.0),
                     Text("Filter by Rounds"),
                     const SizedBox(height: 8.0),
@@ -328,16 +357,24 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                                   color: Colors.black45,
                                   width: 1,
                                 ),
-                                borderRadius: BorderRadius.circular( 15 ),
+                                borderRadius: BorderRadius.circular(15),
                               ),
                               child: Padding(
-                                padding: const EdgeInsets.symmetric( horizontal: 8.0),
-                                child: DropdownButton<Map<String,dynamic>>(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 8.0),
+                                child: DropdownButton<Map<String, dynamic>>(
                                   isExpanded: true,
-                                  value: _selectedRound, // the currently selected title
+                                  value:
+                                      _selectedRound, // the currently selected title
                                   underline: Container(),
-                                  items: _dynamicLists['round']?.where( (DropdownMenuItem round) => round.value['range_id'] == _selectedRange!['id'] ).toList(),
-                                  onChanged: (Map<String,dynamic>? newValue) {
+                                  items: _selectedRange == null
+                                      ? []
+                                      : _dynamicLists['round']
+                                          ?.where((DropdownMenuItem round) =>
+                                              round.value['range_id'] ==
+                                              _selectedRange!['id'])
+                                          .toList(),
+                                  onChanged: (Map<String, dynamic>? newValue) {
                                     setState(() {
                                       _selectedRound = newValue!;
                                     });
@@ -355,13 +392,14 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                           IconButton(
                             icon: Icon(Icons.clear),
                             onPressed: () {
-                              clearDropdown('round');
+                              setState(() {
+                                clearDropdown('round');
+                              });
                             },
                           ),
                         ],
                       ),
                     ),
-
                     const SizedBox(height: 16.0),
                     Text("Filter by Conflict Name"),
                     const SizedBox(height: 8.0),
@@ -376,16 +414,19 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                                   color: Colors.black45,
                                   width: 1,
                                 ),
-                                borderRadius: BorderRadius.circular( 15 ),
+                                borderRadius: BorderRadius.circular(15),
                               ),
                               child: Padding(
-                                padding: const EdgeInsets.symmetric( horizontal: 8.0, ),
-                                child: DropdownButton<Map<String,dynamic>>(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8.0,
+                                ),
+                                child: DropdownButton<Map<String, dynamic>>(
                                   isExpanded: true,
-                                  value: _selectedConflict, // the currently selected title
+                                  value:
+                                      _selectedConflict, // the currently selected title
                                   items: _dynamicLists['conflict'],
                                   underline: Container(),
-                                  onChanged: (Map<String,dynamic>? newValue) {
+                                  onChanged: (Map<String, dynamic>? newValue) {
                                     setState(() {
                                       _selectedConflict = newValue!;
                                     });
@@ -403,17 +444,17 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                           IconButton(
                             icon: Icon(Icons.clear),
                             onPressed: () {
-                              clearDropdown('conflict');
+                              setState(() {
+                                clearDropdown('conflict');
+                              });
                             },
                           ),
                         ],
                       ),
                     ),
-
                     const SizedBox(height: 16.0),
                     Text("Filter by Date"),
                     const SizedBox(height: 8.0),
-
                     SizedBox(
                       width: MediaQuery.of(context).size.width,
                       child: Row(
@@ -425,12 +466,14 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                                   color: Colors.black45,
                                   width: 1,
                                 ),
-                                borderRadius: BorderRadius.circular( 15 ),
+                                borderRadius: BorderRadius.circular(15),
                               ),
                               child: Padding(
-                                padding: const EdgeInsets.symmetric( horizontal: 8.0),
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 8.0),
                                 child: DropdownButton<String>(
-                                  value: _selectedDate, // the currently selected title
+                                  value:
+                                      _selectedDate, // the currently selected title
                                   underline: Container(),
                                   isExpanded: true,
                                   items: _dateDropdownOptions.map((item) {
@@ -447,7 +490,8 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                                       _selectedDate = newValue!;
                                     });
 
-                                    filterList['date'] = newValue!.toLowerCase();
+                                    filterList['date'] =
+                                        newValue!.toLowerCase();
                                     filterData();
                                   },
                                 ),
@@ -460,7 +504,9 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                           IconButton(
                             icon: Icon(Icons.clear),
                             onPressed: () {
-                              clearDropdown('date');
+                              setState(() {
+                                clearDropdown('date');
+                              });
                             },
                           ),
                         ],
@@ -475,9 +521,7 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                   child: Text(
                     'Close',
                     style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold
-                    ),
+                        color: Colors.black, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
@@ -491,240 +535,252 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-        debugShowCheckedModeBanner: false,
         home: Scaffold(
-          resizeToAvoidBottomInset: false,
-          appBar: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            flexibleSpace: Container(
-              height: 120,
-              decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.green, Colors.greenAccent],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(10),
-                    bottomRight: Radius.circular(10),
-                  )),
-            ),
-            title: const Text(
-              'Forest Data List',
-              style: TextStyle(
-                color: Colors.black,
-                fontWeight: FontWeight.bold,
+      resizeToAvoidBottomInset: false,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: Container(
+          height: 120,
+          decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.green, Colors.greenAccent],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-            ),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(10),
+                bottomRight: Radius.circular(10),
+              )),
+        ),
+        title: const Text(
+          'Forest Data List',
+          style: TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
           ),
-          body: Column(
+        ),
+      ),
+      body: Column(
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Forest Data List',
-                          style: TextStyle(
-                            fontSize: 24.0,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(
-                          width: 30,
-                        ),
-                        ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors
-                                  .greenAccent.shade400, // Background color
-                              // Text Color (Foreground color)
-                            ),
-                            onPressed: () async {
-                              if( await hasConnection ) {
-                                await ConflictService.exportToExcel( _searchResult, context);
-                              }
-                              else {
-                                showDialog(
-                                  context: context,
-                                  builder: (BuildContext context) => AlertDialog(
-                                    title: const Text('Error'),
-                                    content: Text('Cannot export data in offline mode'),
-                                    actions: <Widget>[
-                                      TextButton(
-                                        child: const Text('OK'),
-                                        onPressed: () {
-                                          Navigator.of(context).pop();
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              }
-                            },
-                            child: Text("Export Data"))
-                      ],
-                    ),
-                  ),
-                ],
-              ),
               Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    labelText: 'Search',
-                    hintText: 'Search by title, user name or user email',
-                    prefixIcon: const Icon(Icons.search),
-                    suffixIcon: IconButton(
-                      icon: Icon(Icons.filter_list),
-                      onPressed: _showFilterDialog,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  onChanged: (value) {
-                    _handleSearchFilter(value, _selectedFilter.simplifyText());
-                  },
-                ),
-              ),
-              FutureBuilder(
-                future: _future,
-                builder: (futureContext, snapshot) {
-                  if( snapshot.connectionState == ConnectionState.waiting ) {
-                    return Expanded(
-                      child: Center(
-                        child: CircularProgressIndicator.adaptive(
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
-                        ),
+                padding: EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Forest Data List',
+                      style: TextStyle(
+                        fontSize: 24.0,
+                        fontWeight: FontWeight.bold,
                       ),
-                    );
-                  }
-                  else {
-                    return _searchResult.isEmpty ? Expanded(
-                      child: Center(
-                        child: Text(
-                          "No result found....",
-                          style:
-                          TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                    ),
+                    SizedBox(
+                      width: 30,
+                    ),
+                    ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              Colors.greenAccent.shade400, // Background color
+                          // Text Color (Foreground color)
                         ),
-                      ),
-                    )
-                        : Expanded(
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(
-                          horizontal: 8.0,
-                        ),
-                        child: ListView.builder(
-                          physics: const BouncingScrollPhysics(),
-                          itemCount: _searchResult.length,
-                          itemBuilder: (innerContext, index) {
-                            Conflict profileData = _searchResult[index];
-                            return Card(
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  SizedBox(
-                                    width: 120.0,
-                                    height: 120.0,
-                                    child: Image.network(
-                                      '${baseUrl}uploads/conflicts/${profileData.imageUrl}',
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                  const SizedBox(
-                                    width: 20,
-                                  ),
-                                  Expanded(
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                        children: <Widget>[
-                                          Row(
-                                            mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Text(
-                                                profileData.village_name,
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 8.0),
-                                          Text(
-                                            DateFormat('MMM d, yyyy h:mm a')
-                                                .format(profileData.datetime!
-                                                .toDate()),
-                                          ),
-                                          const SizedBox(height: 8.0),
-                                          Text(
-                                            profileData.userName,
-                                          ),
-                                          const SizedBox(height: 8.0),
-                                          Text(
-                                            profileData.userEmail,
-                                          ),
-                                          const SizedBox(height: 8.0),
-                                          ElevatedButton.icon(
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Color.fromARGB(
-                                                  255,
-                                                  3,
-                                                  8,
-                                                  35), // Background color
-                                              // Text Color (Foreground color)
-                                            ),
-                                            onPressed: () {
-                                              Navigator.of(context).push(
-                                                  MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          ForestDetail(
-                                                            forestData: profileData,
-                                                            changeIndex: widget.changeScreen,
-                                                            currentIndex: 2,
-                                                            changeData: (Conflict newData) {
-                                                              setState(() {
-                                                                _searchResult[index] = newData;
-                                                              });
-                                                            },
-                                                            deleteData: (Conflict data) {
-                                                              setState(() {
-                                                                _searchResult.removeWhere((element) => element.id == data.id );
-                                                              });
-                                                            },
-                                                          )
-                                                  )
-                                              );
-                                            },
-                                            label: const Text("View"),
-                                            icon: const Icon(
-                                                Icons.arrow_right_alt_outlined),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
+                        onPressed: () async {
+                          if (await hasConnection) {
+                            await ConflictService.exportToExcel(
+                                _searchResult, context);
+                          } else {
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) => AlertDialog(
+                                title: const Text('Error'),
+                                content:
+                                    Text('Cannot export data in offline mode'),
+                                actions: <Widget>[
+                                  TextButton(
+                                    child: const Text('OK'),
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
                                   ),
                                 ],
                               ),
                             );
-                          },
-                        ),
-                      ),
-                    );
-                  }
-                }
-              )
+                          }
+                        },
+                        child: Text("Export Data"))
+                  ],
+                ),
+              ),
             ],
           ),
-        ));
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                labelText: 'Search',
+                hintText: 'Search by title, user name or user email',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: IconButton(
+                  icon: Icon(Icons.filter_list),
+                  onPressed: _showFilterDialog,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              onChanged: (value) {
+                _handleSearchFilter(value, _selectedFilter.simplifyText());
+              },
+            ),
+          ),
+          FutureBuilder(
+              future: _future,
+              builder: (futureContext, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Expanded(
+                    child: Center(
+                      child: CircularProgressIndicator.adaptive(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                      ),
+                    ),
+                  );
+                } else {
+                  return _searchResult.isEmpty
+                      ? Expanded(
+                          child: Center(
+                            child: Text(
+                              "No result found....",
+                              style: TextStyle(
+                                  fontSize: 15, fontWeight: FontWeight.w500),
+                            ),
+                          ),
+                        )
+                      : Expanded(
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(
+                              horizontal: 8.0,
+                            ),
+                            child: ListView.builder(
+                              physics: const BouncingScrollPhysics(),
+                              itemCount: _searchResult.length,
+                              itemBuilder: (innerContext, index) {
+                                Conflict profileData = _searchResult[index];
+                                return Card(
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      SizedBox(
+                                        width: 120.0,
+                                        height: 120.0,
+                                        child: Image.network(
+                                          '${baseUrl}uploads/conflicts/${profileData.imageUrl}',
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ),
+                                      const SizedBox(
+                                        width: 20,
+                                      ),
+                                      Expanded(
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: <Widget>[
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  Text(
+                                                    profileData.village_name,
+                                                    style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 8.0),
+                                              Text(
+                                                DateFormat('MMM d, yyyy h:mm a')
+                                                    .format(profileData
+                                                        .datetime!
+                                                        .toDate()),
+                                              ),
+                                              const SizedBox(height: 8.0),
+                                              Text(
+                                                profileData.userName,
+                                              ),
+                                              const SizedBox(height: 8.0),
+                                              Text(
+                                                profileData.userEmail,
+                                              ),
+                                              const SizedBox(height: 8.0),
+                                              ElevatedButton.icon(
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: Color.fromARGB(
+                                                      255,
+                                                      3,
+                                                      8,
+                                                      35), // Background color
+                                                  // Text Color (Foreground color)
+                                                ),
+                                                onPressed: () {
+                                                  Navigator.of(context).push(
+                                                      MaterialPageRoute(
+                                                          builder: (context) =>
+                                                              ForestDetail(
+                                                                forestData:
+                                                                    profileData,
+                                                                changeIndex: widget
+                                                                    .changeScreen,
+                                                                currentIndex: 2,
+                                                                changeData:
+                                                                    (Conflict
+                                                                        newData) {
+                                                                  setState(() {
+                                                                    _searchResult[
+                                                                            index] =
+                                                                        newData;
+                                                                  });
+                                                                },
+                                                                deleteData:
+                                                                    (Conflict
+                                                                        data) {
+                                                                  setState(() {
+                                                                    _searchResult.removeWhere((element) =>
+                                                                        element
+                                                                            .id ==
+                                                                        data.id);
+                                                                  });
+                                                                },
+                                                              )));
+                                                },
+                                                label: const Text("View"),
+                                                icon: const Icon(Icons
+                                                    .arrow_right_alt_outlined),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        );
+                }
+              })
+        ],
+      ),
+    ));
   }
 
   @override
