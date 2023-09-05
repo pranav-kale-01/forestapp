@@ -44,6 +44,8 @@ class _EditConflictState extends State<EditConflict> {
 
   Map<String, dynamic> dynamicLists = {};
 
+  var rounds, beats;
+
   Future<void> editConflict() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
@@ -208,7 +210,7 @@ class _EditConflictState extends State<EditConflict> {
                     height: 10,
                   ),
                   DropdownButtonFormField(
-                    decoration: ThemeHelper().textInputDecoration('Range', 'Enter Range'),
+                    decoration: ThemeHelper().textInputDecoration('Range' , 'Enter Range'),
                     value: selectedRange,
                     items: dynamicLists['range'].map<DropdownMenuItem<Map<String, dynamic>>>( (range) => DropdownMenuItem<Map<String, dynamic>>(
                       value: range,
@@ -217,9 +219,11 @@ class _EditConflictState extends State<EditConflict> {
                     onChanged: (Map<String, dynamic>? value) {
                       setState(() {
                         selectedRange = value;
-                        var rounds = dynamicLists['round'].where( (round) => round['range_id'] == selectedRange!['id'] ).toList();
+                        rounds = dynamicLists['round'].where( (round) => round['range_id'] == selectedRange!['id'] ).toList();
+                        print("Rounds : " + rounds );
+
                         selectedRound = rounds.isNotEmpty ? rounds.first : {};
-                        var beats = dynamicLists['beat'].where( (beat) => beat['round_id'] == selectedRound!['id'] ).toList();
+                        beats = dynamicLists['beat'].where( (beat) => beat['round_id'] == selectedRound!['id'] ).toList();
                         selectedBt = beats.isNotEmpty ? beats.first : {};
                       });
                     },
@@ -239,11 +243,9 @@ class _EditConflictState extends State<EditConflict> {
                     height: 10,
                   ),
                   DropdownButtonFormField(
-                    decoration: ThemeHelper()
-                        .textInputDecoration('Round', 'Enter Round'),
+                    decoration: ThemeHelper().textInputDecoration('Round', 'Enter Round'),
                     value: selectedRound,
                     items: dynamicLists['round']!.where( (round) => round['range_id'] == selectedRange!['id'] ).map<DropdownMenuItem<Map<String, dynamic>>>(
-                    // items: dynamicLists['round']!.map<DropdownMenuItem<Map<String, dynamic>>>(
                     (round) => DropdownMenuItem<Map<String, dynamic>>(
                         child: Text(round['name']),
                         value: round,

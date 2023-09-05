@@ -216,8 +216,11 @@ class _EditConflictState extends State<EditConflict> {
                     ) ).toList(),
                     onChanged: (Map<String, dynamic>? value) {
                       setState(() {
+                        selectedRange = value;
                         var rounds = dynamicLists['round'].where( (round) => round['range_id'] == selectedRange!['id'] ).toList();
                         selectedRound = rounds.isNotEmpty ? rounds.first : {};
+
+                        debugPrint("Rounds " + rounds.toString() );
                         var beats = dynamicLists['beat'].where( (beat) => beat['round_id'] == selectedRound!['id'] ).toList();
                         selectedBt = beats.isNotEmpty ? beats.first : {};
                       });
