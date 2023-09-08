@@ -21,6 +21,7 @@ class UserScreen extends StatefulWidget {
 class _UserScreenState extends State<UserScreen> {
   late List<User> guardsList = [];
   late Future<void> _future;
+  bool isLoading = false;
 
   @override
   void initState() {
@@ -39,9 +40,13 @@ class _UserScreenState extends State<UserScreen> {
       );
     }
 
+    setState(() {
+      isLoading = true;
+    });
     List<User> profileDataList = await UserService.getAllUsers(context);
 
     setState(() {
+      isLoading = false;
       guardsList = profileDataList;
     });
 
@@ -128,7 +133,9 @@ class _UserScreenState extends State<UserScreen> {
           ),
         ],
       ),
-      body: Container(
+      body: isLoading ? Center(
+        child: CircularProgressIndicator(),
+      ): Container(
         padding: const EdgeInsets.all(10.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -155,7 +162,7 @@ class _UserScreenState extends State<UserScreen> {
                         itemCount: guardsList.length,
                         itemBuilder: (innerContext, index) {
                           final User guard = guardsList[index];
-                          guard.radius = (guard.radius / 1000 ).round();
+                          guard.radius = (guard.radius).round();
 
                           return InkWell(
                             onTap: () {

@@ -234,7 +234,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       children: [
                         Text("Radius Area: "),
                         Text(
-                          (  ( _profileData!.radius / 1000 ).round() ).toString() + "Km",
+                          (  ( _profileData!.radius).round() ).toString() + "Km",
                           style: const TextStyle(
                             fontSize: 16.0,
                           ),

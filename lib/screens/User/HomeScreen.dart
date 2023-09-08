@@ -53,7 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   late double _longitude;
   late double _latitude;
-  late double _circleRadius ; // radius in meters, 50000=km
+  late double _circleRadius ;
 
   StreamSubscription? connection;
   bool isOffline = false;
@@ -317,7 +317,7 @@ class _HomeScreenState extends State<HomeScreen> {
     print( _latitude.toString() + "|" + _longitude.toString() );
     print("distance is : " + _distance.toString() );
 
-    return (_distance <= _circleRadius);
+    return (_distance <= _circleRadius * 1000 );
   }
 
   Future<bool> uploadStoredConflicts() async {
@@ -402,8 +402,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           children: [
                             Text( "Current : " + _point.latitude.toString() + ", " + _point.longitude.toString() ),
                             Text( "Stored : " + _latitude.toString() + ", " + _longitude.toString() ),
-                            Text("Radius : " +  ( _circleRadius / 1000 ).toString() +  "km" ),
-                            Text("Distance : " + ( _distance / 1000 ).round().toString() + "Km" ),
+                            Text("Radius : " +  ( _circleRadius ).toString() +  "km" ),
+                            Text("Distance : " + ( _distance ).round().toString() + "Km" ),
                           ],
                         ),
                         actions: [

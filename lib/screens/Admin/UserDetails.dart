@@ -28,7 +28,7 @@ class UserDetails extends StatelessWidget {
           ),
         ),
         title: const Text(
-          'Edit User',
+          'User Details',
           style: TextStyle(
             fontWeight: FontWeight.bold,
           ),
@@ -123,7 +123,7 @@ class UserDetails extends StatelessWidget {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'Radius Range : ${ (user.radius / 1000 ).round().toString() }',
+                    'Radius Range : ${ (user.radius ).round().toString() }',
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.grey[600],

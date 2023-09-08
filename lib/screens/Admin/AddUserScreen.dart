@@ -78,7 +78,7 @@ class _AddUserScreenState extends State<AddUserScreen> {
           'privileged_user' : false,
           'latitude' :  latitude!,
           'longitude' : longitude!,
-          'radius' : int.parse( radius! ) * 1000,
+          'radius' : int.parse( radius! ) ,
         };
 
         bool success = await UserService.addUser( context, userData );

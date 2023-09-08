@@ -97,6 +97,17 @@ class _AdminLoginState extends State<AdminLogin> {
                                 ),
                                 GestureDetector(
                                     onTap: ()  async {
+                                      showDialog(
+                                        context: context,
+                                        barrierDismissible: false,
+                                        builder: (context) =>  Center(
+                                          child: CircularProgressIndicator(
+                                            valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+                                            strokeWidth: 2,
+                                          ),
+                                        ),
+                                      );
+
                                       // sending Otp
                                       otpSent = await UserService.sendOTP( context, _phoneController.text );
 

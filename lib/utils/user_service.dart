@@ -426,7 +426,7 @@ class UserService {
         'forest_id': userData['forestID'].toString(),
         'latitude': userData['latitude'].toString(),
         'longitude': userData['longitude'].toString(),
-        'radius':  ( userData['radius'] * 1000 ).toString(),
+        'radius':  ( userData['radius'] ).toString(),
       });
 
       request.files.add(await http.MultipartFile.fromPath('profile_photo', userData['image'].path ));
@@ -438,13 +438,13 @@ class UserService {
 
       if( response.statusCode != 200 ) {
         print("There was an error");
-        print( await response.stream.bytesToString( ) );
+        var message =  await response.stream.bytesToString( );
         print(response.reasonPhrase);
         showDialog(
           context: context,
           builder: (BuildContext context) => AlertDialog(
             title: const Text('Error'),
-            content: Text('Failed to upload data. Error : ${response.reasonPhrase}'),
+            content: Text('Failed to upload data. Error : ${message}'),
             actions: <Widget>[
               TextButton(
                 child: const Text('OK'),

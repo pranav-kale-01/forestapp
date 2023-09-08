@@ -100,7 +100,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
           forestId: int.parse( _forestId ),
           longitude: double.parse(longitude!),
           latitude: double.parse(latitude!),
-          radius: int.parse( radius! ) * 1000,
+          radius: int.parse( radius! ),
           aadharImageUrl: widget.user.aadharImageUrl,
           forestIDImageUrl: widget.user.forestIDImageUrl,
       );
@@ -489,9 +489,9 @@ class _EditUserScreenState extends State<EditUserScreen> {
                         }
                         return null;
                       },
-                      initialValue: ( widget.user.radius  / 1000 ).round().toString(),
+                      initialValue: ( widget.user.radius ).round().toString(),
                       onSaved: (value) {
-                        radius = (int.parse( value! ) * 1000).toString();
+                        radius = (int.parse( value! ) ).toString();
                       },
                     ),
                     const SizedBox(height: 16.0),
