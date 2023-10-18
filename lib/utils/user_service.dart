@@ -484,9 +484,7 @@ class UserService {
   static Future<bool> updateUser(BuildContext context, User updatedUser) async {
     try {
       // calling the API for updating user
-      var request = http.MultipartRequest(
-          'POST',
-          Uri.parse('${baseUrl}admin/update_guard'));
+      var request = http.MultipartRequest( 'POST', Uri.parse('${baseUrl}admin/update_guard'));
       request.fields.addAll({
         'name': updatedUser.name,
         'email': updatedUser.email,
@@ -501,18 +499,24 @@ class UserService {
 
       print( request.fields.toString() );
       http.StreamedResponse response = await request.send();
+      Navigator.of(context).pop();
 
       if (response.statusCode == 200) {
         return true;
       } else {
-        print( response.reasonPhrase );
-        var jsonResponse = jsonDecode(await response.stream.bytesToString());
-        print( jsonResponse );
+        var resultBody = await response.stream.bytesToString();
+        var message = resultBody;
+
+        if( response.statusCode == 409 ) {
+          var jsonResponse = jsonDecode( resultBody );
+          message = jsonResponse['message'];
+        }
+
         showDialog(
           context: context,
           builder: (BuildContext context) => AlertDialog(
             title: const Text('Error'),
-            content: Text('Failed to upload data. Error : ${jsonResponse.toString()}'),
+            content: Text('Error : $message'),
             actions: <Widget>[
               TextButton(
                 child: const Text('OK'),

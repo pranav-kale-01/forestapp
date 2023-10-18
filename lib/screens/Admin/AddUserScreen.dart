@@ -360,6 +360,9 @@ class _AddUserScreenState extends State<AddUserScreen> {
                       if (value == null || value.isEmpty) {
                         return 'Please enter a Latitude';
                       }
+                      else if ( double.tryParse( value ) == null ) {
+                        return "Please enter a valid Latitude";
+                      }
                       return null;
                     },
                     onChanged: (value) {
@@ -386,6 +389,9 @@ class _AddUserScreenState extends State<AddUserScreen> {
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter a longitude';
+                      }
+                      else if ( double.tryParse( value ) == null ) {
+                        return "Please enter a valid Longitude";
                       }
                       return null;
                     },
