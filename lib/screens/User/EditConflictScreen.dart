@@ -77,7 +77,7 @@ class _EditConflictState extends State<EditConflict> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Conflict updated successfully'),
+            content: Text('Status updated successfully'),
           ),
         );
 
@@ -147,7 +147,7 @@ class _EditConflictState extends State<EditConflict> {
           ),
         ),
         title: const Text(
-          'Edit Conflict',
+          'Edit Status',
           style: TextStyle(
             fontWeight: FontWeight.bold,
           ),
@@ -353,7 +353,7 @@ class _EditConflictState extends State<EditConflict> {
                   ),
 
                   Text(
-                    "Conflict",
+                    "Status",
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -364,7 +364,7 @@ class _EditConflictState extends State<EditConflict> {
                   ),
                   DropdownButtonFormField(
                     decoration: ThemeHelper().textInputDecoration(
-                        'Conflict', 'Select Conflict'
+                        'Status', 'Select Status'
                     ),
                     value: selectedConflict,
                     items: dynamicLists['conflict']!.map<DropdownMenuItem<Map<String,dynamic>>>( (e) => DropdownMenuItem<Map<String, dynamic>>(
@@ -461,7 +461,7 @@ class _EditConflictState extends State<EditConflict> {
                   ),
 
                   Text(
-                    "notes",
+                    "Description",
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -474,7 +474,7 @@ class _EditConflictState extends State<EditConflict> {
                       controller: _notesController,
                       decoration: ThemeHelper()
                           .textInputDecoration(
-                          'notes', 'Notes'),
+                          'notes', 'Description'),
                       maxLines: null,
                       keyboardType: TextInputType.multiline
                   ),

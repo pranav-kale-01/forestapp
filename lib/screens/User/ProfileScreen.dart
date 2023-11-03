@@ -76,7 +76,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     context: context,
                     builder: (context) => AlertDialog(
                       title: const Text('Confirm Logout'),
-                      content: const Text('Are you sure you want to log out?'),
+                      content: const Text('Are you sure you w ant to log out?'),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(context, false),

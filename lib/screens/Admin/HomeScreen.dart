@@ -226,7 +226,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                                     children: [
                                       Text(
-                                        "Total conflicts",
+                                        "Total Statuses",
                                         style: TextStyle(
                                           fontSize: 18,
                                         ),

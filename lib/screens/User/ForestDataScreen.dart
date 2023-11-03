@@ -32,6 +32,7 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
       _dynamicLists = {};
   Map<String, dynamic> filterList = {};
   late List<Conflict> _profileDataList = [];
+  List<String> _villages = [];
   late List<Conflict> _searchResult = [];
   late List<Conflict> _baseSearchData = [];
   bool isSearchEnabled = false;
@@ -52,6 +53,55 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
   Map<String, dynamic>? _selectedRound;
   Map<String, dynamic>? _selectedBt;
   String? _selectedDate;
+  List<String> villages = [
+    "Bakhari (R)",
+    "Usaripar",
+    "Kadbhikheda",
+    "Sawra",
+    "Kamtee",
+    "Dongartal",
+    "Zinzaria",
+    "Khapa",
+    "Sillari",
+    "Pipariya",
+    "Salai",
+    "Chargaon",
+    "Hiwra",
+    "Moudi",
+    "Mohagaon (R)",
+    "Ghoti",
+    "Sahapur",
+    "Dahoda",
+    "Tuyapar",
+    "Jamuniya",
+    "Patharai",
+    "Ambazari",
+    "Sarra (R)",
+    "Borda",
+    "Sarakha",
+    "Kirangisarra",
+    "Borban (R)",
+    "Deoli (R)",
+    "Bajarkund (R)",
+    "Kolitmara",
+    "Kukda (R)",
+    "Surera",
+    "Banera",
+    "Narhar",
+    "Dhawalpur",
+    "Sawangi",
+    "Ghatkukda",
+    "Pardi",
+    "Gargoti",
+    "Saleghat",
+    "Suwardhra",
+    "Siladevi",
+    "Chargaon",
+    "Makardhokda",
+    "Ambazari",
+    "Ghatpendhri"
+  ];
+  String? selectedVillage;
 
   @override
   void initState() {
@@ -60,8 +110,7 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
   }
 
   Future<void> fetchUserProfileData() async {
-    final profileDataList =
-        await ConflictService.getData(context, userEmail: widget.userEmail);
+    final profileDataList = await ConflictService.getData(context, userEmail: widget.userEmail);
 
     // if the data is loaded from cache showing a bottom popup to user alerting
     // that the app is running in offline mode
@@ -76,6 +125,8 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
     // fetching the list of attributes
     final dynamicItems = await DynamicListService.fetchDynamicLists(context);
     for (var item in dynamicItems.keys) {
+      debugPrint( item.toString() );
+
       _dynamicLists.addAll({
         item: dynamicItems[item]
             .map<DropdownMenuItem<Map<String, dynamic>>>(
@@ -84,8 +135,7 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                 child: Text(e['name']),
                 value: e,
               ),
-            )
-            .toList(),
+            ).toList(),
       });
     }
 
@@ -401,7 +451,7 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                       ),
                     ),
                     const SizedBox(height: 16.0),
-                    Text("Filter by Conflict Name"),
+                    Text("Filter by Status"),
                     const SizedBox(height: 8.0),
                     SizedBox(
                       width: MediaQuery.of(context).size.width,
@@ -617,22 +667,56 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
           ),
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                labelText: 'Search',
-                hintText: 'Search by title, user name or user email',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: IconButton(
-                  icon: Icon(Icons.filter_list),
-                  onPressed: _showFilterDialog,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              onChanged: (value) {
-                _handleSearchFilter(value, _selectedFilter.simplifyText());
+            child: Autocomplete<String>(
+              optionsBuilder: (TextEditingValue textEditingValue) {
+                if (textEditingValue.text == "") {
+                  return const Iterable<String>.empty();
+                } else {
+                  List<String> matches = <String>[];
+                  matches.addAll(villages);
+
+                  matches.retainWhere((s) {
+                    return s
+                        .toLowerCase()
+                        .contains(textEditingValue.text.toLowerCase());
+                  });
+
+                  return matches;
+                }
+              },
+              onSelected: (String value) {
+                _handleSearchFilter( value, _selectedFilter.simplifyText());
+
+              },
+              fieldViewBuilder: (BuildContext context,
+                  TextEditingController searchController,
+                  FocusNode focusNode,
+                  VoidCallback onFieldSubmitted) {
+
+                return Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TextField(
+                    controller: searchController,
+                    focusNode: focusNode,
+                    decoration: InputDecoration(
+                      labelText: 'Search',
+                      hintText: 'Search by title, user name or user email',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: IconButton(
+                        icon: Icon(Icons.filter_list),
+                        onPressed: _showFilterDialog,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    onChanged: (String value) {
+                      _handleSearchFilter( value, _selectedFilter.simplifyText());
+
+                      setState(() {});
+                    },
+                  ),
+                );
               },
             ),
           ),

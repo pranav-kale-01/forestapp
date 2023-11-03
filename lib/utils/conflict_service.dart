@@ -382,7 +382,7 @@ class ConflictService {
         'SP Causing Death',
         'notes',
         'Username'
-            'User Email',
+        'User Email',
         'User Contact',
         'location',
         'Created At',

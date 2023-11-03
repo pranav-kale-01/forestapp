@@ -254,7 +254,7 @@ class _AddForestDataState extends State<AddForestData> {
           context: context,
           builder: (BuildContext context) => AlertDialog(
             title: const Text('Failure'),
-            content: const Text('Failed To Upload Conflict'),
+            content: const Text('Failed To Upload Status'),
             actions: <Widget>[
               TextButton(
                 child: const Text('OK'),
@@ -385,7 +385,7 @@ class _AddForestDataState extends State<AddForestData> {
         context: context,
         builder: (BuildContext context) => AlertDialog(
           title: const Text('Error'),
-          content: Text('No Conflicts Found, please Add a conflict first'),
+          content: Text('No Status Found, please Add a Status first'),
           actions: <Widget>[
             TextButton(
               child: const Text('OK'),
@@ -609,7 +609,7 @@ class _AddForestDataState extends State<AddForestData> {
                     ),
 
                     Text(
-                      "Conflict",
+                      "Status",
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -620,7 +620,7 @@ class _AddForestDataState extends State<AddForestData> {
                     ),
                     DropdownButtonFormField(
                       decoration: ThemeHelper()
-                          .textInputDecoration('Conflict', 'Select Conflict')
+                          .textInputDecoration('Conflict', 'Select Status')
                           .copyWith(
                             enabledBorder: OutlineInputBorder(
                               borderSide: BorderSide(
@@ -648,7 +648,7 @@ class _AddForestDataState extends State<AddForestData> {
                           horizontal: 10.0,
                         ),
                         child: Text(
-                          "Please Select a valid conflict",
+                          "Please Select a valid Status",
                           style: TextStyle(
                             color: Colors.red,
                           ),
@@ -734,7 +734,7 @@ class _AddForestDataState extends State<AddForestData> {
                     ),
 
                     Text(
-                      "notes",
+                      "Description",
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,

@@ -24,17 +24,64 @@ class ForestDataScreen extends StatefulWidget {
 }
 
 class _ForestDataScreenState extends State<ForestDataScreen> {
-  final TextEditingController _searchController = TextEditingController();
-
   late List<Conflict> _profileDataList = [];
   late List<Conflict> _searchResult = [];
   late List<Conflict> _baseSearchData = [];
+  List<String> villages = [
+    "Bakhari (R)",
+    "Usaripar",
+    "Kadbhikheda",
+    "Sawra",
+    "Kamtee",
+    "Dongartal",
+    "Zinzaria",
+    "Khapa",
+    "Sillari",
+    "Pipariya",
+    "Salai",
+    "Chargaon",
+    "Hiwra",
+    "Moudi",
+    "Mohagaon (R)",
+    "Ghoti",
+    "Sahapur",
+    "Dahoda",
+    "Tuyapar",
+    "Jamuniya",
+    "Patharai",
+    "Ambazari",
+    "Sarra (R)",
+    "Borda",
+    "Sarakha",
+    "Kirangisarra",
+    "Borban (R)",
+    "Deoli (R)",
+    "Bajarkund (R)",
+    "Kolitmara",
+    "Kukda (R)",
+    "Surera",
+    "Banera",
+    "Narhar",
+    "Dhawalpur",
+    "Sawangi",
+    "Ghatkukda",
+    "Pardi",
+    "Gargoti",
+    "Saleghat",
+    "Suwardhra",
+    "Siladevi",
+    "Chargaon",
+    "Makardhokda",
+    "Ambazari",
+    "Ghatpendhri"
+  ];
 
   final Map<String, List<DropdownMenuItem<Map<String, dynamic>>>>
       _dynamicLists = {};
   Map<String, dynamic> filterList = {};
   bool isSearchEnabled = false;
   late Future<void> _future;
+  late TextEditingController _searchController;
 
   final List<String> _dateDropdownOptions = [
     'today',
@@ -51,6 +98,8 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
   Map<String, dynamic>? _selectedRound;
   Map<String, dynamic>? _selectedBt;
   String? _selectedDate;
+
+  String? selectedVillage;
 
   @override
   void initState() {
@@ -93,6 +142,14 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
     // _selectedRound = _dynamicLists['round']?.first.value;
     // _selectedBt = _dynamicLists['bt']?.first.value;
 
+    // for( var item in profileDataList ) {
+    //   if( !villages.contains( item.village_name ) ) {
+    //     villages.add( item.village_name );
+    //   }
+    // }
+
+    // debugPrint( villages.toString() );
+
     // if defaultFilterConflict is not null then filtering the data according to conflict
     if (widget.defaultFilterConflict.isNotEmpty) {
       setState(() {
@@ -130,6 +187,9 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
       }
     });
 
+
+    print( tempList.length );
+
     filterData();
 
     setState(() {
@@ -144,6 +204,8 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
       } else {
         _searchResult = _profileDataList;
       }
+
+      print( filterList );
 
       if (filterList.keys.contains('range')) {
         setState(() {
@@ -215,6 +277,7 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
           }
         });
 
+
         setState(() {
           _searchResult = tempList;
         });
@@ -225,7 +288,9 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
     }
   }
 
-  void _handleSearchFilter(String searchQuery, String filterType) {
+  void _handleSearchFilter( String filterType) {
+    String searchQuery = selectedVillage!;
+
     if (searchQuery.isNotEmpty) {
       isSearchEnabled = true;
       _searchList(searchQuery);
@@ -399,7 +464,7 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
                       ),
                     ),
                     const SizedBox(height: 16.0),
-                    Text("Filter by Conflict Name"),
+                    Text("Filter by Status"),
                     const SizedBox(height: 8.0),
                     SizedBox(
                       width: MediaQuery.of(context).size.width,
@@ -613,25 +678,66 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
           ),
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                labelText: 'Search',
-                hintText: 'Search by title, user name or user email',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: IconButton(
-                  icon: Icon(Icons.filter_list),
-                  onPressed: _showFilterDialog,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
+            child: Container(
+              child: Autocomplete<String>(
+                optionsBuilder: (TextEditingValue textEditingValue) {
+                  if (textEditingValue.text == "") {
+                    return const Iterable<String>.empty();
+                  } else {
+                    List<String> matches = <String>[];
+                    matches.addAll(villages);
+
+                    matches.retainWhere((s) {
+                      return s
+                          .toLowerCase()
+                          .contains(textEditingValue.text.toLowerCase());
+                    });
+
+                    return matches;
+                  }
+                },
+                onSelected: (String value) {
+                  selectedVillage = value;
+                  _handleSearchFilter( _selectedFilter.simplifyText());
+
+                },
+                fieldViewBuilder: (BuildContext context,
+                    TextEditingController searchController,
+                    FocusNode focusNode,
+                    VoidCallback onFieldSubmitted) {
+
+                  _searchController = searchController;
+
+                  return Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: TextField(
+                      controller: searchController,
+                      focusNode: focusNode,
+                      decoration: InputDecoration(
+                        labelText: 'Search',
+                        hintText: 'Search by title, user name or user email',
+                        prefixIcon: const Icon(Icons.search),
+                        suffixIcon: IconButton(
+                          icon: Icon(Icons.filter_list),
+                          onPressed: _showFilterDialog,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      onChanged: (String value) {
+                        selectedVillage = value;
+                        _handleSearchFilter( _selectedFilter.simplifyText());
+
+                        setState(() {});
+                      },
+                    ),
+                  );
+                },
               ),
-              onChanged: (value) {
-                _handleSearchFilter(value, _selectedFilter.simplifyText());
-              },
             ),
           ),
+
           FutureBuilder(
               future: _future,
               builder: (futureContext, snapshot) {

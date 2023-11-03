@@ -166,7 +166,7 @@ class _ForestDetailState extends State<ForestDetail> {
                     SizedBox(height: 16),
                     Text('C.No/S.No Name: ${widget.forestData.cNoName}'),
                     SizedBox(height: 16),
-                    Text('Conflict: ${widget.forestData.conflict}'),
+                    Text('Status: ${widget.forestData.conflict}'),
                     SizedBox(height: 16),
                     Text('Name: ${widget.forestData.person_name}'),
                     SizedBox(height: 16),
@@ -255,7 +255,7 @@ class _ForestDetailState extends State<ForestDetail> {
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('conflict not found.'),
+                              content: Text('Status not found.'),
                             ),
                           );
                         }
