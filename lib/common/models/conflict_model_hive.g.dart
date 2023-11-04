@@ -23,27 +23,26 @@ class ConflictAdapter extends TypeAdapter<Conflict> {
       bt: fields[3] as String,
       village_name: fields[4] as String,
       cNoName: fields[5] as String,
-      pincodeName: fields[6] as String,
-      conflict: fields[7] as String,
-      person_name: fields[8] as String,
-      person_age: fields[9] as String,
-      person_gender: fields[10] as String,
-      sp_causing_death: fields[11] as String,
-      notes: fields[12] as String,
-      datetime: fields[13] as TimeStamp?,
-      location: fields[14] as GeoPoint,
-      userContact: fields[15] as String,
-      userImage: fields[16] as String,
-      imageUrl: fields[17] as String,
-      userName: fields[18] as String,
-      userEmail: fields[19] as String,
+      conflict: fields[6] as String,
+      person_name: fields[7] as String,
+      person_age: fields[8] as String,
+      person_gender: fields[9] as String,
+      sp_causing_death: fields[10] as String,
+      notes: fields[11] as String,
+      imageUrl: fields[16] as String,
+      userName: fields[17] as String,
+      userEmail: fields[18] as String,
+      datetime: fields[12] as TimeStamp?,
+      location: fields[13] as GeoPoint,
+      userContact: fields[14] as String,
+      userImage: fields[15] as String,
     );
   }
 
   @override
   void write(BinaryWriter writer, Conflict obj) {
     writer
-      ..writeByte(20)
+      ..writeByte(19)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -57,32 +56,30 @@ class ConflictAdapter extends TypeAdapter<Conflict> {
       ..writeByte(5)
       ..write(obj.cNoName)
       ..writeByte(6)
-      ..write(obj.pincodeName)
-      ..writeByte(7)
       ..write(obj.conflict)
-      ..writeByte(8)
+      ..writeByte(7)
       ..write(obj.person_name)
-      ..writeByte(9)
+      ..writeByte(8)
       ..write(obj.person_age)
-      ..writeByte(10)
+      ..writeByte(9)
       ..write(obj.person_gender)
-      ..writeByte(11)
+      ..writeByte(10)
       ..write(obj.sp_causing_death)
-      ..writeByte(12)
+      ..writeByte(11)
       ..write(obj.notes)
-      ..writeByte(13)
+      ..writeByte(12)
       ..write(obj.datetime)
-      ..writeByte(14)
+      ..writeByte(13)
       ..write(obj.location)
-      ..writeByte(15)
+      ..writeByte(14)
       ..write(obj.userContact)
-      ..writeByte(16)
+      ..writeByte(15)
       ..write(obj.userImage)
-      ..writeByte(17)
+      ..writeByte(16)
       ..write(obj.imageUrl)
-      ..writeByte(18)
+      ..writeByte(17)
       ..write(obj.userName)
-      ..writeByte(19)
+      ..writeByte(18)
       ..write(obj.userEmail);
   }
 
@@ -92,7 +89,7 @@ class ConflictAdapter extends TypeAdapter<Conflict> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-          other is ConflictAdapter &&
-              runtimeType == other.runtimeType &&
-              typeId == other.typeId;
+      other is ConflictAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
 }

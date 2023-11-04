@@ -30,7 +30,6 @@ class _EditConflictState extends State<EditConflict> {
 
   late TextEditingController _villageNameController;
   late TextEditingController _cNoController;
-  late TextEditingController _pincodeNameController;
   late TextEditingController _personNameController;
   late TextEditingController _personAgeController;
   late TextEditingController _personGenderController;
@@ -58,7 +57,6 @@ class _EditConflictState extends State<EditConflict> {
         'beat' : selectedBt,
         "village_name" : _villageNameController.text,
         "cn_sr_name" : _cNoController.text,
-        "pincode" : _pincodeNameController.text,
         "conflict" :  selectedConflict,
         "name" : _personNameController.text,
         "age" : _personAgeController.text,
@@ -105,7 +103,6 @@ class _EditConflictState extends State<EditConflict> {
 
     _villageNameController = TextEditingController(text: widget.conflictData.village_name);
     _cNoController = TextEditingController(text: widget.conflictData.cNoName);
-    _pincodeNameController = TextEditingController(text: widget.conflictData.pincodeName);
     _personNameController = TextEditingController(text: widget.conflictData.person_name);
     _personAgeController = TextEditingController(text: widget.conflictData.person_age);
     _personGenderController = TextEditingController(text: widget.conflictData.person_gender);
@@ -327,26 +324,6 @@ class _EditConflictState extends State<EditConflict> {
                     decoration: ThemeHelper()
                         .textInputDecoration(
                         'cn/s.no_name', 'Enter CN/S.NO name'),
-                  ),
-                  const SizedBox(
-                    height: 10,
-                  ),
-
-                  Text(
-                    "Pincode Name",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 10,
-                  ),
-                  TextFormField(
-                    controller: _pincodeNameController,
-                    decoration: ThemeHelper()
-                        .textInputDecoration(
-                        'pincode_name', 'Enter pincode Name'),
                   ),
                   const SizedBox(
                     height: 10,

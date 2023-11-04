@@ -25,46 +25,42 @@ class Conflict {
   final String cNoName;
 
   @HiveField(6)
-  final String pincodeName;
-
-  @HiveField(7)
   final String conflict;
 
-  @HiveField(8)
+  @HiveField(7)
   final String person_name;
 
-  @HiveField(9)
+  @HiveField(8)
   final String person_age;
 
-  @HiveField(10)
+  @HiveField(9)
   final String person_gender;
 
-  @HiveField(11)
+  @HiveField(10)
   final String sp_causing_death;
 
-  @HiveField(12)
+  @HiveField(11)
   final String notes;
 
-  @HiveField(13)
+  @HiveField(12)
   final TimeStamp? datetime;
 
-
-  @HiveField(14)
+  @HiveField(13)
   final GeoPoint location;
 
-  @HiveField(15)
+  @HiveField(14)
   final String userContact;
 
-  @HiveField(16)
+  @HiveField(15)
   final String userImage;
 
-  @HiveField(17)
+  @HiveField(16)
   String imageUrl;
 
-  @HiveField(18)
+  @HiveField(17)
   final String userName;
 
-  @HiveField(19)
+  @HiveField(18)
   final String userEmail;
 
   Conflict({
@@ -74,7 +70,6 @@ class Conflict {
     required this.bt,
     required this.village_name,
     required this.cNoName,
-    required this.pincodeName,
     required this.conflict,
     required this.person_name,
     required this.person_age,
@@ -99,7 +94,6 @@ class Conflict {
       "c_no_name" : cNoName,
       "conflict" : conflict,
       "person_name" : person_name,
-      "pincode_name" : pincodeName,
       "person_age" : person_age,
       "person_gender" : person_gender  ,
       "sp_causing_death" : sp_causing_death,

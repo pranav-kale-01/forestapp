@@ -33,7 +33,6 @@ class _AddForestDataState extends State<AddForestData> {
 
   final _villageNameController = TextEditingController();
   final _cNoController = TextEditingController();
-  final _pincodeNameController = TextEditingController();
   final _personNameController = TextEditingController();
   final _personAgeController = TextEditingController();
   final _personGenderController = TextEditingController();
@@ -44,12 +43,12 @@ class _AddForestDataState extends State<AddForestData> {
   Map<String, dynamic>? selectedRound;
   Map<String, dynamic>? selectedBt;
   Map<String, dynamic>? selectedConflict;
+  String? selectedVillage;
 
   // list of errors for validation
   bool conflictError = false;
   bool villageNameError = false;
   bool cnoError = false;
-  bool pincodeError = false;
   bool nameError = false;
   bool ageError = false;
   bool genderError = false;
@@ -64,7 +63,48 @@ class _AddForestDataState extends State<AddForestData> {
   Map<dynamic, dynamic> dynamicLists = {};
 
   HiveService hiveService = HiveService();
-  var test = {"id" : "12", "name": "humans killed"};
+
+  List<String> villages = [
+    "Usaripar, Ramtek",
+    "Kadbhikheda, Ramtek",
+    "Sawra, Ramtek",
+    "Kamtee, Ramtek",
+    "Dongartal, Ramtek",
+    "Zinzaria, Ramtek",
+    "Khapa, Ramtek",
+    "Sillari, Ramtek",
+    "Pipariya, Ramtek",
+    "Salai, Ramtek",
+    "Chatgaon, Ramtek",
+    "Hiwra, Ramtek",
+    "Mundi, Ramtek",
+    "Ghoti, Ramtek",
+    "Sahapur, Ramtek",
+    "Dahoda, Ramtek",
+    "Tuyapar, Ramtek",
+    "Jamuniya, Ramtek",
+    "Patharai, Ramtek",
+    "Ambazari, Ramtek",
+    "Borda, Ramtek",
+    "Sarakha, Ramtek",
+    "Kirangisarra, Parseoni",
+    "Kolitmara, Parseoni",
+    "Surera, Parseoni",
+    "Banera, Parseoni",
+    "Narhar, Parseoni",
+    "Dhawalpur, Parseoni",
+    "Sawangi, Parseoni",
+    "Ghatkukda, Parseoni",
+    "Pardi, Parseoni",
+    "Gargoti, Parseoni",
+    "Saleghat, Parseoni",
+    "Suwardhara, Parseoni",
+    "Siladevi, Perseoni",
+    "Chargaon, Perseoni",
+    "Makardhokda, Perseoni",
+    "Ambazari, Perseoni",
+    "Ghatpendhri, Perseoni"
+  ];
 
   @override
   void initState() {
@@ -108,6 +148,12 @@ class _AddForestDataState extends State<AddForestData> {
       },
     );
 
+    // Validating the data
+    if( !_formKey.currentState!.validate() ) {
+      Navigator.of(context).pop();
+      return;
+    }
+
     try {
       // getting user
       String name, contactNumber, imageUrl;
@@ -136,11 +182,10 @@ class _AddForestDataState extends State<AddForestData> {
         range: selectedRange!['id'],
         round: selectedRound!['id'],
         bt: selectedBt!['id'],
-        village_name: _villageNameController.text,
+        village_name: selectedVillage!,
         cNoName: _cNoController.text,
         conflict: selectedConflict!['id'],
         person_name: _personNameController.text,
-        pincodeName: _pincodeNameController.text,
         person_age: _personAgeController.text,
         person_gender: _personGenderController.text,
         sp_causing_death: _spCausingDeathController.text,
@@ -505,8 +550,7 @@ class _AddForestDataState extends State<AddForestData> {
                       height: 10,
                     ),
                     DropdownButtonFormField(
-                      decoration: ThemeHelper()
-                          .textInputDecoration('Round', 'Enter Round'),
+                      decoration: ThemeHelper().textInputDecoration('Round', 'Enter Round'),
                       value: selectedRound,
                       items: dynamicLists['round']!.where( (round) => round['range_id'] == selectedRange!['id'] ).map<DropdownMenuItem<Map<String,dynamic>>>(
                             (round) => DropdownMenuItem<Map<String,dynamic>>(
@@ -561,11 +605,30 @@ class _AddForestDataState extends State<AddForestData> {
                     const SizedBox(
                       height: 10,
                     ),
-                    TextFormField(
-                      controller: _villageNameController,
-                      decoration: ThemeHelper().textInputDecoration(
-                          'Village name', 'Enter Village name'),
+                    DropdownButtonFormField<String>(
+                      validator: ( String? newValue ) {
+                        if( newValue?.isEmpty ?? true ) {
+                          return "Please Select a Village";
+                        }
+                      },
+                      decoration: ThemeHelper().textInputDecoration('Village Name', 'Select Village'),
+                      value: selectedVillage,
+                      items: villages.map((e) => DropdownMenuItem(
+                          value: e,
+                          child: Text( e ),
+                        )
+                      ).toList(),
+                      onChanged: (String? value) {
+                        selectedVillage = value;
+                      },
                     ),
+
+                    // TextFormField(
+                    //   controller: _villageNameController,
+                    //   decoration: ThemeHelper().textInputDecoration(
+                    //       'Village name', 'Enter Village name'),
+                    // ),
+
                     const SizedBox(
                       height: 10,
                     ),
@@ -590,25 +653,6 @@ class _AddForestDataState extends State<AddForestData> {
                     ),
 
                     Text(
-                      "Pincode Name",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(
-                      height: 10,
-                    ),
-                    TextFormField(
-                      controller: _pincodeNameController,
-                      decoration: ThemeHelper().textInputDecoration(
-                          'pincode_name', 'Enter pincode Name'),
-                    ),
-                    const SizedBox(
-                      height: 10,
-                    ),
-
-                    Text(
                       "Status",
                       style: TextStyle(
                         fontSize: 18,
@@ -619,6 +663,11 @@ class _AddForestDataState extends State<AddForestData> {
                       height: 10,
                     ),
                     DropdownButtonFormField(
+                      validator: ( Map<String, dynamic>? newValue ) {
+                        if( newValue == null ) {
+                          return "Please Select a Status";
+                        }
+                      },
                       decoration: ThemeHelper()
                           .textInputDecoration('Conflict', 'Select Status')
                           .copyWith(
@@ -668,6 +717,11 @@ class _AddForestDataState extends State<AddForestData> {
                       height: 10,
                     ),
                     TextFormField(
+                      validator: (String? value) {
+                        if( value?.isEmpty ?? true ) {
+                          return "Please Enter a Name";
+                        }
+                      },
                       controller: _personNameController,
                       decoration: ThemeHelper()
                           .textInputDecoration('person_name', 'Enter name'),
@@ -688,6 +742,14 @@ class _AddForestDataState extends State<AddForestData> {
                     ),
                     TextFormField(
                       controller: _personAgeController,
+                      validator: (String? value) {
+                        if( value?.isEmpty ?? true ) {
+                          return "Please Enter a Age";
+                        }
+                        else if ( int.tryParse(value!) == null ) {
+                          return "Age must be a number!";
+                        }
+                      },
                       decoration: ThemeHelper()
                           .textInputDecoration('person_age', 'Enter Age'),
                     ),
@@ -707,6 +769,11 @@ class _AddForestDataState extends State<AddForestData> {
                     ),
                     TextFormField(
                       controller: _personGenderController,
+                      validator: (String? value) {
+                        if( value?.isEmpty ?? true ) {
+                          return "Please Enter a Gender";
+                        }
+                      },
                       decoration: ThemeHelper()
                           .textInputDecoration('person_gender', 'Enter Gender'),
                     ),
@@ -715,7 +782,7 @@ class _AddForestDataState extends State<AddForestData> {
                     ),
 
                     Text(
-                      "sp causing death",
+                      "Sp causing death",
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -725,6 +792,11 @@ class _AddForestDataState extends State<AddForestData> {
                       height: 10,
                     ),
                     TextFormField(
+                      validator: (String? value) {
+                        if( value?.isEmpty ?? true ) {
+                          return "Please Enter a SP Causing Death";
+                        }
+                      },
                       controller: _spCausingDeathController,
                       decoration: ThemeHelper().textInputDecoration(
                           'sp_causing_death', 'sp causing death'),

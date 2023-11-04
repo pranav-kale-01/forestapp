@@ -46,8 +46,8 @@ class _HomeScreenState extends State<HomeScreen> {
     'total_conflicts' : 0,
     'cattle injured' : 0,
     'cattle killed': 0,
-    'humans injured': 0,
-    'humans killed': 0,
+    'human injured': 0,
+    'human killed': 0,
     'crop damaged': 0,
   };
 
@@ -105,8 +105,8 @@ class _HomeScreenState extends State<HomeScreen> {
         'total_conflicts': 0,
         'cattle injured': 0,
         'cattle killed': 0,
-        'humans injured': 0,
-        'humans killed': 0,
+        'human injured': 0,
+        'human killed': 0,
         'crop damaged': 0,
       };
 
@@ -516,7 +516,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     Expanded(
                                       child: GestureDetector(
                                         onTap: () {
-                                          widget.setConflict({"name": 'humans injured', "id": ""});
+                                          widget.setConflict({"name": 'human injured', "id": ""});
                                           widget.changeIndex(2);
                                         },
                                         child: Container(
@@ -540,13 +540,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   MainAxisAlignment.spaceAround,
                                               children: [
                                                 Text(
-                                                  "Humans Injured",
+                                                  "Human Injured",
                                                   style: TextStyle(
                                                     fontSize: 18,
                                                   ),
                                                 ),
                                                 Text(
-                                                  conflictsCounter.containsKey('humans injured') ? conflictsCounter['humans injured'].toString() : "0",
+                                                  conflictsCounter.containsKey('human injured') ? conflictsCounter['human injured'].toString() : "0",
                                                   style: TextStyle(
                                                     fontSize: 18,
                                                   ),
@@ -558,7 +558,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     Expanded(
                                       child: GestureDetector(
                                         onTap: () {
-                                          widget.setConflict({"name": 'humans killed', "id": ""});
+                                          widget.setConflict({"name": 'human killed', "id": ""});
                                           widget.changeIndex(2);
                                         },
                                         child: Container(
@@ -584,13 +584,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   MainAxisAlignment.spaceAround,
                                               children: [
                                                 Text(
-                                                  "Humans Killed",
+                                                  "Human Killed",
                                                   style: TextStyle(
                                                     fontSize: 18,
                                                   ),
                                                 ),
                                                 Text(
-                                                  conflictsCounter.containsKey('humans killed') ? conflictsCounter['humans killed'].toString() : "0",
+                                                  conflictsCounter.containsKey('human killed') ? conflictsCounter['human killed'].toString() : "0",
                                                   style: TextStyle(
                                                     fontSize: 18,
                                                   ),
