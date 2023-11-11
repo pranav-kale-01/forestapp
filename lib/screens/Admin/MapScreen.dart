@@ -233,7 +233,8 @@ class _MapScreenState extends State<MapScreen> {
                         MapTileLayer(
                           urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                           initialZoomLevel: 13,
-                          initialFocalLatLng: MapLatLng(21.5549701, 79.1735154),
+                          // initialFocalLatLng: MapLatLng(21.5549701, 79.1735154),
+                          initialFocalLatLng: MapLatLng(_markers.first.latitude, _markers.first.longitude),
                           zoomPanBehavior: _zoomPanBehavior,
                           markerBuilder: (BuildContext context, int index) {
                             return MapMarker(
@@ -247,7 +248,7 @@ class _MapScreenState extends State<MapScreen> {
                                     ),
                                     padding: const EdgeInsets.symmetric( vertical: 2.0, horizontal: 4.0, ),
                                     child: Text(
-                                      _profileDataList[_ind].village_name,
+                                      _profileDataList[index].village_name,
                                       style: TextStyle(
                                         color: Colors.white,
                                         fontWeight: FontWeight.bold,

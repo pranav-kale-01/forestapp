@@ -264,7 +264,7 @@ class _ForestMapScreenState extends State<ForestMapScreen> {
                   MapTileLayer(
                     urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                     initialZoomLevel: 13,
-                    initialFocalLatLng: MapLatLng(21.5549701, 79.1735154),
+                    initialFocalLatLng: MapLatLng(_markers.first.latitude, _markers.first.longitude),
                     zoomPanBehavior: _zoomPanBehavior,
                     markerBuilder: (BuildContext context, int index) {
                       return MapMarker(
