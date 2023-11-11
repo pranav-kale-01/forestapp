@@ -61,7 +61,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         title: const Text(
-          'Pench MH',
+          'Profile',
           style: TextStyle(
             fontWeight: FontWeight.bold,
           ),

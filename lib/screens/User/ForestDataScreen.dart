@@ -118,8 +118,6 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
     // fetching the list of attributes
     final dynamicItems = await DynamicListService.fetchDynamicLists(context);
     for (var item in dynamicItems.keys) {
-      debugPrint( item.toString() );
-
       _dynamicLists.addAll({
         item: dynamicItems[item]
             .map<DropdownMenuItem<Map<String, dynamic>>>(

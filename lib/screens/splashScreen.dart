@@ -1,13 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:forestapp/common/models/user.dart';
 import 'package:forestapp/contstant/constant.dart';
 import 'package:forestapp/screens/Admin/homeAdmin.dart';
 import 'package:forestapp/screens/User/homeUser.dart';
 import 'package:forestapp/screens/loginScreen.dart';
-import 'package:forestapp/utils/user_service.dart';
-import 'package:forestapp/utils/utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -41,9 +38,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
   _SplashScreenState() {
     Timer(const Duration(milliseconds: 3000), () {
-
       setState(() {
-
          check_user().then((screen) {
           Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(
@@ -56,7 +51,7 @@ class _SplashScreenState extends State<SplashScreen> {
         
     });
 
-    Timer(const Duration(milliseconds: 30), () {
+    Timer(const Duration(milliseconds: 60), () {
       setState(() {
         _isVisible = true;
       });
@@ -89,7 +84,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 child: SizedBox(
                   width: 200,
                   height: 200,
-                  child: Image.asset('assets/splash_screen.jpg'),
+                  child: Image.asset('assets/splash_screen.png'),
                 ),
               ),
             ),
@@ -121,7 +116,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     margin: EdgeInsets.only(top: 5),
                     width: 20,
                     height: 20,
-                    child: Image.asset('assets/splash_screen.jpg', width: 26, height: 26),
+                    child: Image.asset('assets/splash_screen.png', width: 26, height: 26),
                   ),
                 ]
               ),

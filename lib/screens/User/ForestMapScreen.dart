@@ -271,10 +271,19 @@ class _ForestMapScreenState extends State<ForestMapScreen> {
                         latitude: _markers[index].latitude,
                         longitude: _markers[index].longitude,
                         child: GestureDetector(
-                          child: Icon(
-                            Icons.location_on,
-                            size: 50,
-                            color: Colors.red,
+                          child:  Container(
+                              decoration: BoxDecoration(
+                                color: Color(0xffe88420),
+                                borderRadius: BorderRadius.circular( 4.0, ),
+                              ),
+                              padding: const EdgeInsets.symmetric( vertical: 2.0, horizontal: 4.0, ),
+                              child: Text(
+                                widget.conflictData.village_name,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              )
                           ),
                           onTap: () {
                             setState(() {

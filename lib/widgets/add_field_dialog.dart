@@ -22,7 +22,7 @@ class _AddFieldDialogState extends State<AddFieldDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text("Add " + widget.listItem.id[0].toUpperCase() + widget.listItem.id.substring(1) + 's'),
+      title: Text("Add " + widget.listItem.id[0].toUpperCase() + widget.listItem.id.substring(1)),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -30,7 +30,7 @@ class _AddFieldDialogState extends State<AddFieldDialog> {
           Container(
             margin: const EdgeInsets.only(top: 15.0, bottom: 8.0),
             child: Text(
-              widget.listItem.id,
+              widget.listItem.id[0].toUpperCase() + widget.listItem.id.substring(1),
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -42,7 +42,7 @@ class _AddFieldDialogState extends State<AddFieldDialog> {
               newField = value;
             },
             decoration: ThemeHelper().textInputDecoration('Round',
-                'Enter ${widget.listItem.id[0].toUpperCase() + widget.listItem.id.substring(1)}s'),
+                'Enter ${widget.listItem.id[0].toUpperCase() + widget.listItem.id.substring(1)}'),
           ),
           if ( widget.listItem.id.toLowerCase() == 'round')
             Column(

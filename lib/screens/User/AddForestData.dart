@@ -472,7 +472,7 @@ class _AddForestDataState extends State<AddForestData> {
               )),
         ),
         title: const Text(
-          'Pench MH',
+          'Add Forest Data',
           style: TextStyle(
             fontWeight: FontWeight.bold,
           ),
@@ -491,20 +491,11 @@ class _AddForestDataState extends State<AddForestData> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const SizedBox(
-                      height: 15,
-                    ),
-                    Text(
-                      "Add Forest Data",
-                      style:
-                          TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                    ),
-
-                    SizedBox(
-                      height: 30,
-                    ),
-
                     // fields for all values
+                    SizedBox(
+                      height: 10,
+                    ),
+
                     Text(
                       "Range",
                       style: TextStyle(
@@ -799,7 +790,7 @@ class _AddForestDataState extends State<AddForestData> {
                       },
                       controller: _spCausingDeathController,
                       decoration: ThemeHelper().textInputDecoration(
-                          'sp_causing_death', 'sp causing death'),
+                          'sp_causing_death', 'Enter a sp causing death'),
                     ),
                     const SizedBox(
                       height: 10,
@@ -818,7 +809,7 @@ class _AddForestDataState extends State<AddForestData> {
                     TextFormField(
                         controller: _notesController,
                         decoration:
-                            ThemeHelper().textInputDecoration('notes', 'Notes'),
+                            ThemeHelper().textInputDecoration('notes', 'Enter a Description'),
                         maxLines: null,
                         keyboardType: TextInputType.multiline),
                     const SizedBox(

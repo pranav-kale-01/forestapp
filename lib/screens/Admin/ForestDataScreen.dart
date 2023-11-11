@@ -141,8 +141,6 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
     //   }
     // }
 
-    // debugPrint( villages.toString() );
-
     // if defaultFilterConflict is not null then filtering the data according to conflict
     if (widget.defaultFilterConflict.isNotEmpty) {
       setState(() {
