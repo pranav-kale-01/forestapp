@@ -1,13 +1,11 @@
 import 'dart:async';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:forestapp/contstant/constant.dart';
 import 'package:forestapp/screens/Admin/homeAdmin.dart';
 import 'package:forestapp/screens/User/homeUser.dart';
 import 'package:forestapp/screens/loginScreen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:google_fonts/google_fonts.dart';
-
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key, required this.title}) : super(key: key);
@@ -20,74 +18,45 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
   bool _isVisible = false;
-  // late String _userEmail;
 
-  final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  String? _userEmail;
-  User? _user;
-
-  @override
-  void initState() {
-    fetchUserEmail();
-    super.initState();
-    // Listen to auth state changes
-    _auth.authStateChanges().listen((User? user) {
-      if (user != null) {
-        // User is logged in
-        setState(() {
-          _user = user;
-        });
-      } else {
-        // User is not logged in
-        setState(() {
-          _user = null;
-        });
-      }
-    });
-  }
-
-  Future<void> fetchUserEmail() async {
+  Future<Widget> check_user() async{
     final prefs = await SharedPreferences.getInstance();
-    final userEmail = prefs.getString('userEmail');
-    setState(() {
-      _userEmail = userEmail;
-    });
+
+    final user_type = prefs.getInt(SHARED_USER_TYPE) ?? noOne;
+
+    if(user_type == admin){
+      return HomeAdmin();
+    }else if(user_type == user){
+      var userEmail = prefs.getString(SHARED_USER_EMAIL);
+      return HomeUser(userEmail: userEmail!);
+    }else{
+      return LoginScreen();
+    }
+
   }
 
   _SplashScreenState() {
     Timer(const Duration(milliseconds: 3000), () {
       setState(() {
-        if (_user != null) {
+         check_user().then((screen) {
           Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(
-                builder: (context) => const HomeAdmin(
-                  title: 'title',
-                ),
+                builder: (context) => screen,
               ),
               (route) => false);
-        } else if (_userEmail != null) {
-          Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(
-                builder: (context) => const HomeUser(
-                  title: 'title',
-                ),
-              ),
-              (route) => false);
-        } else {
-          Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(builder: (context) => const LoginScreen()),
-              (route) => false);
-        }
+        });
       });
+
+        
     });
 
-    Timer(const Duration(milliseconds: 30), () {
+    Timer(const Duration(milliseconds: 60), () {
       setState(() {
-        _isVisible =
-            true; // Now it is showing fade effect and navigating to Login page
+        _isVisible = true;
       });
     });
+    
   }
 
   @override
@@ -115,7 +84,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 child: SizedBox(
                   width: 200,
                   height: 200,
-                  child: Image.asset('assets/penchlogo.png'),
+                  child: Image.asset('assets/splash_screen.png'),
                 ),
               ),
             ),
@@ -147,7 +116,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     margin: EdgeInsets.only(top: 5),
                     width: 20,
                     height: 20,
-                    child: Image.asset('assets/t.png', width: 26, height: 26),
+                    child: Image.asset('assets/splash_screen.png', width: 26, height: 26),
                   ),
                 ]
               ),

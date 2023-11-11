@@ -44,39 +44,38 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyC1eOOA3PUPweuob4XwfzR5DE-_XByhvA4',
-    appId: '1:716226720902:web:dd1f1d7e60e0c7e9ab0d07',
-    messagingSenderId: '716226720902',
-    projectId: 'pench-app',
-    authDomain: 'pench-app.firebaseapp.com',
-    storageBucket: 'pench-app.appspot.com',
+    apiKey: 'AIzaSyDKoXEjoTVh_TBdGiCdVTU-RqMFamHpEXI',
+    appId: '1:464886748295:web:a54f4e551a04bee4d9d422',
+    messagingSenderId: '464886748295',
+    projectId: 'conflict-pench-firebase',
+    authDomain: 'conflict-pench-firebase.firebaseapp.com',
+    storageBucket: 'conflict-pench-firebase.appspot.com',
+    measurementId: 'G-KFB7FS6766',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDmAcGCWIfT0j1NCCgjeD6yt-mwbthB1KY',
-    appId: '1:716226720902:android:94710978d6024539ab0d07',
-    messagingSenderId: '716226720902',
-    projectId: 'pench-app',
-    storageBucket: 'pench-app.appspot.com',
+    apiKey: 'AIzaSyBH6o_0Iw1JfXRa609AxOihNJonlMg_LyA',
+    appId: '1:464886748295:android:7c885928f097ece0d9d422',
+    messagingSenderId: '464886748295',
+    projectId: 'conflict-pench-firebase',
+    storageBucket: 'conflict-pench-firebase.appspot.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyC4AJNdZNsq9HU3JFPKkKWk7OSpughvmgI',
-    appId: '1:716226720902:ios:c6e32d2aa0e61381ab0d07',
-    messagingSenderId: '716226720902',
-    projectId: 'pench-app',
-    storageBucket: 'pench-app.appspot.com',
-    iosClientId: '716226720902-5kjalis9kq1enfil35aeg2e911j37sto.apps.googleusercontent.com',
-    iosBundleId: 'com.example.forestapp',
+    apiKey: 'AIzaSyA5Iay2pXuA3Jv3EshLLq1iChGqtWyTHfE',
+    appId: '1:464886748295:ios:97aff4bfde7527aad9d422',
+    messagingSenderId: '464886748295',
+    projectId: 'conflict-pench-firebase',
+    storageBucket: 'conflict-pench-firebase.appspot.com',
+    iosBundleId: 'com.example.forestapp1',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyC4AJNdZNsq9HU3JFPKkKWk7OSpughvmgI',
-    appId: '1:716226720902:ios:c6e32d2aa0e61381ab0d07',
-    messagingSenderId: '716226720902',
-    projectId: 'pench-app',
-    storageBucket: 'pench-app.appspot.com',
-    iosClientId: '716226720902-5kjalis9kq1enfil35aeg2e911j37sto.apps.googleusercontent.com',
-    iosBundleId: 'com.example.forestapp',
+    apiKey: 'AIzaSyA5Iay2pXuA3Jv3EshLLq1iChGqtWyTHfE',
+    appId: '1:464886748295:ios:97aff4bfde7527aad9d422',
+    messagingSenderId: '464886748295',
+    projectId: 'conflict-pench-firebase',
+    storageBucket: 'conflict-pench-firebase.appspot.com',
+    iosBundleId: 'com.example.forestapp1',
   );
 }

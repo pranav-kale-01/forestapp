@@ -1,31 +1,10 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:forestapp/common/models/conflict_model_hive.dart';
+import 'package:forestapp/utils/conflict_service.dart';
+import 'package:forestapp/utils/utils.dart';
+
 import 'package:syncfusion_flutter_maps/maps.dart';
 import 'dart:math' as math;
-import '../loginScreen.dart';
-import 'ForestDataScreen.dart';
-
-class ProfileData {
-  final String title;
-  final String description;
-  final String imageUrl;
-  final String userName;
-  final String userEmail;
-  final Timestamp? datetime;
-  final GeoPoint location;
-
-  ProfileData({
-    required this.title,
-    required this.description,
-    required this.imageUrl,
-    required this.userName,
-    required this.userEmail,
-    this.datetime,
-    required this.location,
-  });
-}
 
 class ForestMapScreen extends StatefulWidget {
   final double latitude;
@@ -44,11 +23,8 @@ class ForestMapScreen extends StatefulWidget {
 }
 
 class _ForestMapScreenState extends State<ForestMapScreen> {
-  late String _userEmail;
-  late List<ProfileData> _profileDataList = [];
 
-  late int _count;
-  late int _countUser;
+  late List<Conflict> _profileDataList = [];
 
   late MapZoomPanBehavior _zoomPanBehavior;
   late List<MapLatLng> _markers;
@@ -101,34 +77,33 @@ class _ForestMapScreenState extends State<ForestMapScreen> {
   }
 
   Future<void> fetchUserEmail() async {
-    final prefs = await SharedPreferences.getInstance();
-    final userEmail = prefs.getString('userEmail');
+    // final prefs = await SharedPreferences.getInstance();
+    // final userEmail = prefs.getString('userEmail');
     setState(() {
-      _userEmail = userEmail ?? '';
+      // _userEmail = userEmail ?? '';
     });
   }
 
   Future<void> fetchUserProfileData() async {
-    final userSnapshot =
-        await FirebaseFirestore.instance.collection('forestdata').get();
-    final profileDataList = userSnapshot.docs
-        .map((doc) => ProfileData(
-              imageUrl: doc['imageUrl'],
-              title: doc['title'],
-              description: doc['description'],
-              userName: doc['user_name'],
-              userEmail: doc['user_email'],
-              datetime: doc['createdAt'] as Timestamp?,
-              location: doc['location'] as GeoPoint,
-            ))
-        .toList();
+    final profileDataList = await ConflictService.getData(context);
+
+    // if the data is loaded from cache showing a bottom popup to user alerting
+    // that the app is running in offline mode
+    if( !(await hasConnection) ) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Loading the page in Offline mode'),
+        ),
+      );
+    }
+
     setState(() {
       _profileDataList = profileDataList;
 
-      // _markers = profileDataList
-      //     .map((profileData) => MapLatLng(
-      //         profileData.location.latitude, profileData.location.longitude))
-      //     .toList();
+      _markers = profileDataList
+          .map((profileData) => MapLatLng(
+              profileData.location.latitude, profileData.location.longitude))
+          .toList();
     });
   }
 
@@ -153,10 +128,7 @@ class _ForestMapScreenState extends State<ForestMapScreen> {
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () {
-            Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(
-                    builder: (context) => const ForestDataScreen()),
-                (route) => false);
+            Navigator.of(context).pop();
           },
         ),
       ),

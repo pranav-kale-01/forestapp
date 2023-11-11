@@ -1,540 +1,573 @@
-// ignore_for_file: unnecessary_null_comparison
-
-import 'dart:io';
-
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:forestapp/common/models/TigerModel.dart';
-import 'package:forestapp/screens/User/homeUser.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/material.dart' as material;
+import 'package:forestapp/common/models/conflict_model_hive.dart';
+import 'package:forestapp/utils/conflict_service.dart';
+import 'package:forestapp/utils/dynamic_list_service.dart';
+import 'package:forestapp/utils/utils.dart';
 import 'package:intl/intl.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 import 'package:excel/excel.dart';
-import 'package:file_picker/file_picker.dart';
 
 import 'ForestDetail.dart';
 
-
 class ForestDataScreen extends StatefulWidget {
-  const ForestDataScreen({Key? key}) : super(key: key);
+  final String userEmail;
+  final Function(int) changeScreen;
+  final Map<String, dynamic> defaultFilterConflict;
+
+  const ForestDataScreen({
+    Key? key,
+    required this.userEmail,
+    required this.changeScreen,
+    required this.defaultFilterConflict,
+  }) : super(key: key);
 
   @override
   State<ForestDataScreen> createState() => _ForestDataScreenState();
 }
 
 class _ForestDataScreenState extends State<ForestDataScreen> {
-  late final WebViewController controller;
-
-  late String _userEmail;
-  late List<TigerModel> _profileDataList = [];
-  late List<TigerModel> _searchResult = [];
-
   final TextEditingController _searchController = TextEditingController();
+
+  final Map<String, List<DropdownMenuItem<Map<String, dynamic>>>>
+      _dynamicLists = {};
+  Map<String, dynamic> filterList = {};
+  late List<Conflict> _profileDataList = [];
+  List<String> _villages = [];
+  late List<Conflict> _searchResult = [];
+  late List<Conflict> _baseSearchData = [];
+  bool isSearchEnabled = false;
+  late Future<void> _future;
+
+  final List<String> _dateDropdownOptions = [
+    'today',
+    'yesterday',
+    'this Week',
+    'this Month',
+    'this Year',
+    'all'
+  ];
+
+  String _selectedFilter = 'All';
+  Map<String, dynamic>? _selectedRange;
+  Map<String, dynamic>? _selectedConflict;
+  Map<String, dynamic>? _selectedRound;
+  Map<String, dynamic>? _selectedBt;
+  String? _selectedDate;
+  List<String> villages = [
+    "Usaripar, Ramtek",
+    "Kadbhikheda, Ramtek",
+    "Sawra, Ramtek",
+    "Kamtee, Ramtek",
+    "Dongartal, Ramtek",
+    "Zinzaria, Ramtek",
+    "Khapa, Ramtek",
+    "Sillari, Ramtek",
+    "Pipariya, Ramtek",
+    "Salai, Ramtek",
+    "Chatgaon, Ramtek",
+    "Hiwra, Ramtek",
+    "Mundi, Ramtek",
+    "Ghoti, Ramtek",
+    "Sahapur, Ramtek",
+    "Dahoda, Ramtek",
+    "Tuyapar, Ramtek",
+    "Jamuniya, Ramtek",
+    "Patharai, Ramtek",
+    "Ambazari, Ramtek",
+    "Borda, Ramtek",
+    "Sarakha, Ramtek",
+    "Kirangisarra, Parseoni",
+    "Kolitmara, Parseoni",
+    "Surera, Parseoni",
+    "Banera, Parseoni",
+    "Narhar, Parseoni",
+    "Dhawalpur, Parseoni",
+    "Sawangi, Parseoni",
+    "Ghatkukda, Parseoni",
+    "Pardi, Parseoni",
+    "Gargoti, Parseoni",
+    "Saleghat, Parseoni",
+    "Suwardhara, Parseoni",
+    "Siladevi, Perseoni",
+    "Chargaon, Perseoni",
+    "Makardhokda, Perseoni",
+    "Ambazari, Perseoni",
+    "Ghatpendhri, Perseoni"
+  ];
+  String? selectedVillage;
 
   @override
   void initState() {
     super.initState();
-    fetchUserEmail();
-    controller = WebViewController()
-      ..loadRequest(
-        Uri.parse(
-            'https://www.google.com/maps/search/?api=1&query=45.523064,-122.676483'),
-      )
-      ..setJavaScriptMode(JavaScriptMode.unrestricted);
-  }
-
-  Future<void> fetchUserEmail() async {
-    final prefs = await SharedPreferences.getInstance();
-    final userEmail = prefs.getString('userEmail');
-    setState(() {
-      _userEmail = userEmail ?? '';
-    });
-    fetchUserProfileData();
+    _future = fetchUserProfileData();
   }
 
   Future<void> fetchUserProfileData() async {
-    final userSnapshot = await FirebaseFirestore.instance
-        .collection('forestdata')
-        .where('user_email', isEqualTo: _userEmail)
-        .get();
-    final profileDataList = userSnapshot.docs
-        .map(
-          (doc) => TigerModel(
-            id: doc['id'],
-            imageUrl: doc['imageUrl'],
-            title: doc['title'],
-            description: doc['description'],
-            userName: doc['user_name'],
-            userEmail: doc['user_email'],
-            datetime: doc['createdAt'] as Timestamp?,
-            location: doc['location'] as GeoPoint,
-            noOfCubs: doc['number_of_cubs'],
-            noOfTigers: doc['number_of_tiger'],
-            remark: doc['remark'],
-            userContact: doc['user_contact'],
-            userImage: doc['user_imageUrl'],
-          ),
-        )
-        .toList();
-    setState(() {
-      _profileDataList = profileDataList;
-      _searchResult = profileDataList;
-    });
+    final profileDataList = await ConflictService.getData(context, userEmail: widget.userEmail);
 
-    int totalCubs = 0;
-    int totalTigers = 0;
-
-    _profileDataList.forEach((profileData) {
-      totalCubs += profileData.noOfCubs;
-      totalTigers += profileData.noOfTigers;
-    });
-
-    print('Total Cubs: $totalCubs');
-    print('Total Tigers: $totalTigers');
-  }
-
-  // Function to filter the list based on the selected filter
-  void _applyFilter(String filterType) {
-    DateTime now = DateTime.now();
-    DateTime start;
-    switch (filterType) {
-      case 'Today':
-        start = DateTime(now.year, now.month, now.day);
-        break;
-      case 'Yesterday':
-        start = DateTime(now.year, now.month, now.day - 1);
-        break;
-      case 'This Week':
-        start = DateTime(now.year, now.month, now.day - now.weekday + 1);
-        break;
-      case 'This Month':
-        start = DateTime(now.year, now.month, 1);
-        break;
-      case 'This Year':
-        start = DateTime(now.year, 1, 1);
-        break;
-      case 'All':
-        start = DateTime(now.year, 1, 1);
-        break;
-      default:
-        print('Invalid filter type: $filterType');
-        return;
+    // if the data is loaded from cache showing a bottom popup to user alerting
+    // that the app is running in offline mode
+    if (!(await hasConnection)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Loading the page in Offline mode'),
+        ),
+      );
     }
 
-    List<TigerModel> tempList = [];
-    _profileDataList.forEach((profileData) {
-      if (profileData.datetime != null &&
-          profileData.datetime!.toDate().isAfter(start)) {
-        tempList.add(profileData);
-      }
-    });
+    // fetching the list of attributes
+    final dynamicItems = await DynamicListService.fetchDynamicLists(context);
+    for (var item in dynamicItems.keys) {
+      _dynamicLists.addAll({
+        item: dynamicItems[item]
+            .map<DropdownMenuItem<Map<String, dynamic>>>(
+              (Map<String, dynamic> e) =>
+                  DropdownMenuItem<Map<String, dynamic>>(
+                child: Text(e['name']),
+                value: e,
+              ),
+            ).toList(),
+      });
+    }
 
-    setState(() {
-      _searchResult = tempList;
-    });
+    // disabling setting the first value as default
+    // _selectedRange = _dynamicLists['range']?.first.value;
+    // _selectedConflict = _dynamicLists['conflict']?.first.value;
+    // _selectedRound = _dynamicLists['round']?.first.value;
+    // _selectedBt = _dynamicLists['bt']?.first.value;
+
+    // if defaultFilterConflict is not null then filtering the data according to conflict
+    if (widget.defaultFilterConflict.isNotEmpty) {
+      setState(() {
+        _profileDataList = profileDataList;
+        _searchResult = profileDataList;
+        filterList['conflict'] = widget.defaultFilterConflict;
+        filterData();
+      });
+    } else {
+      setState(() {
+        _profileDataList = profileDataList;
+        _searchResult = profileDataList;
+      });
+    }
   }
 
-// Function to search the list based on the user input
   void _searchList(String searchQuery) {
-    List<TigerModel> tempList = [];
+    searchQuery = searchQuery.trim();
+
+    List<Conflict> tempList = [];
     _profileDataList.forEach((profileData) {
-      if (profileData.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
+      if (profileData.village_name
+              .trim()
+              .toLowerCase()
+              .contains(searchQuery.toLowerCase()) ||
           profileData.userName
+              .trim()
               .toLowerCase()
               .contains(searchQuery.toLowerCase()) ||
           profileData.userEmail
+              .trim()
               .toLowerCase()
               .contains(searchQuery.toLowerCase())) {
         tempList.add(profileData);
       }
     });
+
+    filterData();
+
     setState(() {
-      _searchResult = tempList;
+      _baseSearchData = tempList;
     });
   }
 
-  void filterData(String? selectedTitle, {bool applyFilter = true}) {
-    setState(() {
-      if (applyFilter) {
-        _searchResult = _profileDataList
-            .where((data) => data.title == selectedTitle)
-            .toList();
+  void filterData() {
+    try {
+      if (isSearchEnabled) {
+        _searchResult = _baseSearchData;
       } else {
         _searchResult = _profileDataList;
       }
-    });
+
+      if (filterList.keys.contains('range')) {
+        setState(() {
+          _searchResult = _searchResult
+              .where((data) =>
+                  data.range.toLowerCase() ==
+                  filterList['range']['name'].toLowerCase())
+              .toList();
+        });
+      }
+      if (filterList.keys.contains('conflict')) {
+        setState(() {
+          _searchResult = _searchResult
+              .where((data) =>
+                  data.conflict.toLowerCase() ==
+                  filterList['conflict']['name'].toLowerCase())
+              .toList();
+        });
+      }
+      if (filterList.keys.contains('round')) {
+        setState(() {
+          _searchResult = _searchResult
+              .where((data) =>
+                  data.round.toLowerCase() ==
+                  filterList['round']['name'].toLowerCase())
+              .toList();
+        });
+      }
+      if (filterList.keys.contains('beat')) {
+        setState(() {
+          _searchResult = _searchResult
+              .where((data) =>
+                  data.bt.toLowerCase() ==
+                  filterList['beat']['name'].toLowerCase())
+              .toList();
+        });
+      }
+      if (filterList.keys.contains('date')) {
+        DateTime now = DateTime.now();
+        DateTime start;
+
+        switch (filterList['date']?.toLowerCase()) {
+          case 'today':
+            start = DateTime(now.year, now.month, now.day);
+            break;
+          case 'yesterday':
+            start = DateTime(now.year, now.month, now.day - 1);
+            break;
+          case 'this week':
+            start = DateTime(now.year, now.month, now.day)
+                .subtract(Duration(days: DateTime.now().weekday));
+            break;
+          case 'this month':
+            start = DateTime(now.year, now.month, 1);
+            break;
+          case 'this year':
+            start = DateTime(now.year, 1, 1);
+            break;
+          default:
+            print('Invalid filter type: ${filterList['date']}');
+            return;
+        }
+
+        List<Conflict> tempList = [];
+        _searchResult.forEach((profileData) {
+          if (profileData.datetime != null &&
+              profileData.datetime!.toDate().isAfter(start)) {
+            tempList.add(profileData);
+          }
+        });
+
+        setState(() {
+          _searchResult = tempList;
+        });
+      }
+    } catch (e, s) {
+      debugPrint(e.toString());
+      debugPrint(s.toString());
+    }
   }
 
-// Function to handle the search and filter actions
   void _handleSearchFilter(String searchQuery, String filterType) {
     if (searchQuery.isNotEmpty) {
+      isSearchEnabled = true;
       _searchList(searchQuery);
-    } else if (filterType.isNotEmpty) {
-      _applyFilter(filterType);
     } else {
-      _searchResult = _profileDataList;
+      setState(() {
+        _searchResult = _profileDataList;
+        isSearchEnabled = false;
+      });
+
+      filterData();
     }
   }
 
-  Future<void> exportToExcel() async {
-    Directory? directory;
-    try {
-      final excel = Excel.createExcel();
-      final sheet = excel['Sheet1'];
-
-      // add header row
-      sheet.appendRow([
-        'Title',
-        'Description',
-        'Image URL',
-        'User Name',
-        'User Email',
-        'Created At',
-        'Latitude',
-        'Longitude',
-        'Number Of Cubs',
-        'Number Of Tiger',
-        'Remark',
-        'Contact Number',
-        'User Profile',
-      ]);
-
-// calculate total cubs and tigers
-      int totalCubs = 0;
-      int totalTigers = 0;
-      _searchResult.forEach((data) {
-        totalCubs += data.noOfCubs;
-        totalTigers += data.noOfTigers;
-      });
-
-// add data rows
-      _searchResult.forEach((data) {
-        sheet.appendRow([
-          data.title,
-          data.description,
-          data.imageUrl,
-          data.userName,
-          data.userEmail,
-          data.datetime?.toDate().toString(),
-          data.location.latitude,
-          data.location.longitude,
-          data.noOfCubs,
-          data.noOfTigers,
-          data.remark,
-          data.userContact,
-          data.userImage,
-        ]);
-      });
-
-// add row with total cubs and tigers for all data
-      sheet.appendRow([
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        'Total Cubs: ${totalCubs}',
-        'Total Cubs: ${totalTigers}',
-        '',
-        '',
-        '',
-      ]);
-
-      // save the Excel file
-      final fileBytes = excel.encode();
-      int fileCount = 0;
-      String fileName = 'forest_data.xlsx';
-      final storagePermission = await Permission.storage.request();
-      if (storagePermission != PermissionStatus.granted) {
-        throw Exception('Storage permission not granted');
-      }
-      directory = await getExternalStorageDirectory();
-      String newPath = "";
-      print(directory);
-
-      List<String> paths = directory!.path.split("/");
-      for (int x = 1; x < paths.length; x++) {
-        String folder = paths[x];
-        if (folder != "Android") {
-          newPath += "/" + folder;
-        } else {
-          break;
-        }
-      }
-      newPath = newPath + "/ForestApp";
-      directory = Directory(newPath);
-
-      if (!await directory.exists()) {
-        await directory.create(recursive: true);
-      }
-
-      var file = File('${directory.path}/$fileName');
-
-      while (await file.exists()) {
-        fileCount++;
-        fileName = 'forest_data($fileCount).xlsx';
-        file = File('${directory.path}/$fileName');
-      }
-
-      await file.writeAsBytes(fileBytes!);
-
-      // show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Excel file saved to folder ForestApp',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-            ),
-          ),
-          duration: const Duration(seconds: 4),
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-      );
-    } catch (e) {
-      // show error message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Export to Excel failed: $e'),
-          duration: const Duration(seconds: 3),
-        ),
-      );
+  void clearDropdown(String filterAttribute) {
+    if (filterAttribute == 'range') {
+      _selectedRange = null;
+    } else if (filterAttribute == 'conflict') {
+      _selectedConflict = null;
+    } else if (filterAttribute == 'round') {
+      _selectedRound = null;
+    } else if (filterAttribute == 'beat') {
+      _selectedBt = null;
+    } else {
+      _selectedDate = null;
     }
-  }
 
-  String _selectedFilter = 'All';
-  DateTime _fromDate = DateTime.now();
-  DateTime _toDate = DateTime.now();
-
-  final List<String> _filterOptions = [
-    'Today',
-    'Yesterday',
-    'This Week',
-    'This Month',
-    'This Year',
-    'All',
-  ];
-
-  void clearDropdown() {
     setState(() {
-      _selectedTitle = null; // or ""
-    });
-    filterData(null,
-        applyFilter:
-            false); // call filterData with null or "" and applyFilter set to false
-  }
-
-  // New functions for filtering by number of tigers and cubs:
-  void filterByTigers(int? numberOfTigers) {
-    setState(() {
-      if (numberOfTigers != null) {
-        _searchResult = _profileDataList
-            .where((profileData) => profileData.noOfTigers == numberOfTigers)
-            .toList();
-      } else {
-        _searchResult = _profileDataList;
-      }
+      filterList.remove(filterAttribute);
+      filterData();
     });
   }
 
-  void filterByCubs(int? numberOfCubs) {
-    setState(() {
-      if (numberOfCubs != null) {
-        _searchResult = _profileDataList
-            .where((profileData) => profileData.noOfCubs == numberOfCubs)
-            .toList();
-      } else {
-        _searchResult = _profileDataList;
-      }
-    });
-  }
-
-  int? _selectedTigers;
-  int? _selectedCubs;
-
-  final TextEditingController tigersController = TextEditingController();
-  final TextEditingController cubsController = TextEditingController();
-
-  final List<String> _selectedOptions = [];
-  String? _selectedTitle;
   void _showFilterDialog() {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10.0),
-          ),
-          title: Text('Filter'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Filter options:'),
-                const SizedBox(height: 8.0),
-                Wrap(
-                  spacing: 8.0,
-                  runSpacing: 8.0,
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.0),
+              ),
+              title: Text('Filter'),
+              content: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    for (final option in _filterOptions)
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _selectedOptions.contains(option)
-                              ? Colors.green
-                              : Colors.lightGreen.shade600,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            if (_selectedOptions.contains(option)) {
-                              _selectedOptions.remove(option);
-                            } else {
-                              _selectedOptions.add(option);
-                            }
-                            _selectedFilter = _selectedOptions.join(',');
-                          });
-                          _handleSearchFilter(_searchController.text,
-                              _selectedFilter.simplifyText());
-                          // Navigator.pop(context);
-                        },
-                        child: Text(option),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 8.0),
-                Text("Filter by Tiger name"),
-                Row(
-                  children: [
-                    DropdownButton<String>(
-                      value: _selectedTitle, // the currently selected title
-                      items: _profileDataList.map((profileData) {
-                        return DropdownMenuItem<String>(
-                          value: profileData.title,
-                          child: Text(profileData.title),
-                        );
-                      }).toList(),
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          _selectedTitle = newValue!;
-                        });
-                        filterData(newValue!, applyFilter: true);
-                      },
-                    ),
+                    Text("Filter by Range"),
+                    const SizedBox(height: 8.0),
                     SizedBox(
-                      width: 10,
+                      width: MediaQuery.of(context).size.width,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                border: material.Border.all(
+                                  color: Colors.black45,
+                                  width: 1,
+                                ),
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              width: 30,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8.0,
+                                ),
+                                child: DropdownButton<Map<String, dynamic>>(
+                                  menuMaxHeight:
+                                      MediaQuery.of(context).size.height * 0.5,
+                                  isExpanded: true,
+                                  underline: Container(),
+                                  value:
+                                      _selectedRange, // the currently selected title
+                                  items: _dynamicLists['range'],
+                                  style: TextStyle(
+                                    // overflow: TextOverflow.ellipsis,
+                                    color: Colors.black,
+                                  ),
+                                  onChanged: (Map<String, dynamic>? newValue) {
+                                    setState(() {
+                                      _selectedRange = newValue!;
+                                    });
+
+                                    filterList['range'] = newValue!;
+                                    // setting the list of beats based on selected range
+                                    filterData();
+
+                                    _selectedRound = _dynamicLists['round']
+                                        ?.where((DropdownMenuItem round) =>
+                                            round.value['range_id'] ==
+                                            _selectedRange!['id'])
+                                        .map((e) => e.value)
+                                        .toList()
+                                        .first;
+                                  },
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 8,
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.clear),
+                            onPressed: () {
+                              clearDropdown('range');
+                              setState(() {});
+                            },
+                          ),
+                        ],
+                      ),
                     ),
-                    IconButton(
-                      icon: Icon(Icons.clear),
-                      onPressed: () {
-                        clearDropdown();
-                      },
+                    const SizedBox(height: 16.0),
+                    Text("Filter by Rounds"),
+                    const SizedBox(height: 8.0),
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                border: material.Border.all(
+                                  color: Colors.black45,
+                                  width: 1,
+                                ),
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 8.0),
+                                child: DropdownButton<Map<String, dynamic>>(
+                                  isExpanded: true,
+                                  value:
+                                      _selectedRound, // the currently selected title
+                                  underline: Container(),
+                                  items: _selectedRange == null
+                                      ? []
+                                      : _dynamicLists['round']
+                                          ?.where((DropdownMenuItem round) =>
+                                              round.value['range_id'] ==
+                                              _selectedRange!['id'])
+                                          .toList(),
+                                  onChanged: (Map<String, dynamic>? newValue) {
+                                    setState(() {
+                                      _selectedRound = newValue!;
+                                    });
+                                    filterList['round'] = newValue!;
+
+                                    filterData();
+                                  },
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 10,
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.clear),
+                            onPressed: () {
+                              setState(() {
+                                clearDropdown('round');
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16.0),
+                    Text("Filter by Status"),
+                    const SizedBox(height: 8.0),
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                border: material.Border.all(
+                                  color: Colors.black45,
+                                  width: 1,
+                                ),
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8.0,
+                                ),
+                                child: DropdownButton<Map<String, dynamic>>(
+                                  isExpanded: true,
+                                  value:
+                                      _selectedConflict, // the currently selected title
+                                  items: _dynamicLists['conflict'],
+                                  underline: Container(),
+                                  onChanged: (Map<String, dynamic>? newValue) {
+                                    setState(() {
+                                      _selectedConflict = newValue!;
+                                    });
+                                    filterList['conflict'] = newValue!;
+
+                                    filterData();
+                                  },
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 10,
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.clear),
+                            onPressed: () {
+                              setState(() {
+                                clearDropdown('conflict');
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16.0),
+                    Text("Filter by Date"),
+                    const SizedBox(height: 8.0),
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                border: material.Border.all(
+                                  color: Colors.black45,
+                                  width: 1,
+                                ),
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 8.0),
+                                child: DropdownButton<String>(
+                                  value:
+                                      _selectedDate, // the currently selected title
+                                  underline: Container(),
+                                  isExpanded: true,
+                                  items: _dateDropdownOptions.map((item) {
+                                    return DropdownMenuItem<String>(
+                                      child: Text(
+                                        item.toLowerCase(),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      value: item.toLowerCase(),
+                                    );
+                                  }).toList(),
+                                  onChanged: (String? newValue) {
+                                    setState(() {
+                                      _selectedDate = newValue!;
+                                    });
+
+                                    filterList['date'] =
+                                        newValue!.toLowerCase();
+                                    filterData();
+                                  },
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 10,
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.clear),
+                            onPressed: () {
+                              setState(() {
+                                clearDropdown('date');
+                              });
+                            },
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8.0),
-                Column(
-                  children: [
-                    TextField(
-                      decoration: InputDecoration(
-                        labelText: 'Number of tigers',
-                      ),
-                      keyboardType: TextInputType.number,
-                      controller: tigersController,
-                      onChanged: (String newValue) {
-                        setState(() {
-                          _selectedTigers = int.tryParse(newValue);
-                        });
-                        filterByTigers(_selectedTigers);
-                      },
-                    ),
-                    TextField(
-                      decoration: InputDecoration(
-                        labelText: 'Number of cubs',
-                      ),
-                      keyboardType: TextInputType.number,
-                      controller: cubsController,
-                      onChanged: (String newValue) {
-                        setState(() {
-                          _selectedCubs = int.tryParse(newValue);
-                        });
-                        filterByCubs(_selectedCubs);
-                      },
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16.0),
-                Text('Selected options:'),
-                const SizedBox(height: 8.0),
-                Wrap(
-                  spacing: 8.0,
-                  runSpacing: 8.0,
-                  children: [
-                    for (final option in _selectedOptions)
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            if (_selectedOptions.contains(option)) {
-                              _selectedOptions.remove(option);
-                            } else {
-                              _selectedOptions.add(option);
-                            }
-                            _selectedFilter = _selectedOptions.join(',');
-                          });
-                          _handleSearchFilter(_searchController.text,
-                              _selectedFilter.simplifyText());
-                          // Navigator.pop(context);
-                        },
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(option),
-                            const SizedBox(width: 4.0),
-                            Icon(Icons.clear, size: 16.0),
-                          ],
-                        ),
-                      ),
-                  ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    'Close',
+                    style: TextStyle(
+                        color: Colors.black, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('Close'),
-            ),
-            // ElevatedButton(
-            //   style: ElevatedButton.styleFrom(
-            //     backgroundColor:
-            //         Colors.greenAccent.shade400, // Background color
-            //     // Text Color (Foreground color)
-            //   ),
-            //   onPressed: () {
-            //     setState(() {
-            //       _selectedFilter = _selectedOptions.join(',');
-            //     });
-            //     _handleSearchFilter(
-            //         _searchController.text, _selectedFilter.simplifyText());
-            //     Navigator.pop(context);
-
-            //     print(_selectedFilter.simplifyText());
-            //   },
-            //   child: Text('Apply'),
-            // ),
-          ],
+            );
+          },
         );
       },
     );
@@ -542,182 +575,293 @@ class _ForestDataScreenState extends State<ForestDataScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // if (_searchResult.isEmpty) {
-    //   return const Center(child: CircularProgressIndicator());
-    // }
     return MaterialApp(
-        debugShowCheckedModeBanner: false,
         home: Scaffold(
-          resizeToAvoidBottomInset: false,
-          appBar: PreferredSize(
-            preferredSize: const Size.fromHeight(0.0), // hide the app bar
-            child: AppBar(
-              backgroundColor: Colors.transparent,
-              elevation: 0.0,
-            ),
+      resizeToAvoidBottomInset: false,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: Container(
+          height: 120,
+          decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.green, Colors.greenAccent],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(10),
+                bottomRight: Radius.circular(10),
+              )),
+        ),
+        title: const Text(
+          'Forest Data List',
+          style: TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
           ),
-          body: Column(
+        ),
+      ),
+      body: Column(
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  IconButton(
-                    icon: Icon(
-                      Icons.arrow_back,
-                      color: Colors.black,
-                    ),
-                    onPressed: () {
-                      Navigator.of(context).pushAndRemoveUntil(
-                          MaterialPageRoute(
-                              builder: (context) => const HomeUser(
-                                    title: '',
-                                  )),
-                          (route) => false);
-                    },
-                  ),
-                  Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Forest Data List',
-                          style: TextStyle(
-                            fontSize: 24.0,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(
-                          width: 30,
-                        ),
-                        ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors
-                                  .greenAccent.shade400, // Background color
-                              // Text Color (Foreground color)
-                            ),
-                            onPressed: () async {
-                              await exportToExcel();
-                            },
-                            child: Text("Export Data"))
-                      ],
-                    ),
-                  ),
-                ],
-              ),
               Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    labelText: 'Search',
-                    hintText: 'Search by title, user name or user email',
-                    prefixIcon: const Icon(Icons.search),
-                    suffixIcon: IconButton(
-                      icon: Icon(Icons.filter_list),
-                      onPressed: _showFilterDialog,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  onChanged: (value) {
-                    _handleSearchFilter(value, _selectedFilter.simplifyText());
-                  },
-                ),
-              ),
-              _searchResult.isEmpty
-                  ? Text(
-                      "No result found....",
-                      style:
-                          TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
-                    )
-                  : Expanded(
-                      child: ListView.builder(
-                        itemCount: _searchResult.length,
-                        itemBuilder: (context, index) {
-                          final profileData = _searchResult[index];
-                          return Card(
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                SizedBox(
-                                  width: 120.0,
-                                  height: 120.0,
-                                  child: Image.network(
-                                    profileData.imageUrl,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                                const SizedBox(
-                                  width: 20,
-                                ),
-                                Expanded(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: <Widget>[
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text(
-                                              profileData.title,
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                            
-                                            
-                                          ],
-                                        ),
-                                        const SizedBox(height: 8.0),
-                                        Text(
-                                              DateFormat('MMM d, yyyy h:mm a')
-                                                  .format(profileData.datetime!
-                                                      .toDate()),
-                                            ),
-                                        const SizedBox(height: 8.0),
-                                        Text(
-                                          profileData.userName,
-                                        ),
-                                        const SizedBox(height: 8.0),
-                                        Text(
-                                          profileData.userEmail,
-                                        ),
-                                        const SizedBox(height: 8.0),
-                                        ElevatedButton.icon(
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Color.fromARGB(255,
-                                                3, 8, 35), // Background color
-                                            // Text Color (Foreground color)
-                                          ),
-                                          onPressed: () {
-                                            Navigator.of(context)
-                                                .push(
-                                                    MaterialPageRoute(
-                                                        builder: (context) =>
-                                                            ForestDetail(
-                                                                forestData:
-                                                                    profileData)));
-                                          },
-                                          label: const Text("View"),
-                                          icon: const Icon(
-                                              Icons.arrow_right_alt_outlined),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
+                padding: EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Forest Data List',
+                      style: TextStyle(
+                        fontSize: 24.0,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
+                    SizedBox(
+                      width: 30,
+                    ),
+                    ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              Colors.greenAccent.shade400, // Background color
+                          // Text Color (Foreground color)
+                        ),
+                        onPressed: () async {
+                          if (await hasConnection) {
+                            await ConflictService.exportToExcel(
+                                _searchResult, context);
+                          } else {
+                            showDialog(
+                              context: context,
+                              builder: (BuildContext context) => AlertDialog(
+                                title: const Text('Error'),
+                                content:
+                                    Text('Cannot export data in offline mode'),
+                                actions: <Widget>[
+                                  TextButton(
+                                    child: const Text('OK'),
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+                        },
+                        child: Text("Export Data"))
+                  ],
+                ),
+              ),
             ],
           ),
-        ));
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Autocomplete<String>(
+              optionsBuilder: (TextEditingValue textEditingValue) {
+                if (textEditingValue.text == "") {
+                  return const Iterable<String>.empty();
+                } else {
+                  List<String> matches = <String>[];
+                  matches.addAll(villages);
+
+                  matches.retainWhere((s) {
+                    return s
+                        .toLowerCase()
+                        .contains(textEditingValue.text.toLowerCase());
+                  });
+
+                  return matches;
+                }
+              },
+              onSelected: (String value) {
+                _handleSearchFilter( value, _selectedFilter.simplifyText());
+
+              },
+              fieldViewBuilder: (BuildContext context,
+                  TextEditingController searchController,
+                  FocusNode focusNode,
+                  VoidCallback onFieldSubmitted) {
+
+                return Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TextField(
+                    controller: searchController,
+                    focusNode: focusNode,
+                    decoration: InputDecoration(
+                      labelText: 'Search',
+                      hintText: 'Search by title, user name or user email',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: IconButton(
+                        icon: Icon(Icons.filter_list),
+                        onPressed: _showFilterDialog,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    onChanged: (String value) {
+                      _handleSearchFilter( value, _selectedFilter.simplifyText());
+
+                      setState(() {});
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+          FutureBuilder(
+              future: _future,
+              builder: (futureContext, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Expanded(
+                    child: Center(
+                      child: CircularProgressIndicator.adaptive(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                      ),
+                    ),
+                  );
+                } else {
+                  return _searchResult.isEmpty
+                      ? Expanded(
+                          child: Center(
+                            child: Text(
+                              "No result found....",
+                              style: TextStyle(
+                                  fontSize: 15, fontWeight: FontWeight.w500),
+                            ),
+                          ),
+                        )
+                      : Expanded(
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(
+                              horizontal: 8.0,
+                            ),
+                            child: ListView.builder(
+                              physics: const BouncingScrollPhysics(),
+                              itemCount: _searchResult.length,
+                              itemBuilder: (innerContext, index) {
+                                Conflict profileData = _searchResult[index];
+                                return Card(
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      SizedBox(
+                                        width: 120.0,
+                                        height: 120.0,
+                                        child: Image.network(
+                                          '${baseUrl}uploads/conflicts/${profileData.imageUrl}',
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ),
+                                      const SizedBox(
+                                        width: 20,
+                                      ),
+                                      Expanded(
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: <Widget>[
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  Text(
+                                                    profileData.village_name,
+                                                    style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 8.0),
+                                              Text(
+                                                DateFormat('MMM d, yyyy h:mm a')
+                                                    .format(profileData
+                                                        .datetime!
+                                                        .toDate()),
+                                              ),
+                                              const SizedBox(height: 8.0),
+                                              Text(
+                                                profileData.userName,
+                                              ),
+                                              const SizedBox(height: 8.0),
+                                              Text(
+                                                profileData.userEmail,
+                                              ),
+                                              const SizedBox(height: 8.0),
+                                              ElevatedButton.icon(
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: Color.fromARGB(
+                                                      255,
+                                                      3,
+                                                      8,
+                                                      35), // Background color
+                                                  // Text Color (Foreground color)
+                                                ),
+                                                onPressed: () {
+                                                  Navigator.of(context).push(
+                                                      MaterialPageRoute(
+                                                          builder: (context) =>
+                                                              ForestDetail(
+                                                                forestData:
+                                                                    profileData,
+                                                                changeIndex: widget
+                                                                    .changeScreen,
+                                                                currentIndex: 2,
+                                                                changeData:
+                                                                    (Conflict
+                                                                        newData) {
+                                                                  setState(() {
+                                                                    _searchResult[
+                                                                            index] =
+                                                                        newData;
+                                                                  });
+                                                                },
+                                                                deleteData:
+                                                                    (Conflict
+                                                                        data) {
+                                                                  setState(() {
+                                                                    _searchResult.removeWhere((element) =>
+                                                                        element
+                                                                            .id ==
+                                                                        data.id);
+                                                                  });
+                                                                },
+                                                              )));
+                                                },
+                                                label: const Text("View"),
+                                                icon: const Icon(Icons
+                                                    .arrow_right_alt_outlined),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        );
+                }
+              })
+        ],
+      ),
+    ));
+  }
+
+  @override
+  void dispose() {
+    //clearing the filter list
+    filterList.clear();
+    super.dispose();
   }
 }

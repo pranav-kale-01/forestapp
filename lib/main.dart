@@ -1,17 +1,20 @@
 import 'package:android_intent_plus/android_intent.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 
 import 'package:forestapp/screens/splashScreen.dart';
+import 'package:forestapp/utils/hive_service.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:hexcolor/hexcolor.dart';
 
 import 'package:location/location.dart';
 import 'package:firebase_core/firebase_core.dart';
 
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  await HiveService().init( );
   runApp(const MyApp());
 }
 
@@ -27,38 +30,39 @@ class _MyAppState extends State<MyApp> {
 
   final Color _primaryColor = HexColor('#54fe7f');
 
-  final Color _accentColor = HexColor('#02ae33');
+  final Color _accentColor = HexColor('#16DFAF');
+  
+  final Color _backgroundColor = HexColor('#F1CB44');
+  
+  final Color _onBackgroundColor = HexColor('#77916A');
 
   @override
   void initState() {
     super.initState();
 
     checkGps();
+  }
 
+  secured() async {
+    await FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
+  }
+
+  Future<void> checkGps() async{
+    // final location = Location();
+    Geolocator.isLocationServiceEnabled().then((isGpsOn){
+      if(isGpsOn){
+        requestLocationPermission();
+      }else{
+        turnOnGps();
+      }
+    });
   }
 
   void turnOnGps(){
-
     final AndroidIntent intent = AndroidIntent(
         action: 'android.settings.LOCATION_SOURCE_SETTINGS');
     intent.launch();
     Navigator.of(context, rootNavigator: true).pop();
-
-}
-
-
-  Future<void> checkGps() async{
-    final location = Location();
-
-    Geolocator.isLocationServiceEnabled().then((isGpsOn){
-
-        if(isGpsOn){
-          requestLocationPermission();
-        }else{
-          turnOnGps();
-        }
-
-    });
   }
 
   Future<void> requestLocationPermission() async {
@@ -84,15 +88,22 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
+    // secured();
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primaryColor: _primaryColor,
         scaffoldBackgroundColor: Colors.grey.shade100,
         colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.grey)
-            .copyWith(secondary: _accentColor),
+            .copyWith(
+          secondary: _accentColor,
+          background: _backgroundColor,
+          primaryContainer: _backgroundColor,
+          secondaryContainer: _onBackgroundColor,
+        ),
       ),
       home: const SplashScreen(title: 'Flutter Login UI'),
     );
   }
 }
+

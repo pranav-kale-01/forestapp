@@ -1,7 +1,7 @@
 {
   "file_generated_by": "FlutterFire CLI",
   "purpose": "FirebaseAppID & ProjectID for this Firebase app in this directory",
-  "GOOGLE_APP_ID": "1:716226720902:ios:c6e32d2aa0e61381ab0d07",
-  "FIREBASE_PROJECT_ID": "pench-app",
-  "GCM_SENDER_ID": "716226720902"
+  "GOOGLE_APP_ID": "1:464886748295:ios:97aff4bfde7527aad9d422",
+  "FIREBASE_PROJECT_ID": "conflict-pench-firebase",
+  "GCM_SENDER_ID": "464886748295"
 }

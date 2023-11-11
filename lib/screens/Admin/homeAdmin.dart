@@ -1,17 +1,13 @@
-// ignore_for_file: library_private_types_in_public_api, avoid_unnecessary_containers
-
 import 'package:flutter/material.dart';
-import 'package:forestapp/screens/Admin/EditUserScreen.dart';
+import 'package:forestapp/screens/Admin/ForestDataScreen.dart';
+import 'package:forestapp/screens/Admin/UserScreen.dart';
 
-import 'AddUserScreen.dart';
-import 'ForestDataScreen.dart';
+import '../../widgets/exit_popup.dart';
 import 'HomeScreen.dart';
 import 'MapScreen.dart';
 
 class HomeAdmin extends StatefulWidget {
-  const HomeAdmin({Key? key, required this.title}) : super(key: key);
-
-  final String title;
+  const HomeAdmin({Key? key}) : super(key: key);
 
   @override
   _HomeAdminState createState() => _HomeAdminState();
@@ -19,18 +15,76 @@ class HomeAdmin extends StatefulWidget {
 
 class _HomeAdminState extends State<HomeAdmin> {
   int _selectedIndex = 0;
+  late Map<String,dynamic> _selectedConflict;
+  late final List<Widget> _widgetOptions;
 
-  static final List<Widget> _widgetOptions = <Widget>[
-    HomeScreen(),
-    const AddUserScreen(),
-    const ForestDataScreen(),
-    MapScreen(
-      latitude: 37.4220,
-      longitude: -122.0841,
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+
+    _selectedConflict = {};
+
+    _widgetOptions = <Widget>[
+      HomeScreen(
+        changeIndex: _changeIndex,
+        setConflict: (Map<String,dynamic> conflict) {
+          _selectedConflict = conflict;
+        }
+      ),
+      UserScreen(
+        changeIndex: _changeIndex,
+      ),
+      ForestDataScreen(
+        changeScreen: _changeIndex,
+        defaultFilterConflict: _selectedConflict,
+      ),
+      MapScreen(
+        latitude: 37.4220,
+        longitude: -122.0841,
+      ),
+    ];
+  }
+
+  void _changeIndex( int index ) {
+    if( _selectedConflict.isNotEmpty ) {
+      print( _selectedConflict );
+      _widgetOptions[2] = ForestDataScreen(
+        defaultFilterConflict: _selectedConflict,
+        changeScreen: _changeIndex,
+      );
+    }
+    else {
+      _widgetOptions[2] = ForestDataScreen(
+        defaultFilterConflict: {},
+        changeScreen: _changeIndex,
+      );
+    }
+    _selectedConflict = {};
+
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
 
   void _onItemTapped(int index) {
+    if( index == 2 ) {
+      if( _selectedConflict.isNotEmpty ) {
+        _widgetOptions[2] = ForestDataScreen(
+          defaultFilterConflict: _selectedConflict,
+          changeScreen: _changeIndex,
+
+        );
+      }
+      else {
+        _widgetOptions[2] = ForestDataScreen(
+          defaultFilterConflict: {},
+          changeScreen: _changeIndex,
+
+        );
+      }
+      _selectedConflict = {};
+    }
+
     setState(() {
       _selectedIndex = index;
     });
@@ -38,53 +92,47 @@ class _HomeAdminState extends State<HomeAdmin> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: _widgetOptions.elementAt(_selectedIndex),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-            backgroundColor: Colors.black,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_add),
-            label: 'Add User',
-            backgroundColor: Colors.black,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.eco),
-            label: 'Forest Data',
-            backgroundColor: Colors.black,
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.map),
-            label: 'Guard',
-            backgroundColor: Colors.black,
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.green,
-        onTap: _onItemTapped,
-      ),
-    );
-  }
-}
-
-class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      child: const Center(
-        child: Text(
-          'Map Screen',
-          style: TextStyle(fontSize: 30),
+    return WillPopScope(
+      onWillPop: () {
+        if( _selectedIndex == 0 ) {
+          return showExitPopup(context);
+        }
+        _changeIndex(0);
+        return false as Future<bool>;
+      },
+      child: Scaffold(
+        body: Center(
+          child: _widgetOptions.elementAt(_selectedIndex),
+        ),
+        bottomNavigationBar: BottomNavigationBar(
+          items: const <BottomNavigationBarItem>[
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home),
+              label: 'Home',
+              backgroundColor: Colors.black,
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person_sharp),
+              label: 'Guard',
+              backgroundColor: Colors.black,
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.eco),
+              label: 'Forest Data',
+              backgroundColor: Colors.black,
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.map),
+              label: 'Maps',
+              backgroundColor: Colors.black,
+            ),
+          ],
+          currentIndex: _selectedIndex,
+          selectedItemColor: Colors.green,
+          onTap: _onItemTapped,
         ),
       ),
     );
   }
 }
+

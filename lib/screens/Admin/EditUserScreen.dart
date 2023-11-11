@@ -1,17 +1,25 @@
 // ignore_for_file: unused_field, library_private_types_in_public_api, use_build_context_synchronously
-
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:forestapp/screens/Admin/MapScreen.dart';
+import 'package:forestapp/common/models/user.dart';
+import 'package:forestapp/utils/user_service.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
-import 'UserScreen.dart';
+import '../../common/themeHelper.dart';
+import '../../utils/utils.dart';
 
 class EditUserScreen extends StatefulWidget {
-  final Map<String, dynamic> user;
-  const EditUserScreen({super.key, required this.user});
+  final User user;
+  final Function(User) updateList;
+  final Function(int) changeIndex;
+
+  const EditUserScreen({
+    super.key,
+    required this.user,
+    required this.changeIndex,
+    required this.updateList
+  });
 
   @override
   _EditUserScreenState createState() => _EditUserScreenState();
@@ -19,267 +27,492 @@ class EditUserScreen extends StatefulWidget {
 
 class _EditUserScreenState extends State<EditUserScreen> {
   final _formKey = GlobalKey<FormState>();
-  String _name = '';
-  String _email = '';
-  String _password = '';
-
-  String _contactNumber = ''; 
-  String _aadharNumber = '';
-  String _forestId = '';
+  late String _name;
+  late String _email;
+  late String _password;
+  late String _contactNumber;
+  late String _aadharNumber;
+  late String _forestId;
   File? _imageFile;
-  final CollectionReference _userRef =
-      FirebaseFirestore.instance.collection('users');
+  NetworkImage? _networkImage;
+  String? imageUrl;
+  String? longitude;
+  String? latitude;
+  String? radius;
+  bool imagePicked = false;
 
-  FirebaseFirestore firestore = FirebaseFirestore.instance;
+  @override
+  void initState( ) {
+    super.initState();
 
-  void _getImage() async {
-    final pickedFile =
-        await ImagePicker().pickImage(source: ImageSource.gallery);
+    // setting text fields
+    _name = widget.user.name;
+    _email = widget.user.email;
+    _password = widget.user.password!;
+    _contactNumber = widget.user.contactNumber;
+    _aadharNumber = widget.user.aadharNumber;
+    _forestId = widget.user.forestId.toString();
+  }
+
+
+  Future<void> _pickImage(ImageSource source) async {
+    final pickedFile = await ImagePicker().pickImage(source: source);
+
+    _imageFile = File( pickedFile?.path as String );
+    imageUrl = _imageFile!.path.split('/').last;
+
     setState(() {
-      _imageFile = pickedFile != null ? File(pickedFile.path) : null;
+      imagePicked = true;
     });
+  }
+
+  void _onItemTapped(int index) {
+    widget.changeIndex( index );
+    Navigator.of(context).pop();
+  }
+
+  Future<void> editUser() async {
+    if (_formKey.currentState!.validate()) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) =>  Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+            strokeWidth: 2,
+          ),
+        ),
+      );
+
+      _formKey.currentState!.save();
+
+      if( imageUrl == null ) {
+        imageUrl = widget.user.imageUrl;
+      }
+
+      final User updatedUser = User(
+          name: _name,
+          email: _email,
+          password: _password,
+          contactNumber: _password,
+          imageUrl: imageUrl!,
+          aadharNumber: _aadharNumber,
+          forestId: int.parse( _forestId ),
+          longitude: double.parse(longitude!),
+          latitude: double.parse(latitude!),
+          radius: int.parse( radius! ),
+          aadharImageUrl: widget.user.aadharImageUrl,
+          forestIDImageUrl: widget.user.forestIDImageUrl,
+      );
+
+      bool userUpdated  = await UserService.updateUser( context, updatedUser );
+
+      if( userUpdated ) {
+        // updating the parent list
+        widget.updateList( updatedUser );
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('User updated successfully'),
+          ),
+        );
+
+        Navigator.of(context).pop();
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        elevation: 0.0,
+        elevation: 0,
         flexibleSpace: Container(
-            height: 90,
-            decoration: BoxDecoration(
+          height: 120,
+          decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [Colors.green, Colors.greenAccent],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-            )),
-        // title: const Text('Pench MH'),
-        title: const Center(
-          child: Text(
-            'Edit User',
-            style: TextStyle(
-              fontSize: 24.0,
-              fontWeight: FontWeight.bold,
-            ),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(15),
+                bottomRight: Radius.circular(15),
+              )
           ),
         ),
-        backgroundColor: Colors.transparent,
-        // elevation: 0.0,
+        title: const Text(
+          'Edit User',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+            backgroundColor: Colors.black,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_sharp),
+            label: 'Guard',
+            backgroundColor: Colors.black,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.eco),
+            label: 'Forest Data',
+            backgroundColor: Colors.black,
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.map),
+            label: 'Maps',
+            backgroundColor: Colors.black,
+          ),
+        ],
+        currentIndex: 1,
+        selectedItemColor: Colors.green,
+        onTap: _onItemTapped,
       ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.symmetric( horizontal: 16.0),
           child: Form(
             key: _formKey,
             child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  GestureDetector(
-                    onTap: _getImage,
-                    child: Container(
-                      height: 150.0,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                      child: _imageFile == null
-                          ? Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: const [
-                                Icon(
-                                  Icons.add_a_photo,
-                                  size: 50.0,
-                                ),
-                                Text(
-                                  'Add Photo',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            )
-                          : ClipRRect(
-                              borderRadius: BorderRadius.circular(8.0),
-                              child: Image.file(
-                                _imageFile!,
-                                fit: BoxFit.cover,
+              physics: const BouncingScrollPhysics(),
+              child: Container(
+                margin: const EdgeInsets.only(top: 24.0, ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: Stack(
+                        alignment: Alignment.bottomRight,
+                        children: [
+                          Container(
+                            width: 200,
+                            height: 200,
+                            decoration: BoxDecoration(
+                              image: DecorationImage(
+                                image: imagePicked ? Image.file(_imageFile!).image : NetworkImage( "${baseUrl}uploads/guard/profile/${widget.user.imageUrl}" ) ,
+                                fit: BoxFit.cover
+                              ),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              showModalBottomSheet(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return SafeArea(
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        ListTile(
+                                          leading: const Icon(Icons.camera_alt),
+                                          title: const Text('Take a photo'),
+                                          onTap: () {
+                                            setState(() {
+                                              _pickImage(ImageSource.camera);
+                                            });
+
+                                            Navigator.pop(context);
+                                          },
+                                        ),
+                                        ListTile(
+                                          leading: const Icon(Icons.photo_library),
+                                          title: const Text('Choose from gallery'),
+                                          onTap: () {
+                                            setState(() {
+                                              _pickImage(ImageSource.gallery);
+                                            });
+
+                                            Navigator.pop(context);
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                            child: Container(
+                              width: 50,
+                              height: 50,
+                              decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(50),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.2),
+                                      blurRadius: 2,
+                                      offset: const Offset(1, 3),
+                                    )
+                                  ]
+                              ),
+                              child: Icon(
+                                Icons.edit,
                               ),
                             ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16.0),
-                  TextFormField(
-                    decoration: const InputDecoration(
-                      labelText: 'Name',
-                      border: OutlineInputBorder(),
+                    const SizedBox(height: 16.0),
+                    Text(
+                      "Name",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter a name';
-                      }
-                      return null;
-                    },
-                    initialValue: widget.user['name'] as String,
-                    onSaved: (value) {
-                      _name = value!;
-                    },
-                  ),
-                  const SizedBox(height: 16.0),
-                  TextFormField(
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter an email';
-                      } else if (!value.contains('@') || !value.contains('.')) {
-                        return 'Please enter a valid email';
-                      }
-                      return null;
-                    },
-                    initialValue: widget.user['email'] as String,
-                    onSaved: (value) {
-                      _email = value!;
-                    },
-                  ),
-                  const SizedBox(height: 16.0),
-                  TextFormField(
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Password',
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter a password';
-                      }
-                      return null;
-                    },
-                    initialValue: widget.user['password'] as String,
-                    onSaved: (value) {
-                      _password = value!;
-                    },
-                  ),
-                  const SizedBox(height: 16.0),
-                  TextFormField(
-                    decoration: const InputDecoration(
-                      labelText: 'Contact Number',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.phone,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter a contact number';
-                      }
-                      return null;
-                    },
-                    initialValue: widget.user['contactNumber'] as String,
-                    onSaved: (value) {
-                      _contactNumber = value!;
-                    },
-                  ),
-                  const SizedBox(height: 16.0),
-                  const SizedBox(height: 16.0),
-                  TextFormField(
-                    decoration: const InputDecoration(
-                      labelText: 'Aadhar Number',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.phone,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter a aadhar number';
-                      }
-                      return null;
-                    },
-                    initialValue: widget.user['aadharNumber'] as String,
-                    onSaved: (value) {
-                      _aadharNumber = value!;
-                    },
-                  ),
-                  const SizedBox(height: 16.0),
-                  TextFormField(
-                    decoration: const InputDecoration(
-                      labelText: 'Forest ID',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.phone,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter a Forest ID';
-                      }
-                      return null;
-                    },
-                    initialValue: widget.user['forestID'] as String,
-                    onSaved: (value) {
-                      _forestId = value!;
-                    },
-                  ),
-                  const SizedBox(height: 16.0),
-                  ElevatedButton(
-                    onPressed: () async {
-                      if (_formKey.currentState!.validate()) {
-                        _formKey.currentState!.save();
-
-                        // Upload the image to Firebase Storage and get the URL
-                        String imageUrl = widget.user['imageUrl'];
-                        if (_imageFile != null) {
-                          final Reference storageRef = FirebaseStorage.instance
-                              .ref()
-                              .child('user-images')
-                              .child(_imageFile!.path);
-                          final UploadTask uploadTask =
-                              storageRef.putFile(_imageFile!);
-                          final TaskSnapshot downloadUrl =
-                              await uploadTask.whenComplete(() => null);
-                          imageUrl = await downloadUrl.ref.getDownloadURL();
+                    const SizedBox(height: 16.0),
+                    TextFormField(
+                      decoration: ThemeHelper().textInputDecoration(
+                          'Name', 'Enter Name'
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter a name';
                         }
+                        return null;
+                      },
+                      initialValue: widget.user.name,
+                      onSaved: (value) {
+                        _name = value!;
+                      },
+                    ),
 
-                        // Update the user data in the Firebase Firestore
-                        final CollectionReference usersRef =
-                            FirebaseFirestore.instance.collection('users');
-                        final Map<String, dynamic> userData = {
-                          'name': _name,
-                          'email': _email,
-                          'password': _password,
-                          'contactNumber': _contactNumber,
-                          'imageUrl': imageUrl,
-                          'aadharNumber': _aadharNumber,
-                          'forestID': _forestId,
-                        };
-                        try {
-                          await usersRef
-                              .where('email', isEqualTo: _email)
-                              .get()
-                              .then((querySnapshot) {
-                            querySnapshot.docs.forEach((doc) {
-                              usersRef.doc(doc.id).update(userData);
-                            });
-                          });
-                          Navigator.of(context).pushAndRemoveUntil(
-                              MaterialPageRoute(
-                                  builder: (context) => const UserScreen()),
-                              (route) => false);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('User updated successfully'),
-                            ),
-                          );
-                        } catch (error) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Error: $error'),
-                            ),
-                          );
+                    const SizedBox(height: 16.0),
+                    Text(
+                      "Email",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16.0),
+                    TextFormField(
+                      decoration: ThemeHelper().textInputDecoration(
+                        'Email', 'Enter Email'
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter an email';
                         }
-                      }
-                    },
-                    child: const Text('Save'),
-                  )
-                ],
+                        // } else if (!value.contains('@') || !value.contains('.')) {
+                        //   return 'Please enter a valid email';
+                        // }
+                        return null;
+                      },
+                      initialValue: widget.user.email,
+                      onSaved: (value) {
+                        _email = value!;
+                      },
+                    ),
+
+                    const SizedBox(height: 16.0),
+                    Text(
+                      "Passsword",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16.0),
+                    TextFormField(
+                      obscureText: true,
+                      decoration: ThemeHelper().textInputDecoration(
+                          'Password', 'Enter Password'
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter a password';
+                        }
+                        return null;
+                      },
+                      initialValue: widget.user.password,
+                      onSaved: (value) {
+                        _password = value!;
+                      },
+                    ),
+
+                    const SizedBox(height: 16.0),
+                    Text(
+                      "Contact Number",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16.0),
+                    TextFormField(
+                      decoration: ThemeHelper().textInputDecoration(
+                          'Contact Number', 'Enter Contact Number'
+                      ),
+                      keyboardType: TextInputType.phone,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter a contact number';
+                        }
+                        return null;
+                      },
+                      initialValue: widget.user.contactNumber,
+                      onSaved: (value) {
+                        _contactNumber = value!;
+                      },
+                    ),
+
+
+                    const SizedBox(height: 16.0),
+                    Text(
+                      "Aadhar Number",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16.0),
+                    TextFormField(
+                      decoration: ThemeHelper().textInputDecoration(
+                          'Aadhar Number', 'Enter Aadhar Number'
+                      ),
+                      keyboardType: TextInputType.phone,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter a aadhar number';
+                        }
+                        return null;
+                      },
+                      initialValue: widget.user.aadharNumber,
+                      onSaved: (value) {
+                        _aadharNumber = value!;
+                      },
+                    ),
+
+                    const SizedBox(height: 16.0),
+                    Text(
+                      "Forest ID",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16.0),
+                    TextFormField(
+                      decoration:ThemeHelper().textInputDecoration(
+                          'Forest ID', 'Enter Forest ID'
+                      ),
+                      keyboardType: TextInputType.phone,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter a Forest ID';
+                        }
+                        return null;
+                      },
+                      initialValue: widget.user.forestId.toString(),
+                      onChanged: ( value ) {
+                        _forestId = value;
+                      },
+                    ),
+                    const SizedBox(height: 16.0),
+                    Text(
+                      "Latitude",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16.0),
+                    TextFormField(
+                      decoration:ThemeHelper().textInputDecoration(
+                          'Latitude', 'Enter Latitude'
+                      ),
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter a Latitude';
+                        }
+                        return null;
+                      },
+                      initialValue: widget.user.latitude.toString(),
+                      onSaved: (value) {
+                        latitude = value!;
+                      },
+                    ),
+                    const SizedBox(height: 16.0),
+                    Text(
+                      "Longitude",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16.0),
+                    TextFormField(
+                      decoration:ThemeHelper().textInputDecoration(
+                          'Longitude', 'Enter Longitude'
+                      ),
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter a Longitude';
+                        }
+                        return null;
+                      },
+                      initialValue: widget.user.longitude.toString(),
+                      onSaved: (value) {
+                        longitude = value!;
+                      },
+                    ),
+
+                    const SizedBox(height: 16.0),
+                    Text(
+                      "Radius in KM",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16.0),
+                    TextFormField(
+                      decoration:ThemeHelper().textInputDecoration(
+                          'Radius', 'Enter Radius in KM'
+                      ),
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Enter Radius in KM';
+                        }
+                        return null;
+                      },
+                      initialValue: ( widget.user.radius ).round().toString(),
+                      onSaved: (value) {
+                        radius = (int.parse( value! ) ).toString();
+                      },
+                    ),
+                    const SizedBox(height: 16.0),
+                    ElevatedButton(
+                      style: ButtonStyle(
+                          backgroundColor: MaterialStateProperty.all<Color>(Colors.green.shade400),
+                          shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                              RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(25.0),
+                              )
+                          )
+                      ),
+                      onPressed: editUser,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric( vertical: 18.0),
+                        child: const Text('Save'),
+                      ),
+                    ),
+                    const SizedBox(height: 16.0),
+                  ],
+                ),
               ),
             ),
           ),

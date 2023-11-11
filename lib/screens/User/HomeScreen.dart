@@ -1,31 +1,30 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
+import 'dart:io';
+
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:forestapp/common/models/conflict_model_hive.dart';
+import 'package:forestapp/contstant/constant.dart';
+import 'package:forestapp/screens/loginScreen.dart';
+import 'package:forestapp/utils/conflict_service.dart';
+import 'package:forestapp/utils/hive_service.dart';
+import 'package:forestapp/utils/utils.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:latlng/latlng.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:intl/intl.dart';
 
-import '../loginScreen.dart';
-import 'ForestDataScreen.dart';
-
-class ProfileData {
-  final String title;
-  final String description;
-  final String imageUrl;
-  final String userName;
-  final String userEmail;
-  final Timestamp? datetime;
-
-  ProfileData({
-    required this.title,
-    required this.description,
-    required this.imageUrl,
-    required this.userName,
-    required this.userEmail,
-    this.datetime,
-  });
-}
+import '../../widgets/home_screen_list_tile.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final Function(int) changeIndex;
+  final Function(Map<String,dynamic>) setConflict;
+  final Function(bool) showNavBar;
+
+  const HomeScreen(
+      {super.key,
+      required this.setConflict,
+      required this.changeIndex,
+      required this.showNavBar});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -33,317 +32,790 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late String _userEmail;
-  late List<ProfileData> _profileDataList = [];
+  late List<Conflict> _profileDataList = [];
+  HiveService hiveService = HiveService();
+  ValueNotifier<int> dialogTrigger = ValueNotifier(0);
+  Future<void>? _future;
+  LatLng? _currentLocation;
 
-  int _userProfileDataCount = 0;
 
-  int? _count;
+  bool isLoading = true;
+  bool conflictUploaded = false;
+
+  Map<String, dynamic> conflictsCounter = {
+    'total_conflicts' : 0,
+    'cattle injured' : 0,
+    'cattle killed': 0,
+    'human injured': 0,
+    'human killed': 0,
+    'crop damaged': 0,
+  };
+
+  late double _longitude;
+  late double _latitude;
+  late double _circleRadius ;
+
+  StreamSubscription? connection;
+  bool isOffline = false;
+  bool userInRange = false;
+
+  late LatLng _point;
+  double _distance = 0.0;
 
   @override
   void initState() {
     super.initState();
+
     fetchUserEmail();
-    getTotalDocumentsCount().then((value) {
-      setState(() {
-        _count = value;
-      });
+    _future = init();
+  }
+
+  Future<void> init() async {
+    if (Util.hasUserLocation == false) {
+      await _getCurrentLocation();
+      userInRange = await isPointInsideCircle(_currentLocation!);
+      Util.hasUserLocation = true;
+      dialogTrigger.value = 1;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.showNavBar(true);
     });
-    getTotalDocumentsCountUser().then((value) {});
   }
 
   Future<void> fetchUserEmail() async {
     final prefs = await SharedPreferences.getInstance();
-    final userEmail = prefs.getString('userEmail');
+    final userEmail = prefs.getString(SHARED_USER_EMAIL);
+    final double longitude = double.parse( prefs.getString(SHARED_USER_LONGITUDE)! );
+    final double latitude = double.parse( prefs.getString(SHARED_USER_LATITUDE)! );
+    final double radius = double.parse( prefs.getString(SHARED_USER_RADIUS)! );
+
     setState(() {
       _userEmail = userEmail ?? '';
+      _latitude = latitude;
+      _longitude = longitude;
+      _circleRadius = radius;
     });
-    fetchUserProfileData();
+    await fetchUserProfileData();
   }
 
   Future<void> fetchUserProfileData() async {
-    final userSnapshot = await FirebaseFirestore.instance
-        .collection('forestdata')
-        .where('user_email', isEqualTo: _userEmail)
-        // .orderBy('createdAt', descending: true)
-        .limit(5)
-        .get();
-    final profileDataList = userSnapshot.docs
-        .map((doc) => ProfileData(
-              imageUrl: doc['imageUrl'],
-              title: doc['title'],
-              description: doc['description'],
-              userName: doc['user_name'],
-              userEmail: doc['user_email'],
-              datetime: doc['createdAt'] as Timestamp?,
-            ))
-        .toList();
-    setState(() {
-      _profileDataList = profileDataList;
-      _userProfileDataCount = userSnapshot.size;
-    });
-  }
+    try {
 
-  Future<int> getTotalDocumentsCount() async {
-    final snapshot = await FirebaseFirestore.instance
-        .collection('forestdata')
-        // .where('user_email', isEqualTo: _userEmail)
-        // .orderBy('createdAt', descending: true)
-        .get();
-    return snapshot.size;
-  }
+      conflictsCounter = {
+        'total_conflicts': 0,
+        'cattle injured': 0,
+        'cattle killed': 0,
+        'human injured': 0,
+        'human killed': 0,
+        'crop damaged': 0,
+      };
 
-  Future<int> getTotalDocumentsCountUser() async {
-    final snapshot = await FirebaseFirestore.instance.collection('users').get();
-    return snapshot.size;
-  }
-
-  // late final int numberOfTigers;
-  final CollectionReference users =
-      FirebaseFirestore.instance.collection('users');
-
-  @override
-  Widget build(BuildContext context) {
-    if (_profileDataList.isEmpty) {
-      return Scaffold(
-        appBar: AppBar(
-          elevation: 0.0,
-          flexibleSpace: Container(
-              height: 90,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.green, Colors.greenAccent],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              )),
-          title: const Text('Pench MH'),
-          actions: [
-            Column(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.logout),
-                  onPressed: () async {
-                    final confirm = await showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('Confirm Logout'),
-                        content:
-                            const Text('Are you sure you want to log out?'),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, false),
-                            child: const Text('Cancel'),
-                          ),
-                          TextButton(
-                            onPressed: () async {
-                              SharedPreferences prefs =
-                                  await SharedPreferences.getInstance();
-                              prefs.remove('userEmail');
-                              Navigator.pushAndRemoveUntil(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => const LoginScreen()),
-                                (route) => false,
-                              );
-                            },
-                            child: const Text('Logout'),
-                          ),
-                        ],
-                      ),
-                    );
-                    if (confirm == true) {
-                      // perform logout
-                    }
-                  },
-                ),
-                // const Text("Logout"),
-              ],
-            ),
-          ],
-        ),
-        body: Center(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                "No Data Found.....",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
-              ),
-              SizedBox(
-                width: 5,
-              ),
-              CircularProgressIndicator()
-            ],
+      // if the data is loaded from cache showing a bottom popup to user alerting
+      // that the app is running in offline mode
+      if (!(await hasConnection)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Loading the page in Offline mode'),
           ),
-        ),
-      );
-    }
-    return Scaffold(
-      appBar: AppBar(
-        elevation: 0.0,
-        flexibleSpace: Container(
-            height: 90,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.green, Colors.greenAccent],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            )),
-        title: const Text('Pench MH'),
-        actions: [
-          Column(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.logout),
-                onPressed: () async {
-                  final confirm = await showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Confirm Logout'),
-                      content: const Text('Are you sure you want to log out?'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          child: const Text('Cancel'),
-                        ),
-                        TextButton(
-                          onPressed: () async {
-                            SharedPreferences prefs =
-                                await SharedPreferences.getInstance();
-                            prefs.remove('userEmail');
-                            Navigator.pushAndRemoveUntil(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => const LoginScreen()),
-                              (route) => false,
-                            );
-                          },
-                          child: const Text('Logout'),
-                        ),
-                      ],
-                    ),
-                  );
-                  if (confirm == true) {
-                    // perform logout
-                  }
-                },
-              ),
-              // const Text("Logout"),
-            ],
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 16.0),
-              InkWell(
-                onTap: () {
-                  Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(
-                          builder: (context) => const ForestDataScreen()),
-                      (route) => false);
-                },
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      children: [
-                        const Text(
-                          'Total Tigers Entries',
-                          style: TextStyle(fontSize: 20.0),
-                        ),
-                        const Icon(
-                          Icons.trending_up,
-                          size: 50.0,
-                        ),
-                        const SizedBox(height: 16.0),
-                        Text(
-                          '$_userProfileDataCount',
-                          style: TextStyle(fontSize: 24.0),
-                        ),
-                      ],
+        );
+
+        // also setting up a listener to trigger when the device is back online
+        connection = Connectivity().onConnectivityChanged.listen((ConnectivityResult result) {
+          // trigger only when user comes back online
+          if (result != ConnectivityResult.none) {
+            // uploading the data to server
+            uploadStoredConflicts().then((uploaded) => {
+              if( uploaded )
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    backgroundColor: Colors.green,
+                    content: Text(
+                      "Back Online! Uploading stored Conflicts",
+                      style: TextStyle(color: Colors.black),
                     ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 16.0),
-              Container(
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text(
-                    "Recent Entries",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
-                  ),
-                ),
-              ),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: SingleChildScrollView(
-                  child: DataTable(
-                    columnSpacing: 16.0,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey.shade500),
-                    ),
-                    columns: const [
-                      DataColumn(
-                        label: Text(
-                          'Tiger Name',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      DataColumn(
-                        label: Text(
-                          'User Name',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      DataColumn(
-                        label: Text(
-                          'Date & Time',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      DataColumn(
-                        label: Text(
-                          'View',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ],
-                    rows: _profileDataList.map((profileData) {
-                      return DataRow(
-                        cells: [
-                          DataCell(Text(profileData.title)),
-                          DataCell(Text(profileData.userName)),
-                          DataCell(Text(DateFormat('dd/MM/yyyy hh:mm')
-                              .format(profileData.datetime!.toDate()))),
-                          DataCell(IconButton(
-                            onPressed: () {
-                              Navigator.of(context).pushAndRemoveUntil(
-                                  MaterialPageRoute(
-                                      builder: (context) => ForestDataScreen()),
-                                  (route) => false);
-                            },
-                            icon: Icon(Icons.visibility),
-                          )),
-                        ],
-                      );
-                    }).toList(),
+                )
+
+            }).then((value) => fetchUserProfileData() );
+
+            connection?.cancel();
+          }
+        });
+
+        setState(() {
+          isLoading = false;
+          _profileDataList = [];
+        });
+      }
+      else {
+        // initializing the conflictCounter
+        conflictsCounter = await ConflictService.getCounts(context, userEmail: _userEmail );
+
+        List<Conflict> conflictList = [];
+
+        if( !conflictUploaded ) {
+          conflictUploaded = true;
+          uploadStoredConflicts().then((uploaded) => {
+            if( uploaded )
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  backgroundColor: Colors.green,
+                  content: Text(
+                    "Back Online! Uploading stored Conflicts",
+                    style: TextStyle(color: Colors.black),
                   ),
                 ),
               )
+          }).then((value) => fetchUserProfileData() );
+        }
+
+        conflictList = await ConflictService.getRecentEntries(context, userEmail: _userEmail);
+
+        setState(() {
+          isLoading = false;
+          _profileDataList = conflictList;
+        });
+      }
+
+
+    }
+    catch( e, s ) {
+      print( e );
+      print( s );
+    }
+
+  }
+
+  Future<void> _getCurrentLocation() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    // Check if location services are enabled
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: Text('Location Services Disabled'),
+          content: Text('Please enable location services to continue.'),
+          actions: [
+            TextButton(
+              child: Text('OK'),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    // Request location permissions
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) => AlertDialog(
+            title: Text('Location Permissions Denied'),
+            content: Text('Please grant location permissions to continue.'),
+            actions: [
+              TextButton(
+                child: Text('OK'),
+                onPressed: () => Navigator.pop(context),
+              ),
             ],
           ),
+        );
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: Text('Location Permissions Denied'),
+          content: Text(
+              'Location permissions are permanently denied, we cannot request permissions.'),
+          actions: [
+            TextButton(
+              child: Text('OK'),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ],
         ),
-      ),
+      );
+      return;
+    }
+
+    // Get the current location
+    Position position = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.bestForNavigation,
     );
+
+    setState(() {
+      _currentLocation = LatLng(position.latitude, position.longitude);
+    });
+
+    return;
+  }
+
+  AlertDialog _isInside(BuildContext context) {
+    return AlertDialog(
+      title: const Text('You are outside the privileged area..'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Do you want to exit the app?'),
+          // Text( "Current : " + _point.latitude.toString() + ", " + _point.longitude.toString() ),
+          // Text( "Stored : " + _latitude.toString() + ", " + _longitude.toString() ),
+          // Text("Radius : " + ( _circleRadius / 1000 ).toString() +  "km" ),
+          // Text("Distance : " + ( _distance / 1000 ).round().toString() + "Km" ),
+        ],
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () async {
+            SharedPreferences prefs = await SharedPreferences.getInstance();
+            prefs.remove('userEmail');
+            Util.hasUserLocation = false;
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const LoginScreen()),
+                  (route) => false,
+            );
+          },
+          child: Text('Logout',
+              style: TextStyle(
+                color: Colors.red,
+              )),
+        ),
+        TextButton(
+          onPressed: () {
+            exit(0);
+          },
+          child: Text('Yes'),
+        ),
+      ],
+    );
+  }
+
+  Future<bool> isPointInsideCircle(LatLng point) async {
+    _point = point;
+
+    _distance = Geolocator.distanceBetween(
+      point.latitude,
+      point.longitude,
+      _latitude,
+      _longitude,
+    );
+
+    // for debugging
+    print( point.latitude.toString() + "|" + point.longitude.toString() );
+    print( _latitude.toString() + "|" + _longitude.toString() );
+    print("distance is : " + _distance.toString() );
+
+    return (_distance <= _circleRadius * 1000 );
+  }
+
+  Future<bool> uploadStoredConflicts() async {
+    // getting all the conflicts in stored_conflicts
+    var storedConflicts = await hiveService.getBoxes('stored_conflicts');
+
+    if( storedConflicts.length == 0 ) {
+      return false;
+    }
+
+    for (Conflict conflict in storedConflicts) {
+      await ConflictService.addConflict(context, conflict, conflict.imageUrl );
+    }
+
+    clearStoredConflicts();
+    return true;
+  }
+
+  Future<void> clearStoredConflicts() async {
+    await hiveService.deleteBox( 'stored_conflicts' );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+
+    return FutureBuilder(
+        future: _future,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "Finding your current location...",
+                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w400),
+                  ),
+                  SizedBox(
+                    width: 10,
+                  ),
+                  CircularProgressIndicator()
+                ],
+              ),
+            );
+          } else {
+            if (_currentLocation != null && !userInRange) {
+              return Container(
+                child: ValueListenableBuilder(
+                    valueListenable: dialogTrigger,
+                    builder: (ctx, value, child) {
+                      Future.delayed(const Duration(seconds: 0), () {
+                        showDialog(
+                            barrierDismissible: false,
+                            context: ctx,
+                            builder: (ctx) {
+                              return _isInside(context);
+                            });
+                      });
+                      return const SizedBox();
+                    }),
+              );
+            } else if (snapshot.hasError) {
+              debugPrint(snapshot.error.toString());
+              debugPrint(snapshot.stackTrace.toString());
+
+              return Center(
+                child: Text("Some error occured!"),
+              );
+            } else {
+              // for debugging
+              if( Util.showDebugDialog ) {
+                Util.showDebugDialog = false;
+                WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+                  showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: Text("Debugging Info"),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text( "Current : " + _point.latitude.toString() + ", " + _point.longitude.toString() ),
+                            Text( "Stored : " + _latitude.toString() + ", " + _longitude.toString() ),
+                            Text("Radius : " +  ( _circleRadius ).toString() +  "km" ),
+                            Text("Distance : " + ( _distance ).round().toString() + "Km" ),
+                          ],
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                            child: Text("Ok"),
+                          ),
+                        ],
+                      )
+                  );
+                });
+              }
+
+              return Scaffold(
+                appBar: AppBar(
+                  elevation: 0,
+                  flexibleSpace: Container(
+                    height: 120,
+                    decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.green, Colors.greenAccent],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(15),
+                          bottomRight: Radius.circular(15),
+                        )),
+                  ),
+                  title: const Text(
+                    'Pench MH',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                body: isLoading ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                CircularProgressIndicator(),
+                                const SizedBox(
+                                  height: 15,
+                                ),
+                                Text(
+                                  "Loading Data.....",
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w500),
+                                ),
+                              ],
+                            ),
+                          )  : Stack(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.only(top: 15),
+                            width: mediaQuery.size.width,
+                            height: mediaQuery.size.height * 0.4,
+                            color: Colors.white,
+                            child: Column(
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          widget.setConflict({});
+                                          widget.changeIndex(2);
+                                        },
+                                        child: Container(
+                                            margin: const EdgeInsets.symmetric(
+                                                horizontal: 5, vertical: 5),
+                                            padding: const EdgeInsets.all(15),
+                                            height:
+                                                mediaQuery.size.height * 0.15,
+                                            decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                borderRadius:
+                                                    BorderRadius.circular(15),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.black
+                                                        .withOpacity(0.1),
+                                                    blurRadius: 20,
+                                                    offset: const Offset(0, 5),
+                                                  )
+                                                ]),
+                                            child: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.spaceAround,
+                                              children: [
+                                                Text(
+                                                  "Total Statuses",
+                                                  style: TextStyle(
+                                                    fontSize: 18,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  conflictsCounter.containsKey('total_conflicts') ? conflictsCounter['total_conflicts'].toString() : "0",
+                                                  style: TextStyle(
+                                                    fontSize: 18,
+                                                  ),
+                                                ),
+                                              ],
+                                            )),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          widget.setConflict({"name": 'human injured', "id": ""});
+                                          widget.changeIndex(2);
+                                        },
+                                        child: Container(
+                                            margin: const EdgeInsets.symmetric(
+                                                horizontal: 5, vertical: 5),
+                                            padding: const EdgeInsets.all(15),
+                                            height: mediaQuery.size.height * 0.15,
+                                            decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                borderRadius: BorderRadius.circular(15),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.black
+                                                        .withOpacity(0.1),
+                                                    blurRadius: 20,
+                                                    offset: const Offset(0, 5),
+                                                  )
+                                                ]),
+                                            child: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.spaceAround,
+                                              children: [
+                                                Text(
+                                                  "Human Injured",
+                                                  style: TextStyle(
+                                                    fontSize: 18,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  conflictsCounter.containsKey('human injured') ? conflictsCounter['human injured'].toString() : "0",
+                                                  style: TextStyle(
+                                                    fontSize: 18,
+                                                  ),
+                                                ),
+                                              ],
+                                            )),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          widget.setConflict({"name": 'human killed', "id": ""});
+                                          widget.changeIndex(2);
+                                        },
+                                        child: Container(
+                                            margin: const EdgeInsets.symmetric(
+                                                horizontal: 5, vertical: 5),
+                                            padding: const EdgeInsets.all(15),
+                                            height:
+                                                mediaQuery.size.height * 0.15,
+                                            decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                borderRadius:
+                                                    BorderRadius.circular(15),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.black
+                                                        .withOpacity(0.1),
+                                                    blurRadius: 20,
+                                                    offset: const Offset(0, 5),
+                                                  )
+                                                ]),
+                                            child: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.spaceAround,
+                                              children: [
+                                                Text(
+                                                  "Human Killed",
+                                                  style: TextStyle(
+                                                    fontSize: 18,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  conflictsCounter.containsKey('human killed') ? conflictsCounter['human killed'].toString() : "0",
+                                                  style: TextStyle(
+                                                    fontSize: 18,
+                                                  ),
+                                                ),
+                                              ],
+                                            )),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          widget.setConflict({"name": 'cattle injured', "id": ""});
+                                          widget.changeIndex(2);
+                                        },
+                                        child: Container(
+                                            margin: const EdgeInsets.symmetric(
+                                                horizontal: 5, vertical: 5),
+                                            padding: const EdgeInsets.all(15),
+                                            height:
+                                                mediaQuery.size.height * 0.15,
+                                            decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                borderRadius:
+                                                    BorderRadius.circular(15),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.black
+                                                        .withOpacity(0.1),
+                                                    blurRadius: 20,
+                                                    offset: const Offset(0, 5),
+                                                  )
+                                                ]),
+                                            child: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.spaceAround,
+                                              children: [
+                                                Text(
+                                                  "Cattles Injured",
+                                                  style: TextStyle(
+                                                    fontSize: 18,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  conflictsCounter.containsKey('cattle injured') ? conflictsCounter['cattle injured'].toString() : "0",
+                                                  style: TextStyle(
+                                                    fontSize: 18,
+                                                  ),
+                                                ),
+                                              ],
+                                            )),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          widget.setConflict({"name": 'cattle killed', "id": ""});
+                                          widget.changeIndex(2);
+                                        },
+                                        child: Container(
+                                            margin: const EdgeInsets.symmetric(
+                                                horizontal: 5, vertical: 5),
+                                            padding: const EdgeInsets.all(15),
+                                            height:
+                                                mediaQuery.size.height * 0.15,
+                                            decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                borderRadius:
+                                                    BorderRadius.circular(15),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.black
+                                                        .withOpacity(0.1),
+                                                    blurRadius: 20,
+                                                    offset: const Offset(0, 5),
+                                                  )
+                                                ]),
+                                            child: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.spaceAround,
+                                              children: [
+                                                Text(
+                                                  "Cattles Killed",
+                                                  style: TextStyle(
+                                                    fontSize: 18,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  conflictsCounter.containsKey('cattle killed') ? conflictsCounter['cattle killed'].toString() : "0",
+                                                  style: TextStyle(
+                                                    fontSize: 18,
+                                                  ),
+                                                ),
+                                              ],
+                                            )),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          widget.setConflict({"name": 'crop damaged', "id": ""});
+                                          widget.changeIndex(2);
+                                        },
+                                        child: Container(
+                                            margin: const EdgeInsets.symmetric(
+                                                horizontal: 5, vertical: 5),
+                                            padding: const EdgeInsets.all(15),
+                                            height:
+                                                mediaQuery.size.height * 0.15,
+                                            decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                borderRadius:
+                                                    BorderRadius.circular(15),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.black
+                                                        .withOpacity(0.1),
+                                                    blurRadius: 20,
+                                                    offset: const Offset(0, 5),
+                                                  )
+                                                ]),
+                                            child: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.spaceAround,
+                                              children: [
+                                                Text(
+                                                  "Crop Damaged",
+                                                  style: TextStyle(
+                                                    fontSize: 18,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  conflictsCounter.containsKey('crop damaged') ? conflictsCounter['crop damaged'].toString() : "0",
+                                                  style: TextStyle(
+                                                    fontSize: 18,
+                                                  ),
+                                                ),
+                                              ],
+                                            )),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            margin: EdgeInsets.only(
+                                top: mediaQuery.size.height * 0.36),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(10),
+                                topRight: Radius.circular(10),
+                              ),
+                              color: Colors.white,
+                            ),
+                            alignment: Alignment.bottomCenter,
+                            width: mediaQuery.size.width,
+                            height: mediaQuery.size.height * 0.5,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                SizedBox(
+                                  height: 10,
+                                ),
+                                Container(
+                                  alignment: Alignment.topLeft,
+                                  width: mediaQuery.size.width,
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 10.0, horizontal: 12.0),
+                                  child: Text(
+                                    "Recent",
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                _profileDataList.isEmpty ? Expanded(
+                                  child: Center(
+                                    child: Text("No data found"),
+                                  ),
+                                ) : SizedBox(
+                                  height: mediaQuery.size.height * 0.37,
+                                  child: RefreshIndicator(
+                                    onRefresh: fetchUserProfileData,
+                                    child: SingleChildScrollView(
+                                      physics: const BouncingScrollPhysics(),
+                                      child: Column(
+                                        children: (_profileDataList.length >= 5
+                                                ? _profileDataList.sublist(0, 5)
+                                                : _profileDataList)
+                                            .map(
+                                              (forestData) =>
+                                                  HomeScreenListTile(
+                                                    isAdmin: false,
+                                                forestData: forestData,
+                                                changeIndex: widget.changeIndex,
+                                                deleteData: (Conflict data) {
+                                                  setState(() {
+                                                    _profileDataList
+                                                        .removeWhere(
+                                                            (element) =>
+                                                                element.id ==
+                                                                data.id);
+                                                  });
+                                                },
+                                              ),
+                                            )
+                                            .toList(),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+              );
+            }
+          }
+        });
   }
 }

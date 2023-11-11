@@ -1,355 +1,241 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:forestapp/screens/Admin/AddUserScreen.dart';
 import 'package:forestapp/screens/Admin/EditUserScreen.dart';
 import 'package:forestapp/screens/Admin/UserDetails.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:intl/intl.dart';
-
-import '../loginScreen.dart';
-import 'homeAdmin.dart';
-
-class ProfileData {
-  final String title;
-  final String description;
-  final String imageUrl;
-  final String userName;
-  final String userEmail;
-  final Timestamp? datetime;
-
-  ProfileData({
-    required this.title,
-    required this.description,
-    required this.imageUrl,
-    required this.userName,
-    required this.userEmail,
-    this.datetime,
-  });
-}
+import 'package:forestapp/utils/user_service.dart';
+import '../../common/models/user.dart';
+import '../../utils/utils.dart';
 
 class UserScreen extends StatefulWidget {
-  const UserScreen({super.key});
+  final Function(int) changeIndex;
+
+  const UserScreen({
+    super.key,
+    required this.changeIndex,
+  });
 
   @override
   State<UserScreen> createState() => _UserScreenState();
 }
 
 class _UserScreenState extends State<UserScreen> {
-  late String _userEmail;
-  late List<ProfileData> _profileDataList = [];
-  late List<ProfileData> _searchResult = [];
-
-  final TextEditingController _searchController = TextEditingController();
-
-  late int _count;
-  late int _countUser;
+  late List<User> guardsList = [];
+  late Future<void> _future;
+  bool isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    fetchUserEmail();
-    getTotalDocumentsCount().then((value) {
-      setState(() {
-        _count = value;
-      });
-    });
-    getTotalDocumentsCountUser().then((value) {
-      setState(() {
-        _countUser = value;
-      });
-    });
-  }
-
-  Future<void> fetchUserEmail() async {
-    final prefs = await SharedPreferences.getInstance();
-    final userEmail = prefs.getString('userEmail');
-    setState(() {
-      _userEmail = userEmail ?? '';
-    });
-    fetchUserProfileData();
+    _future = fetchUserProfileData();
   }
 
   Future<void> fetchUserProfileData() async {
-    final userSnapshot = await FirebaseFirestore.instance
-        .collection('forestdata')
-        .orderBy('createdAt', descending: true)
-        .get();
-    final profileDataList = userSnapshot.docs
-        .map((doc) => ProfileData(
-              imageUrl: doc['imageUrl'],
-              title: doc['title'],
-              description: doc['description'],
-              userName: doc['user_name'],
-              userEmail: doc['user_email'],
-              datetime: doc['createdAt'] as Timestamp?,
-            ))
-        .toList();
+    // if the data is loaded from cache showing a bottom popup to user alerting
+    // that the app is running in offline mode
+    if( !(await hasConnection) ) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Loading the page in Offline mode'),
+        ),
+      );
+    }
+
     setState(() {
-      _profileDataList = profileDataList;
-      _searchResult = profileDataList;
+      isLoading = true;
     });
+    List<User> profileDataList = await UserService.getAllUsers(context);
+
+    setState(() {
+      isLoading = false;
+      guardsList = profileDataList;
+    });
+
+    return;
   }
 
-  void _filterList(String searchQuery) {
-    if (searchQuery.isNotEmpty) {
-      List<ProfileData> tempList = [];
-      _profileDataList.forEach((profileData) {
-        if (profileData.userName
-                .toLowerCase()
-                .contains(searchQuery.toLowerCase()) ||
-            profileData.userEmail
-                .toLowerCase()
-                .contains(searchQuery.toLowerCase())) {
-          tempList.add(profileData);
-        }
-      });
+  Future<void> deleteUser( String email ) async {
+    final confirm = await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+            'Confirm Deletion'),
+        content: const Text(
+            'Are you sure you want to delete this user?'),
+        actions: [
+          TextButton(
+            onPressed: () =>
+                Navigator.pop(
+                    context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () =>
+                Navigator.pop(
+                    context, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      UserService.deleteUser( context, email );
+
+      // removing the user from list of users
       setState(() {
-        _searchResult = tempList;
-      });
-      return;
-    } else {
-      setState(() {
-        _searchResult = _profileDataList;
+        guardsList = guardsList.where((guard) => guard.email != email ).toList();
       });
     }
   }
 
-  Future<int> getTotalDocumentsCount() async {
-    final snapshot =
-        await FirebaseFirestore.instance.collection('forestdata').get();
-    return snapshot.size;
-  }
-
-  Future<int> getTotalDocumentsCountUser() async {
-    final snapshot = await FirebaseFirestore.instance.collection('users').get();
-    return snapshot.size;
-  }
-
-  final CollectionReference users =
-      FirebaseFirestore.instance.collection('users');
-
   @override
   Widget build(BuildContext context) {
-    // if (_profileDataList.isEmpty) {
-    //   return const Center(child: CircularProgressIndicator());
-    // }
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(0.0), // hide the app bar
-        child: AppBar(
-          elevation: 0.0,
-          flexibleSpace: Container(
-              height: 90,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.green, Colors.greenAccent],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              )),
-          title: const Text('Pench MH'),
+      resizeToAvoidBottomInset: false,
+      appBar: AppBar(
+        elevation: 0,
+        flexibleSpace: Container(
+          height: 120,
+          decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.green, Colors.greenAccent],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(15),
+                bottomRight: Radius.circular(15),
+              )
+          ),
         ),
+        title: const Text(
+          'Guard',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        actions: [
+          Container(
+            margin: const EdgeInsets.symmetric( horizontal: 12.0),
+            child: IconButton(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                        builder: (context) => AddUserScreen(
+                          changeIndex: widget.changeIndex,
+                        ),
+                    )
+                  ).then((value) => fetchUserProfileData() );
+                },
+                icon: Icon(
+                  Icons.add
+                ),
+            ),
+          ),
+        ],
       ),
-      body: Container(
+      body: isLoading ? Center(
+        child: CircularProgressIndicator(),
+      ): Container(
         padding: const EdgeInsets.all(10.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                IconButton(
-                  icon: Icon(
-                    Icons.arrow_back,
-                    color: Colors.black,
-                  ),
-                  onPressed: () {
-                    Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(
-                            builder: (context) => const HomeAdmin(
-                                  title: '',
-                                )),
-                        (route) => false);
-                  },
-                ),
-                Center(
-                  child: Text(
-                    'Guard',
-                    style:
-                        TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
-            ),
-            // Padding(
-            //   padding: const EdgeInsets.all(8.0),
-            //   child: TextField(
-            //     controller: _searchController,
-            //     decoration: InputDecoration(
-            //       labelText: 'Search',
-            //       hintText: 'Search by title, user name or user email',
-            //       prefixIcon: const Icon(Icons.search),
-            //       border: OutlineInputBorder(
-            //         borderRadius: BorderRadius.circular(10),
-            //       ),
-            //     ),
-            //     onChanged: (value) {
-            //       _filterList(value);
-            //     },
-            //   ),
-            // ),
-            _searchResult.isEmpty
-                ? Text(
-                    "No result found....",
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
-                  )
-                : Expanded(
-                    child: StreamBuilder<QuerySnapshot>(
-                      stream: users.snapshots(),
-                      builder: (BuildContext context,
-                          AsyncSnapshot<QuerySnapshot> snapshot) {
-                        if (!snapshot.hasData) {
-                          return const Center(
-                              child: CircularProgressIndicator());
-                        }
+            Expanded(
+              child: FutureBuilder(
+                future: _future,
+                builder: ((context, snapshot) {
+                    if ( guardsList.isEmpty) {
+                      return Center(
+                        child: Text(
+                          "No result found....",
+                        ),
+                      );
+                    }
+                    else if( snapshot.connectionState == ConnectionState.waiting ) {
+                      return const Center(
+                          child: CircularProgressIndicator()
+                      );
+                    }
+                    else {
+                      return ListView.builder(
+                        physics: const BouncingScrollPhysics(),
+                        itemCount: guardsList.length,
+                        itemBuilder: (innerContext, index) {
+                          final User guard = guardsList[index];
+                          guard.radius = (guard.radius).round();
 
-                        final List<DocumentSnapshot> documents =
-                            snapshot.data!.docs;
-                        return ListView.builder(
-                          itemCount: documents.length,
-                          itemBuilder: (BuildContext context, int index) {
-                            final data =
-                                documents[index].data() as Map<String, dynamic>;
-
-                            return InkWell(
-                              onTap: () {
-                                Navigator.of(context).pushAndRemoveUntil(
-                                    MaterialPageRoute(
-                                        builder: (context) => UserDetails(
-                                              user: data,
-                                            )),
-                                    (route) => false);
-                              },
-                              child: Card(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.center,
-                                    children: [
-                                      CircleAvatar(
-                                        backgroundImage: NetworkImage(
-                                            data['imageUrl'] as String),
-                                      ),
-                                      const SizedBox(width: 16.0),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              data['name'] as String,
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 20.0,
-                                              ),
+                          return InkWell(
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                    builder: (context) => UserDetails(
+                                      user: guard,
+                                    )
+                                ),
+                              ).then((value) => fetchUserProfileData() );
+                            },
+                            child: Card(
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Row(
+                                  crossAxisAlignment:
+                                  CrossAxisAlignment.center,
+                                  children: [
+                                    CircleAvatar(
+                                      backgroundImage: NetworkImage('${baseUrl}uploads/guard/profile/${guard.imageUrl}'),
+                                    ),
+                                    const SizedBox(width: 16.0),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            guard.name,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 20.0,
                                             ),
-                                            const SizedBox(height: 8.0),
-                                            Text(data['email'] as String),
-                                          ],
-                                        ),
+                                          ),
+                                          const SizedBox(height: 8.0),
+                                          Text(guard.email),
+                                        ],
                                       ),
-                                      const SizedBox(width: 16.0),
-                                      IconButton(
-                                        icon: const Icon(Icons.edit),
-                                        onPressed: () {
-                                          Navigator.of(context)
-                                              .pushAndRemoveUntil(
-                                                  MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          EditUserScreen(
-                                                            user: data,
-                                                          )),
-                                                  (route) => false);
-                                        },
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(Icons.delete),
-                                        onPressed: () async {
-                                          final confirm = await showDialog(
-                                            context: context,
-                                            builder: (context) => AlertDialog(
-                                              title: const Text(
-                                                  'Confirm Deletion'),
-                                              content: const Text(
-                                                  'Are you sure you want to delete this user?'),
-                                              actions: [
-                                                TextButton(
-                                                  onPressed: () =>
-                                                      Navigator.pop(
-                                                          context, false),
-                                                  child: const Text('Cancel'),
-                                                ),
-                                                TextButton(
-                                                  onPressed: () =>
-                                                      Navigator.pop(
-                                                          context, true),
-                                                  child: const Text('Delete'),
-                                                ),
-                                              ],
-                                            ),
-                                          );
-                                          if (confirm == true) {
-                                            try {
-                                              final snapshot =
-                                                  await FirebaseFirestore
-                                                      .instance
-                                                      .collection('users')
-                                                      .where('email',
-                                                          isEqualTo:
-                                                              data['email'])
-                                                      .get();
-                                              if (snapshot.docs.isNotEmpty) {
-                                                await snapshot
-                                                    .docs.first.reference
-                                                    .delete();
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(
-                                                  const SnackBar(
-                                                    content: Text(
-                                                        'User deleted successfully.'),
-                                                  ),
-                                                );
-                                              } else {
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(
-                                                  const SnackBar(
-                                                    content:
-                                                        Text('User not found.'),
-                                                  ),
-                                                );
-                                              }
-                                            } catch (e) {
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(
-                                                SnackBar(
-                                                  content: Text(
-                                                      'Error deleting user: $e'),
-                                                ),
-                                              );
-                                            }
-                                          }
-                                        },
-                                      ),
-                                    ],
-                                  ),
+                                    ),
+                                    const SizedBox(width: 16.0),
+                                    IconButton(
+                                      icon: const Icon(Icons.edit),
+                                      onPressed: () {
+                                        Navigator.of(innerContext).push(
+                                          MaterialPageRoute(
+                                              builder: (innerContext) =>
+                                                  EditUserScreen(
+                                                    user: guard,
+                                                    changeIndex: widget.changeIndex,
+                                                    updateList: ( User guard ) {
+                                                      setState(() {
+                                                        guardsList = guardsList.map( (g) => g.email == guard.email ? guard : g ).toList();
+                                                      });
+                                                    },
+                                                  )
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete),
+                                      onPressed: () => deleteUser( guard.email ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            );
-                          },
-                        );
-                      },
-                    ),
-                  ),
+                            ),
+                          );
+                        },
+                      );
+                    }
+                })),
+              ),
           ],
         ),
       ),

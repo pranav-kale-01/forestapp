@@ -1,212 +1,298 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:flutter/material.dart';
-import 'package:forestapp/common/models/TigerModel.dart';
-import 'package:forestapp/screens/Admin/EditTigerAdmin.dart';
-import 'package:forestapp/screens/Admin/ForestMapScreen.dart' as mp;
+import 'package:forestapp/common/models/conflict_model_hive.dart';
+import 'package:forestapp/screens/Admin/EditConflictScreen.dart';
+import 'package:forestapp/utils/conflict_service.dart';
+import 'package:forestapp/utils/utils.dart';
 import 'package:intl/intl.dart';
-import 'ForestDataScreen.dart';
+
+import '../User/ForestMapScreen.dart';
+
+class ForestDetail extends StatefulWidget {
+  Conflict forestData;
+  final int currentIndex;
+  final Function(int) changeIndex;
+  final Function( Conflict ) deleteData;
+  final Function( Conflict ) changeData;
 
 
-class ForestDetail extends StatelessWidget {
-  final TigerModel forestData;
+  ForestDetail({
+    Key? key,
+    required this.forestData,
+    required this.currentIndex,
+    required this.changeIndex,
+    required this.changeData,
+    required this.deleteData
+  }) : super(key: key);
 
-  const ForestDetail({Key? key, required this.forestData}) : super(key: key);
+
+  @override
+  _ForestDetailState createState() => _ForestDetailState();
+}
+
+class _ForestDetailState extends State<ForestDetail> {
+  late final _bottomNavigator;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _bottomNavigator = BottomNavigationBar(
+      items: const <BottomNavigationBarItem>[
+        BottomNavigationBarItem(
+          icon: Icon(Icons.home),
+          label: 'Home',
+          backgroundColor: Colors.black,
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.person_sharp),
+          label: 'Guard',
+          backgroundColor: Colors.black,
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.eco),
+          label: 'Forest Data',
+          backgroundColor: Colors.black,
+        ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.map),
+          label: 'Maps',
+          backgroundColor: Colors.black,
+        ),
+      ],
+      currentIndex: widget.currentIndex,
+      selectedItemColor: Colors.green,
+      onTap: _onItemTapped,
+    );
+  }
+
+  void _changeData( Conflict newData ) {
+    setState(() {
+      widget.forestData = newData;
+    });
+
+    // also passing the value back to home screen
+    widget.changeData( newData );
+  }
+
+  void _onItemTapped(int index) {
+    widget.changeIndex( index );
+    Navigator.of(context).pop();
+  }
+
 
   @override
   Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+
     return Scaffold(
-      appBar: AppBar(
-        elevation: 0.0,
+      appBar:AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
         flexibleSpace: Container(
-            height: 90,
-            decoration: BoxDecoration(
+          height: 120,
+          decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [Colors.green, Colors.greenAccent],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-            )),
-        title: Text(forestData.title),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(
-                    builder: (context) => const ForestDataScreen()),
-                (route) => false);
-          },
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(15),
+                bottomRight: Radius.circular(15),
+              )
+          ),
+        ),
+        title: const Text(
+          'Forest Detail',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
+      bottomNavigationBar: _bottomNavigator,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           AspectRatio(
             aspectRatio: 16 / 9,
             child: Image.network(
-              forestData.imageUrl,
+              '${baseUrl}uploads/conflicts/${widget.forestData.imageUrl}',
               fit: BoxFit.cover,
             ),
           ),
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  forestData.title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 24,
-                  ),
-                ),
-                SizedBox(height: 8),
-                Text(forestData.description),
-                SizedBox(height: 8),
-                Row(
+            child: SizedBox(
+              height: mediaQuery.size.height * 0.42,
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    CircleAvatar(
-                      backgroundImage: NetworkImage(forestData.userImage),
+                    Text(
+                      widget.forestData.village_name,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 24,
+                      ),
                     ),
-                    SizedBox(width: 8),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    SizedBox(height: 16),
+                    Row(
                       children: [
-                        Text(forestData.userName),
-                        Text(forestData.userEmail),
+                        CircleAvatar(
+                          backgroundImage: NetworkImage("${baseUrl}uploads/guard/profile/${widget.forestData.imageUrl}"),
+                        ),
+                        SizedBox(width: 8),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(widget.forestData.userName),
+                            Text(widget.forestData.userEmail),
+                          ],
+                        ),
                       ],
                     ),
+                    SizedBox(height: 16),
+                    Text( "Created At: " + DateFormat('MMM d, yyyy h:mm a').format(widget.forestData.datetime!.toDate()),),
+                    SizedBox(height: 16),
+                    Text( 'Latitude: ${widget.forestData.location.latitude}, Longitude: ${widget.forestData.location.longitude}'),
+                    SizedBox(height: 16),
+                    Text('Range: ${widget.forestData.range}'),
+                    SizedBox(height: 16),
+                    Text('Round: ${widget.forestData.round}'),
+                    SizedBox(height: 16),
+                    Text('Bt: ${widget.forestData.bt}'),
+                    SizedBox(height: 16),
+                    Text('C.No/S.No Name: ${widget.forestData.cNoName}'),
+                    SizedBox(height: 16),
+                    Text('Status: ${widget.forestData.conflict}'),
+                    SizedBox(height: 16),
+                    Text('Name: ${widget.forestData.person_name}'),
+                    SizedBox(height: 16),
+                    Text('Age: ${widget.forestData.person_age}'),
+                    SizedBox(height: 16),
+                    Text('Gender: ${widget.forestData.person_gender}'),
+                    SizedBox(height: 16),
+                    Text('Sp Causing Death: ${widget.forestData.sp_causing_death}'),
+                    SizedBox(height: 16),
+                    Text('Notes: ${widget.forestData.notes}'),
+                    SizedBox(height: 16),
+                    Text('Guard Contact: ${widget.forestData.userContact}'),
+                    SizedBox(height: 16),
                   ],
                 ),
-                SizedBox(height: 8),
-                Text(
-                  DateFormat('MMM d, yyyy h:mm a')
-                      .format(forestData.datetime!.toDate()),
+              ),
+            ),
+          ),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Row(
+              children: [
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                    Colors.green.shade400, // Background color
+                    // Text Color (Foreground color)
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => ForestMapScreen(
+                          conflictData: widget.forestData,
+                          bottomNavigator: _bottomNavigator
+                        ),
+                      ),
+                    );
+                  },
+                  label: const Text("Show on Map"),
+                  icon: const Icon(Icons.arrow_right_alt_outlined),
                 ),
-                SizedBox(height: 8),
-                Text(
-                    'Latitude: ${forestData.location.latitude}, Longitude: ${forestData.location.longitude}'),
-
-                SizedBox(height: 8),
-                Text('Number Of Cubs: ${forestData.noOfCubs}'),
-                SizedBox(height: 8),
-                Text('Number Of Tigers: ${forestData.noOfTigers}'),
-                SizedBox(height: 8),
-                Text('Remark: ${forestData.remark}'),
-                SizedBox(height: 8),
-                Text('Guard Contact: ${forestData.userContact}'),
-                SizedBox(height: 16),
-
-                Row(
-                  children: [
-                    ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            Colors.green.shade400, // Background color
-                        // Text Color (Foreground color)
+                SizedBox(
+                  width: 10,
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                    Colors.red.shade400, // Background color
+                    // Text Color (Foreground color)
+                  ),
+                  onPressed: () async {
+                    final confirm = await showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Confirm Deletion'),
+                        content: const Text(
+                            'Are you sure you want to delete this user?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            child: const Text('Delete'),
+                          ),
+                        ],
                       ),
-                      onPressed: () {
-                        Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute(
-                              builder: (context) => mp.ForestMapScreen(
-                                latitude: forestData.location.latitude,
-                                longitude: forestData.location.longitude,
-                                userName: forestData.userName,
-                                tigerName: forestData.title,
-                              ),
+                    );
+                    if (confirm == true) {
+                      try {
+                        bool success = await ConflictService.deleteConflict( context, widget.forestData.id );
+
+                        if( success ) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('User deleted successfully.'),
                             ),
-                            (route) => false);
-                      },
-                      label: const Text("Show on Map"),
-                      icon: const Icon(Icons.arrow_right_alt_outlined),
-                    ),
-                    SizedBox(
-                      width: 10,
-                    ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            Colors.red.shade400, // Background color
-                        // Text Color (Foreground color)
-                      ),
-                      onPressed: () async {
-                        final confirm = await showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: const Text('Confirm Deletion'),
-                            content: const Text(
-                                'Are you sure you want to delete this user?'),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, false),
-                                child: const Text('Cancel'),
-                              ),
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, true),
-                                child: const Text('Delete'),
-                              ),
-                            ],
+                          );
+
+                          Navigator.of(context).pop();
+
+                          // updating on the parent screen
+                          widget.deleteData( widget.forestData );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Status not found.'),
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Error deleting user: $e'),
                           ),
                         );
-                        if (confirm == true) {
-                          try {
-                            final snapshot = await FirebaseFirestore.instance
-                                .collection('forestdata')
-                                .where('user_email',
-                                    isEqualTo: forestData.userEmail)
-                                .get();
-                            if (snapshot.docs.isNotEmpty) {
-                              await snapshot.docs.first.reference.delete();
-                              Navigator.of(context).pushAndRemoveUntil(
-                                  MaterialPageRoute(
-                                      builder: (context) =>
-                                          const ForestDataScreen()),
-                                  (route) => false);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('User deleted successfully.'),
-                                ),
-                              );
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('User not found.'),
-                                ),
-                              );
-                            }
-                          } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Error deleting user: $e'),
-                              ),
-                            );
-                          }
-                        }
-                      },
-                      child: Text("Delete"),
-                    ),
-                    SizedBox(
-                      width: 10,
-                    ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            Colors.green.shade400, // Background color
-                        // Text Color (Foreground color)
-                      ),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => EditTigerAdmin(tiger: this.forestData))
-                        );
-                            
-                      },
-                      child: const Text("Edit"),
-                    ),
-                  ],
+                      }
+                    }
+                  },
+                  child: Text("Delete"),
                 ),
-                SizedBox(height: 16),
-               
+                SizedBox(
+                  width: 10,
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                    Colors.green.shade400, // Background color
+                    // Text Color (Foreground color)
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => EditConflict(
+                              changeData: _changeData,
+                              conflictData: widget.forestData,
+                              currentIndex: widget.currentIndex,
+                              changeIndex: widget.changeIndex,
+                            ))
+                    );
+                  },
+                  child: const Text("Edit"),
+                ),
               ],
             ),
           ),
